@@ -90,6 +90,21 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		FollowFront(Battle, HUD, RealDeltaSeconds);
 	}
 
+	// 컷씬: 첫 번째만 대사가 다 나온 뒤 한 장 찍고, 나머지는 건너뛴다
+	if (const FYJJCutLine* Line = Mode->CutsceneLine())
+	{
+		if (!bCutShot)
+		{
+			if (Mode->CutsceneTime() >= Line->Duration * CutShotAt)
+			{
+				bCutShot = true;
+				Mode->TakeShot(FString::Printf(TEXT("%sCutscene"), ShotPrefix));
+			}
+			return;
+		}
+		Mode->SkipCutscene();
+	}
+
 	// 카드: 아무거나 하나
 	if (Battle.bCardPending)
 	{

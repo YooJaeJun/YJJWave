@@ -266,6 +266,33 @@ void FYJJGameDatabase::LoadStages()
 			Wave.Spawns.Add(Spawn);
 		}
 	});
+	// 시작 컷씬
+	const UDataTable* CutTable = LoadTable(TEXT("Cutscenes.csv"), FYJJCutsceneRow::StaticStruct());
+	TArray<TPair<int32, TPair<int32, FYJJCutLine>>> Lines;
+	CutTable->ForeachRow<FYJJCutsceneRow>(ContextName, [this, &Lines](const FName& Name, const FYJJCutsceneRow& Row)
+	{
+		const int32 Stage = Stages.IndexOfByPredicate([&Row](const FYJJStageDef& Def) { return Def.Id == FName(*Row.Stage); });
+		if (Stage == INDEX_NONE)
+		{
+			Problem(FString::Printf(TEXT("Cutscenes.csv %s: 모르는 스테이지 %s"), *Name.ToString(), *Row.Stage));
+			return;
+		}
+		FYJJCutLine Line;
+		const bool bNarrator = Row.Speaker == NarratorName;
+		Line.Speaker = bNarrator ? INDEX_NONE : FindUnit(Row.Speaker, TEXT("Cutscenes.csv"));
+		Line.VoiceKey = FName(*(FString(TEXT("Voice_")) + Row.Speaker));
+		Line.TextKey = Row.TextKey;
+		Line.Duration = Row.Duration;
+		Line.Camera = FVector2f(Row.CamX, Row.CamY);
+		Line.Zoom = Row.Zoom;
+		Lines.Emplace(Stage, TPair<int32, FYJJCutLine>(Row.Order, Line));
+	});
+	Lines.StableSort([](const auto& A, const auto& B) { return A.Value.Key < B.Value.Key; });
+	for (const auto& Entry : Lines)
+	{
+		Stages[Entry.Key].Cutscene.Add(Entry.Value.Value);
+	}
+
 	for (const FYJJStageDef& Stage : Stages)
 	{
 		if (Stage.Waves.Num() == 0)

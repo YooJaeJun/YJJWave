@@ -188,6 +188,7 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 	}
 	InitGround();
 	UpdateCamera(DeltaSeconds);
+	UpdateCutsceneCamera(DeltaSeconds);
 	TakeDeaths();
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	UpdateDying(Mode && Mode->IsRunning() ? DeltaSeconds * Mode->GetSpeed() : 0.f);
@@ -230,6 +231,7 @@ void AYJJWaveHUD::DrawHUD()
 		DrawPlotTooltip();
 	}
 	DrawSidePanel();
+	DrawCutscene();
 	DrawGameOver();
 	DrawDebugLine();
 	if (bOptionsOpen)

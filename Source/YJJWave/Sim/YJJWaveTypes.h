@@ -167,6 +167,17 @@ struct FYJJWaveLevel
 	TArray<FYJJWaveSpawn> Spawns;
 };
 
+/** 컷씬 한 줄: 화자(유닛 번호, INDEX_NONE = 해설), 대사, 시간, 카메라 */
+struct FYJJCutLine
+{
+	int32 Speaker = INDEX_NONE;
+	FName VoiceKey;
+	FString TextKey;
+	float Duration = 0.f;
+	FVector2f Camera = FVector2f::ZeroVector;
+	float Zoom = 0.f;   // 0이면 그대로
+};
+
 /** Stages.csv 한 줄 + 그 스테이지의 웨이브들 (Waves.csv) */
 struct FYJJStageDef
 {
@@ -174,6 +185,7 @@ struct FYJJStageDef
 	FString NameKey;
 	float HPScale = 1.f;
 	TArray<FYJJWaveLevel> Waves;   // 0번 = 1웨이브
+	TArray<FYJJCutLine> Cutscene;  // 시작 컷씬 (Cutscenes.csv, Order 순서)
 };
 
 /** Perks.csv 한 줄 */

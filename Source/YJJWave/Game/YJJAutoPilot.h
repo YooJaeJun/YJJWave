@@ -45,6 +45,7 @@ private:
 	bool bTreeShot = false;
 	bool bCardShot = false;
 	bool bOptionsShot = false;
+	bool bCutShot = false;
 	float CardShotWait = 0.f;
 
 	// 성능 기록
@@ -72,5 +73,7 @@ private:
 	static constexpr float TreeShotAt = 0.6f;
 	/** 그다음 옵션 화면 */
 	static constexpr float OptionsShotAt = 0.25f;
+	/** 컷씬 첫 줄이 이만큼 지나면 찍는다 */
+	static constexpr float CutShotAt = 0.9f;
 	static constexpr const TCHAR* ShotPrefix = TEXT("Play_");
 };

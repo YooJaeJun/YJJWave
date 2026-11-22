@@ -41,6 +41,7 @@ void AYJJWaveGameMode::BeginPlay()
 	// 아직 안 깬 가장 앞 스테이지부터
 	const int32 First = FMath::Clamp(Progress.Cleared, 0, FMath::Max(YJJData::Stages().Num() - 1, 0));
 	Battle.Reset(First, Progress);
+	StartCutscene();
 	UE_LOG(LogYJJWave, Display, TEXT("[Run] 시작: 유닛 %d종, 병영 %d종, 특성 %d개, 스테이지 %d개 (%d번부터)"),
 		YJJData::Units().Num(), YJJData::Buildings().Num(), YJJData::Perks().Num(), YJJData::Stages().Num(), First + 1);
 }
@@ -49,7 +50,7 @@ bool AYJJWaveGameMode::IsRunning() const
 {
 	const APlayerController* Player = GetWorld()->GetFirstPlayerController();
 	const AYJJWaveHUD* HUD = Player ? Cast<AYJJWaveHUD>(Player->GetHUD()) : nullptr;
-	return !bUserPaused && !Battle.bGameOver && !Battle.bCardPending && !(HUD && (HUD->IsTreeOpen() || HUD->IsOptionsOpen()));
+	return !bUserPaused && !Battle.bGameOver && !Battle.bCardPending && CutIndex == INDEX_NONE && !(HUD && (HUD->IsTreeOpen() || HUD->IsOptionsOpen()));
 }
 
 float AYJJWaveGameMode::GetSpeed() const
@@ -111,12 +112,54 @@ void AYJJWaveGameMode::StartStage(int32 Stage)
 	bResultSaved = false;
 	PendingPostDt = 0.f;
 	Battle.Reset(Stage, Progress);
+	StartCutscene();
 	Accumulator = 0.0;
 	bBenchSpawned = false;
 	if (AYJJWaveHUD* HUD = GetWorld()->GetFirstPlayerController() ? Cast<AYJJWaveHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()) : nullptr)
 	{
 		HUD->ResetBattleView();
 	}
+}
+
+void AYJJWaveGameMode::StartCutscene()
+{
+	CutIndex = INDEX_NONE;
+	CutTime = 0.f;
+	if (Battle.StageDef().Cutscene.Num() > 0)
+	{
+		CutIndex = 0;
+		FYJJAudio::Play(this, Battle.StageDef().Cutscene[0].VoiceKey);
+	}
+}
+
+const FYJJCutLine* AYJJWaveGameMode::CutsceneLine() const
+{
+	const TArray<FYJJCutLine>& Lines = Battle.StageDef().Cutscene;
+	return Lines.IsValidIndex(CutIndex) ? &Lines[CutIndex] : nullptr;
+}
+
+void AYJJWaveGameMode::NextCutsceneLine()
+{
+	if (CutIndex == INDEX_NONE)
+	{
+		return;
+	}
+	CutTime = 0.f;
+	++CutIndex;
+	if (const FYJJCutLine* Line = CutsceneLine())
+	{
+		FYJJAudio::Play(this, Line->VoiceKey);
+	}
+	else
+	{
+		CutIndex = INDEX_NONE;
+	}
+}
+
+void AYJJWaveGameMode::SkipCutscene()
+{
+	CutIndex = INDEX_NONE;
+	CutTime = 0.f;
 }
 
 void AYJJWaveGameMode::TakeShot(const FString& Name) const
@@ -162,6 +205,16 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	// 지난 프레임에 띄운 시뮬이 끝나야 판을 만질 수 있다
 	WaitForSim();
+
+	// 컷씬은 실제 시간으로 흐른다
+	if (const FYJJCutLine* Line = CutsceneLine())
+	{
+		CutTime += DeltaSeconds;
+		if (CutTime >= Line->Duration)
+		{
+			NextCutsceneLine();
+		}
+	}
 
 	// 콘솔 변수는 -ExecCmds 로 첫 프레임 뒤에 들어오므로 여기서 확인한다
 	if (!AutoPilot && CVarAutoPlay.GetValueOnGameThread() > 0)

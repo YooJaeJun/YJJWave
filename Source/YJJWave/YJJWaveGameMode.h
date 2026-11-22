@@ -56,6 +56,13 @@ public:
 	void NextStage();
 	/** 영혼·특성·깬 스테이지 저장 (특성을 찍은 뒤에도 부른다) */
 	void SaveProgress();
+
+	// ---- 컷씬 ----
+	/** 지금 보여 주는 줄 (없으면 nullptr) */
+	const FYJJCutLine* CutsceneLine() const;
+	float CutsceneTime() const { return CutTime; }
+	void NextCutsceneLine();
+	void SkipCutscene();
 	void TakeShot(const FString& Name) const;
 
 private:
@@ -65,6 +72,9 @@ private:
 	FYJJHordeView View;
 	FYJJProgress Progress;
 	bool bResultSaved = false;
+	int32 CutIndex = INDEX_NONE;
+	float CutTime = 0.f;
+	void StartCutscene();
 	UE::Tasks::FTask SimTask;
 	bool bSimRunning = false;
 	float PendingPostDt = 0.f;

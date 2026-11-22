@@ -158,6 +158,13 @@ MassacreKills,80,이 시간 안에 이만큼 처치하면 학살 배너
 ShakeTime,0.35,화면 흔들림 시간
 ShakePixels,14,화면 흔들림 세기 (픽셀)
 DeathRiseFromFling,0.6,세게 맞아 날아갈수록 더 높이 튄다 (밀쳐진 속도 비율)
+CutBarH,90,위아래 검은 띠 높이
+CutBoxW,1100,대사 상자 너비
+CutBoxH,190,대사 상자 높이
+CutPortrait,160,초상화 크기
+CutNarratorInset,0.2,해설 별 아이콘 안쪽 여백 비율
+CutTypeSpeed,22,대사 글자가 초당 나오는 수
+CutCameraFollow,2.5,컷씬 카메라가 목표로 가는 빠르기
 OptionsW,720,옵션 창 너비
 OptionsRowH,68,옵션 한 줄 높이
 OptionsLabelW,170,옵션 이름 칸 너비

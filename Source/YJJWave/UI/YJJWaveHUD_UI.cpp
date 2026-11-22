@@ -547,6 +547,11 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 	{
 		return;
 	}
+	if (Mode->CutsceneLine())
+	{
+		Mode->NextCutsceneLine();
+		return;
+	}
 	if (bTreeOpen)
 	{
 		const int32 Perk = PerkAt(ToVirtual(Mouse));
@@ -616,6 +621,19 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	if (!Current || !Mode)
 	{
+		return;
+	}
+	// 컷씬: 스페이스·엔터 다음 줄, ESC 건너뛰기
+	if (Mode->CutsceneLine())
+	{
+		if (Key == EKeys::Escape)
+		{
+			Mode->SkipCutscene();
+		}
+		else if (Key == EKeys::SpaceBar || Key == EKeys::Enter)
+		{
+			Mode->NextCutsceneLine();
+		}
 		return;
 	}
 	const int32 BuildingIndex = BuildingIndexForKey(Key);

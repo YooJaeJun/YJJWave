@@ -284,6 +284,14 @@ struct FYJJUILayout
 	UPROPERTY() float ShakeTime = 0.f;   // 화면 흔들림 시간
 	UPROPERTY() float ShakePixels = 0.f;   // 화면 흔들림 세기 (픽셀)
 	UPROPERTY() float DeathRiseFromFling = 0.f;   // 세게 맞아 날아갈수록 더 높이 튄다 (밀쳐진 속도 비율)
+	// ---- 컷씬 ----
+	UPROPERTY() float CutBarH = 0.f;   // 위아래 검은 띠 높이
+	UPROPERTY() float CutBoxW = 0.f;   // 대사 상자 너비
+	UPROPERTY() float CutBoxH = 0.f;   // 대사 상자 높이
+	UPROPERTY() float CutPortrait = 0.f;   // 초상화 크기
+	UPROPERTY() float CutNarratorInset = 0.f;   // 해설 별 아이콘 안쪽 여백 비율
+	UPROPERTY() float CutTypeSpeed = 0.f;   // 대사 글자가 초당 나오는 수
+	UPROPERTY() float CutCameraFollow = 0.f;   // 컷씬 카메라가 목표로 가는 빠르기
 	// ---- 옵션 화면 ----
 	UPROPERTY() float OptionsW = 0.f;   // 옵션 창 너비
 	UPROPERTY() float OptionsRowH = 0.f;   // 옵션 한 줄 높이

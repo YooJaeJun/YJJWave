@@ -66,6 +66,7 @@ private:
 	static FAutoConsoleCommand ReloadCommand;
 	static constexpr const TCHAR* DataFolder = TEXT("YJJWave/Data");
 	static constexpr const TCHAR* ContextName = TEXT("YJJData");
+	static constexpr const TCHAR* NarratorName = TEXT("Narrator");
 };
 
 // 자주 쓰는 표를 짧게 부르는 길 (모두 FYJJGameDatabase::Get()을 거친다)

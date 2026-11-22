@@ -212,6 +212,8 @@ private:
 	/** 특성·카드 공통: 능력치 줄 + 특수 효과 줄 */
 	FString EffectText(const FYJJPerkDef& Def) const;
 	void DrawCardPick();
+	void DrawCutscene();
+	void UpdateCutsceneCamera(float Dt);
 	void DrawOptions();
 	void HandleOption(int32 Index);
 	static float* OptionVolume(int32 Row);

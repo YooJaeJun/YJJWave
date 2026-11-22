@@ -86,6 +86,22 @@ struct FYJJStageRow : public FTableRowBase
 	UPROPERTY() FString Note;
 };
 
+/** Cutscenes.csv: 스테이지 시작 컷씬 한 줄 */
+USTRUCT()
+struct FYJJCutsceneRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString Stage;
+	UPROPERTY() int32 Order = 0;
+	UPROPERTY() FString Speaker;
+	UPROPERTY() FString TextKey;
+	UPROPERTY() float Duration = 0.f;
+	UPROPERTY() float CamX = 0.f;
+	UPROPERTY() float CamY = 0.f;
+	UPROPERTY() float Zoom = 0.f;
+};
+
 /** Waves.csv (행 이름은 아무거나 겹치지 않게: M1_Skeleton …) */
 USTRUCT()
 struct FYJJWaveRow : public FTableRowBase
