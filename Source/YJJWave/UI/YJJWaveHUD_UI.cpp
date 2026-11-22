@@ -13,6 +13,7 @@
 #include "UI/YJJUIStyle.h"
 #include "UI/YJJWaveHUD.h"
 #include "YJJWaveGameMode.h"
+#include "Audio/YJJAudio.h"
 
 // ---------------------------------------------------------------------------------------------
 // 그리기 도구
@@ -495,6 +496,7 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 
 	if (const FYJJButton* Button = ButtonAt(ToVirtual(Mouse)))
 	{
+		FYJJAudio::Play(this, SoundClick);
 		switch (static_cast<EButton>(Button->Kind))
 		{
 		case EButton::BuildCard:
@@ -716,6 +718,7 @@ void AYJJWaveHUD::DrawCardPick()
 
 void AYJJWaveHUD::AddBanner(const FString& Text, const FLinearColor& Color)
 {
+	FYJJAudio::Play(this, SoundBanner);
 	FYJJBanner& Banner = Banners.AddDefaulted_GetRef();
 	Banner.Text = Text;
 	Banner.Color = Color;

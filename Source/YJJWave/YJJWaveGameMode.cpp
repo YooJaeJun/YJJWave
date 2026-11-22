@@ -2,6 +2,8 @@
 #include "Data/YJJGameData.h"
 #include "Game/YJJAutoPilot.h"
 #include "Meta/YJJWaveSave.h"
+#include "Audio/YJJAudio.h"
+#include "Meta/YJJOptions.h"
 #include "Misc/Paths.h"
 #include "Player/YJJWavePlayerController.h"
 #include "UI/YJJWaveHUD.h"
@@ -34,6 +36,7 @@ void AYJJWaveGameMode::BeginPlay()
 	{
 		UE_LOG(LogYJJWave, Error, TEXT("[Data] %s"), *Problem);
 	}
+	FYJJOptions::Get().Apply();
 	Progress = UYJJWaveSave::Load();
 	// 아직 안 깬 가장 앞 스테이지부터
 	const int32 First = FMath::Clamp(Progress.Cleared, 0, FMath::Max(YJJData::Stages().Num() - 1, 0));
@@ -197,6 +200,14 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 
 	// 2) 이번 프레임 그리기용 사본
 	Battle.Horde.CopyTo(View);
+
+	// 소리: 쌓인 사건을 틀고, 보스가 있으면 보스곡
+	for (const FName& Key : Battle.Sounds)
+	{
+		FYJJAudio::Play(this, Key);
+	}
+	Battle.Sounds.Reset();
+	FYJJAudio::PlayMusic(this, Battle.bGameOver ? NAME_None : (View.Boss != INDEX_NONE ? MusicBoss : MusicBattle));
 
 	// 3) 규칙·생산은 여기서, 유닛 시뮬은 작업 스레드로 (그리기와 겹친다)
 	if (IsRunning())

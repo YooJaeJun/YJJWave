@@ -303,6 +303,8 @@ private:
 	static constexpr int32 QuadTriangles = 2;
 	static constexpr int32 SpriteChunk = 1024;
 	static constexpr int32 BakePasses = 3;   // 피 → 시체 → 큰 시체
+	inline static const FName SoundClick = TEXT("Click");
+	inline static const FName SoundBanner = TEXT("Banner");
 	static constexpr const TCHAR* BaseFontPath = TEXT("/Engine/EngineFonts/Roboto.Roboto");
 	static constexpr const TCHAR* GameFontFile = TEXT("YJJWave/Fonts/Jua-Regular.ttf");
 	static constexpr const TCHAR* GameFontFace = TEXT("Regular");

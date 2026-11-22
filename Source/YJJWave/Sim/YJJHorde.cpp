@@ -532,6 +532,7 @@ void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From, int32 Att
 {
 	HP[Victim] -= Amount;
 	Flash[Victim] = Config.HitFlashTime;
+	++HitCount;
 	const FVector2f Dir = Pos[Victim] - From;
 	LastHitDir[Victim] = Dir.GetSafeNormal();
 
@@ -670,6 +671,7 @@ void FYJJHorde::Shoot(int32 Slot, int32 Victim)
 			Aimed = Aimed != INDEX_NONE ? Aimed : Victim;
 			LastAimed = Aimed;
 		}
+		++ShotCount;
 		FYJJProjectile& Arrow = Projectiles.AddDefaulted_GetRef();
 		Arrow.Start = Pos[Slot];
 		Arrow.Pos = Pos[Slot];

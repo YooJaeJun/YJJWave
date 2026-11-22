@@ -15,7 +15,9 @@ param(
     # 추가 콘솔 명령 (쉼표로). 예: -Exec "stat RHI, stat unit"
     [string]$Exec = "",
     # 오토파일럿 전용 저장 슬롯(AutoPilot.sav)을 지우고 처음부터 (영혼·특성·깬 스테이지 0)
-    [switch]$Fresh
+    [switch]$Fresh,
+    # 소리를 켠다 (기본은 -NoSound)
+    [switch]$Sound
 )
 
 $ProjectDir = Resolve-Path (Join-Path $PSScriptRoot "..")
@@ -30,10 +32,11 @@ if ($Fresh) { Remove-Item (Join-Path $ProjectDir "Saved\SaveGames\AutoPilot.sav"
 $AllExec = "yjj.AutoPlay 1, yjj.AutoPlayTime $Time, yjj.AutoPlaySpeed $Speed, yjj.ShotInterval $ShotInterval, yjj.Bench $Bench, t.MaxFPS 0, r.VSync 0"
 if ($Exec) { $AllExec += ", $Exec" }
 $GameArgs = @(
-    "`"$Project`"", "-game", "-windowed", "-ResX=$ResX", "-ResY=$ResY", "-WinX=0", "-WinY=0", "-nosplash", "-unattended", "-NoSound", "-YJJSave=AutoPilot",
+    "`"$Project`"", "-game", "-windowed", "-ResX=$ResX", "-ResY=$ResY", "-WinX=0", "-WinY=0", "-nosplash", "-unattended", "-YJJSave=AutoPilot",
     "-ExecCmds=`"$AllExec`"", "-log", "-abslog=`"$Log`""
 )
 if ($Lang) { $GameArgs += "-yjjlang=$Lang" }
+if (-not $Sound) { $GameArgs += "-NoSound" }
 
 $Process = Start-Process -FilePath $Editor -ArgumentList $GameArgs -PassThru
 $Limit = [int](($Time / [Math]::Max($Speed, 0.1)) * 3 + 180)
@@ -42,5 +45,5 @@ if (-not $Process.WaitForExit($Limit * 1000)) {
     Write-Host "Timed out"
 }
 
-Select-String -Path $Log -Encoding UTF8 -Pattern "\[AutoPilot\]|\[Save\]|\[Battle\] 스테이지|\[Bench\]|\[Run\] 시작|\[Data\]|\[Art\]|Error:|Ensure condition failed|Fatal|\[Battle\] 성벽" | ForEach-Object { $_.Line }
+Select-String -Path $Log -Encoding UTF8 -Pattern "\[Audio\]|\[AutoPilot\]|\[Save\]|\[Battle\] 스테이지|\[Bench\]|\[Run\] 시작|\[Data\]|\[Art\]|Error:|Ensure condition failed|Fatal|\[Battle\] 성벽" | ForEach-Object { $_.Line }
 Get-ChildItem (Join-Path $ProjectDir "Saved\Screenshots\Play_*.png") -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }

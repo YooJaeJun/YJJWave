@@ -111,6 +111,8 @@ public:
 	TArray<FYJJDeath> RecentDeaths;
 	/** HUD가 바닥에 그을음으로 굽고 비운다 */
 	TArray<FVector2f> RecentCraters;
+	/** 소리 사건 (Sounds.csv 키). 게임 모드가 틀고 비운다 */
+	TArray<FName> Sounds;
 
 	int32 Stage = 0;
 	double Gold = 0.0;
@@ -183,4 +185,22 @@ private:
 	static constexpr uint32 RandomSeed = 7742u;
 	static constexpr float BossEffectRadiusScale = 2.f;
 	static constexpr float Half = 0.5f;
+
+	// 소리 사건 키 (Sounds.csv Name)
+	inline static const FName SoundHit = TEXT("Hit");
+	inline static const FName SoundArrow = TEXT("Arrow");
+	inline static const FName SoundDeath = TEXT("Death");
+	inline static const FName SoundRescue = TEXT("Rescue");
+	inline static const FName SoundRaise = TEXT("Raise");
+	inline static const FName SoundVictory = TEXT("Victory");
+	inline static const FName SoundDefeat = TEXT("Defeat");
+	inline static const FName SoundMeteorFall = TEXT("MeteorFall");
+	inline static const FName SoundMeteorBoom = TEXT("MeteorBoom");
+	inline static const FName SoundRally = TEXT("Rally");
+	inline static const FName SoundHeroVoice = TEXT("Voice_Hero");
+	inline static const FName SoundBossAppear = TEXT("BossAppear");
+	inline static const FName SoundCard = TEXT("Card");
+	inline static const FName SoundBuild = TEXT("Build");
+	inline static const FName SoundUpgrade = TEXT("Upgrade");
+	inline static const FName SoundBuy = TEXT("Buy");
 };

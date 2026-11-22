@@ -30,6 +30,7 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	}
 
 	Effects.Reset();
+	Sounds.Reset();
 	RecentDeaths.Reset();
 	RecentCraters.Reset();
 	Gold = T.StartGold;
@@ -42,6 +43,7 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	bVictory = false;
 	bCardPending = false;
 	CardOffer.Reset();
+	Sounds.Add(SoundCard);
 	CardsTaken.Reset();
 	FrontBonus = 1.f;
 	Corpses.Reset();
@@ -134,8 +136,25 @@ void FYJJBattle::PostStep(float Dt)
 	FrontBonus = 1.f + T.FrontBonusMax * FMath::Clamp(Pushed, 0.f, 1.f);
 
 	TickEffects(Dt);
+	if (Horde.HitCount > 0)
+	{
+		Sounds.Add(SoundHit);
+	}
+	if (Horde.ShotCount > 0)
+	{
+		Sounds.Add(SoundArrow);
+	}
+	if (Horde.Deaths.Num() > 0)
+	{
+		Sounds.Add(SoundDeath);
+	}
+	Horde.HitCount = Horde.ShotCount = 0;
 	CollectRewards();
 	TickNecro(Dt);
+	if (Horde.Rescued.Num() > 0)
+	{
+		Sounds.Add(SoundRescue);
+	}
 	for (const FVector2f& Where : Horde.Rescued)
 	{
 		AddEffect(EYJJEffectKind::Rescue, Where, YJJData::Tune().RescueEffectTime, YJJData::Tune().RescueEffectSize);
@@ -157,6 +176,7 @@ void FYJJBattle::Finish(bool bWon)
 {
 	bGameOver = true;
 	bVictory = bWon;
+	Sounds.Add(bWon ? SoundVictory : SoundDefeat);
 	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 스테이지 %d %s: 웨이브 %d/%d, 처치 %d, 시간 %.0f초, 영혼 +%.0f"),
 		Stage + 1, bWon ? TEXT("돌파") : TEXT("패배 (영웅 쓰러짐)"), Level, NumWaves(), Kills, Time, SoulsEarned);
 }
@@ -247,9 +267,11 @@ int32 FYJJBattle::SpawnEnemyAt(int32 Unit, const FVector2f& Pos)
 		return INDEX_NONE;
 	}
 	++Spawned[static_cast<int32>(EYJJTeam::Enemy)];
+	Sounds.Add(YJJData::Unit(Unit).VoiceKey);
 	if (YJJData::Unit(Unit).bBoss)
 	{
 		AddEffect(EYJJEffectKind::Build, Pos, T.BuildEffectTime, YJJData::Unit(Unit).DrawSize * BossEffectRadiusScale);
+		Sounds.Add(SoundBossAppear);
 		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 보스 등장: %s (웨이브 %d)"), *YJJData::Unit(Unit).Id.ToString(), Level);
 	}
 	return Slot;
@@ -287,6 +309,7 @@ void FYJJBattle::TickNecro(float Dt)
 			if (SpawnEnemyAt(Raise, Corpses[Index]) != INDEX_NONE)
 			{
 				AddEffect(EYJJEffectKind::Raise, Corpses[Index], T.RaiseEffectTime, T.RaiseEffectSize);
+				Sounds.Add(SoundRaise);
 				++Raised;
 			}
 			Corpses.RemoveAtSwap(Index, EAllowShrinking::No);
@@ -407,6 +430,7 @@ void FYJJBattle::TickPlots(float Dt)
 
 		const FYJJBuildingDef& Def = YJJData::Building(Plot.Building);
 		const FYJJSpawnStats Stats = PlayerStats(Plot.Building, Plot.Level);
+		Sounds.Add(YJJData::Unit(Def.Unit).VoiceKey);
 		const int32 Count = SpawnCount(PlotIndex);
 		for (int32 Index = 0; Index < Count && Horde.Num(EYJJTeam::Player) < T.MaxUnitsPerTeam; ++Index)
 		{
@@ -481,6 +505,7 @@ void FYJJBattle::TickEffects(float Dt)
 		{
 			Horde.DamageArea(Effect.Pos, Effect.Radius, Effect.Power, T.MeteorKnockback, EYJJTeam::Enemy);
 			RecentCraters.Add(Effect.Pos);
+			Sounds.Add(SoundMeteorBoom);
 			const FVector2f BlastPos = Effect.Pos;
 			const float BlastRadius = Effect.Radius;
 			Effects.RemoveAtSwap(Index, EAllowShrinking::No);
@@ -548,6 +573,8 @@ bool FYJJBattle::Buy(int32 Building, int32 Count)
 		}
 	}
 	AddEffect(EYJJEffectKind::Build, FVector2f(CampEdgeX, FieldHeight * Half), T.BuildEffectTime, T.PlotSize);
+	Sounds.Add(SoundBuy);
+	Sounds.Add(YJJData::Unit(YJJData::Building(Building).Unit).VoiceKey);
 	return true;
 }
 
@@ -575,6 +602,7 @@ bool FYJJBattle::Build(int32 PlotIndex, int32 Building)
 	Plot.Level = 1;
 	Plot.SpawnTimer = 0.f;
 	AddEffect(EYJJEffectKind::Build, Plot.Pos, YJJData::Tune().BuildEffectTime, YJJData::Tune().PlotSize);
+	Sounds.Add(SoundBuild);
 	return true;
 }
 
@@ -602,6 +630,7 @@ bool FYJJBattle::Upgrade(int32 PlotIndex)
 	}
 	Gold -= UpgradeCost(PlotIndex);
 	++Plots[PlotIndex].Level;
+	Sounds.Add(SoundUpgrade);
 	AddEffect(EYJJEffectKind::Build, Plots[PlotIndex].Pos, YJJData::Tune().BuildEffectTime, YJJData::Tune().PlotSize);
 	return true;
 }
@@ -634,6 +663,7 @@ bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
 	{
 		const FVector2f Target(FMath::Clamp(Where.X, CampEdgeX, FieldWidth), FMath::Clamp(Where.Y, 0.f, FieldHeight));
 		AddEffect(EYJJEffectKind::MeteorFall, Target, T.MeteorFallTime, T.MeteorRadius, T.MeteorDamage * Power);
+		Sounds.Add(SoundMeteorFall);
 		if (MeteorTwiceDelay > 0.f)
 		{
 			AddEffect(EYJJEffectKind::MeteorFall, Target, T.MeteorFallTime + MeteorTwiceDelay, T.MeteorRadius, T.MeteorDamage * Power);
@@ -642,6 +672,8 @@ bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
 	else
 	{
 		RallyTime = T.RallyDuration * Power;
+		Sounds.Add(SoundRally);
+		Sounds.Add(SoundHeroVoice);
 		if (RallyHealFraction > 0.f)
 		{
 			Horde.HealTeam(EYJJTeam::Player, RallyHealFraction);

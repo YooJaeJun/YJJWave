@@ -198,6 +198,9 @@ public:
 	TArray<FYJJProjectile> Projectiles;
 	/** 이번 틱 최후의 저항·부활이 일어난 자리 (FYJJBattle이 연출로 바꾸고 비운다) */
 	TArray<FVector2f> Rescued;
+	/** 소리용: 이번 틱들 동안 타격·화살 수 (FYJJBattle이 가져가 0으로) */
+	int32 HitCount = 0;
+	int32 ShotCount = 0;
 	/** 편별 이동·공격 속도 버프 배율 (스펠) */
 	float MoveBuff[static_cast<int32>(EYJJTeam::Count)] = { 1.f, 1.f };
 	float AttackBuff[static_cast<int32>(EYJJTeam::Count)] = { 1.f, 1.f };

@@ -127,7 +127,8 @@ struct FYJJUnitDef
 	bool bBoss = false;
 	bool bHero = false;         // 내 영웅 (중심, 쓰러지면 패배)
 	int32 RaiseUnit = INDEX_NONE; // 강령술사: 시체를 이 유닛으로 일으킨다
-	int32 BigRow = INDEX_NONE;   // 크게 그려지는 유닛: BigUnits.png 줄 (흐릿하지 않게 256px 칸)
+	int32 BigRow = INDEX_NONE;
+	FName VoiceKey;              // Sounds.csv Voice_<Id>   // 크게 그려지는 유닛: BigUnits.png 줄 (흐릿하지 않게 256px 칸)
 };
 
 /** Buildings.csv 한 줄 */

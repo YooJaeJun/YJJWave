@@ -73,6 +73,8 @@ NecroRaiseCount,4,한 번에 일으키는 시체 수
 NecroRaiseRadius,220,강령술사 둘레 이 안의 시체만
 RaiseEffectTime,0.7,되살아나는 연기 연출 시간
 RaiseEffectSize,60,되살아나는 연기 크기
+VoicesPerSecond,4,보이스는 전체 합쳐 초당 이만큼까지 (수천 마리가 한꺼번에 떠들지 않게)
+MusicFade,1.2,배경음을 바꿀 때 서서히 줄이고 키우는 시간
 PerkCostBase,15,첫 별 영혼 비용
 PerkCostGrowth,1.12,별을 찍을 때마다 비용 배율
 BotThinkInterval,0.5,봇 판단 간격 (게임 시간)

@@ -1,0 +1,32 @@
+﻿Name,Sounds,Volume,Category,Cooldown,PitchMin,PitchMax,Note
+Music_Battle,BGM_Battle,0.45,Music,0,1,1,전투 배경음
+Music_Boss,BGM_Boss,0.5,Music,0,1,1,보스가 있을 때
+Hit,SFX_Hit1 SFX_Hit2 SFX_Hit3,0.3,Sfx,0.05,0.85,1.15,근접 타격 (많아도 초당 20번)
+Arrow,SFX_Arrow,0.2,Sfx,0.08,0.9,1.15,화살 발사
+Death,SFX_Death,0.25,Sfx,0.06,0.8,1.25,쓰러짐
+MeteorFall,SFX_MeteorFall,0.6,Sfx,0,1,1,유성 시전
+MeteorBoom,SFX_MeteorBoom,0.8,Sfx,0.1,0.9,1.05,유성 폭발
+Rally,SFX_Rally,0.6,Sfx,0,1,1,돌격 함성
+Build,SFX_Build,0.5,Sfx,0.05,0.95,1.05,병영 건설
+Upgrade,SFX_Upgrade,0.5,Sfx,0.05,1,1,병영 강화
+Buy,SFX_Buy,0.5,Sfx,0.05,1,1.1,병사 즉시 구매
+Card,SFX_Card,0.6,Sfx,0,1,1,카드 고름
+Banner,SFX_Banner,0.55,Sfx,0.3,1,1,물량·학살 배너
+BossAppear,SFX_BossAppear,0.8,Sfx,0.5,1,1,보스 등장
+Victory,SFX_Victory,0.7,Sfx,0,1,1,스테이지 돌파
+Defeat,SFX_Defeat,0.7,Sfx,0,1,1,영웅 쓰러짐
+Click,SFX_Click,0.4,Sfx,0.03,1,1,UI 클릭
+Rescue,SFX_Rescue,0.35,Sfx,0.15,1,1.2,최후의 저항·부활
+Raise,SFX_Raise,0.45,Sfx,0.3,0.9,1.1,강령술사가 시체를 일으킴
+Voice_Grunt,VO_Grunt_0 VO_Grunt_1 VO_Grunt_2,0.45,Voice,0.25,0.9,1.2,졸병이 나올 때
+Voice_Archer,VO_Archer_0 VO_Archer_1,0.45,Voice,0.35,0.95,1.15,궁수
+Voice_Shield,VO_Shield_0 VO_Shield_1,0.45,Voice,0.4,0.95,1.1,방패병
+Voice_Brute,VO_Brute_0 VO_Brute_1,0.55,Voice,0.5,0.95,1.05,망치 대장
+Voice_Hero,VO_Hero_0 VO_Hero_1 VO_Hero_2,0.65,Voice,1,1,1.05,영웅
+Voice_Skeleton,VO_Skeleton_0,0.3,Voice,0.4,0.85,1.2,해골
+Voice_Imp,VO_Imp_0,0.3,Voice,0.5,0.95,1.2,도깨비
+Voice_Fatty,VO_Fatty_0,0.4,Voice,0.8,0.9,1.05,뚱보 좀비
+Voice_BoneArcher,VO_Skeleton_0,0.3,Voice,0.6,1.05,1.25,해골 궁수
+Voice_Necro,VO_Necro_0,0.5,Voice,1,0.95,1.05,강령술사
+Voice_BoneKing,VO_BoneKing_0,0.85,Voice,1,1,1,해골 왕
+Voice_Narrator,VO_Narrator_0,0.6,Voice,0,1,1,컷씬 해설

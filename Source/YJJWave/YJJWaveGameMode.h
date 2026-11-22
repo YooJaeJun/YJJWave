@@ -83,4 +83,6 @@ private:
 	static TAutoConsoleVariable<int32> CVarAsyncSim;
 	static constexpr double MsPerSecond = 1000.0;
 	static constexpr int32 BenchSeedSalt = 7919;
+	inline static const FName MusicBattle = TEXT("Music_Battle");
+	inline static const FName MusicBoss = TEXT("Music_Boss");
 };

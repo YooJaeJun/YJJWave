@@ -93,6 +93,9 @@ struct FYJJTuning
 	UPROPERTY() float NecroRaiseRadius = 0.f;   // 강령술사 둘레 이 안의 시체만
 	UPROPERTY() float RaiseEffectTime = 0.f;   // 되살아나는 연기 연출 시간
 	UPROPERTY() float RaiseEffectSize = 0.f;   // 되살아나는 연기 크기
+	// ---- 소리 ----
+	UPROPERTY() int32 VoicesPerSecond = 0;   // 보이스는 전체 합쳐 초당 이만큼까지 (수천 마리가 한꺼번에 떠들지 않게)
+	UPROPERTY() float MusicFade = 0.f;   // 배경음을 바꿀 때 서서히 줄이고 키우는 시간
 	// ---- 특성 성좌 ----
 	UPROPERTY() float PerkCostBase = 0.f;   // 첫 별 영혼 비용
 	UPROPERTY() float PerkCostGrowth = 0.f;   // 별을 찍을 때마다 비용 배율
