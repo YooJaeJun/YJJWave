@@ -24,14 +24,17 @@ void AYJJWaveHUD::DrawSidePanel()
 	{
 		const float H = L.HeaderH;
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
-		DrawLabel(YJJLoc::Format(TEXT("UI.Level"), { Current->Level }), X + Pad, Y + Pad, L.BigText, YJJUI::Paper);
+		// 스테이지 이름 / 웨이브 a/b, 남은 시간
+		DrawLabel(YJJLoc::Get(Current->StageDef().NameKey), X + Pad, Y + Pad, L.SmallText, YJJUI::Muted);
+		const float WaveY = Y + Pad + L.SmallText;
+		DrawLabel(YJJLoc::Format(TEXT("UI.Level"), { Current->Level, Current->NumWaves() }), X + Pad, WaveY, L.BigText, YJJUI::Paper);
 		const int32 Seconds = FMath::CeilToInt(FMath::Max(Current->LevelDuration() - Current->LevelTime, 0.f));
-		DrawLabel(YJJLoc::Format(TEXT("UI.Timer"), { Seconds / 60, FString::Printf(TEXT("%02d"), Seconds % 60) }), X + W - Pad, Y + Pad, L.BigText, YJJUI::Highlight, 1.f);
+		DrawLabel(YJJLoc::Format(TEXT("UI.Timer"), { Seconds / 60, FString::Printf(TEXT("%02d"), Seconds % 60) }), X + W - Pad, WaveY, L.BigText, YJJUI::Highlight, 1.f);
 		DrawBar(X + Pad, Y + H - Pad - L.BarH, W - Pad * 2.f, L.BarH, Current->LevelTime / FMath::Max(Current->LevelDuration(), KINDA_SMALL_NUMBER), YJJUI::LevelBar);
 		Y += H + L.SectionGap;
 	}
 
-	// ---- 아군 VS 적, 성벽 ----
+	// ---- 아군 VS 적, 영웅 체력 ----
 	{
 		const float H = L.VsH;
 		const float Icon = L.IconSize;
@@ -45,9 +48,9 @@ void AYJJWaveHUD::DrawSidePanel()
 		const float SmallIcon = Icon * L.SmallIconScale;
 		const float BarY = Y + H - Pad - L.BarH;
 		const float BarX = X + Pad + SmallIcon + L.IconGap;
-		DrawIcon(FMath::RoundToInt(L.UiWall), X + Pad, BarY + (L.BarH - SmallIcon) * Half, SmallIcon);
-		DrawBar(BarX, BarY, X + W - Pad - BarX, L.BarH, Current->WallHP / FMath::Max(Current->WallMaxHP, KINDA_SMALL_NUMBER), YJJUI::WallBar);
-		DrawLabel(YJJLoc::Format(TEXT("UI.WallHP"), { FormatCount(FMath::CeilToFloat(Current->WallHP)), FormatCount(Current->WallMaxHP) }),
+		DrawIcon(FMath::RoundToInt(L.UiHero), X + Pad, BarY + (L.BarH - SmallIcon) * Half, SmallIcon);
+		DrawBar(BarX, BarY, X + W - Pad - BarX, L.BarH, Units.HeroHP / FMath::Max(Units.HeroMaxHP, KINDA_SMALL_NUMBER), YJJUI::HeroBar);
+		DrawLabel(YJJLoc::Format(TEXT("UI.HeroHP"), { FormatCount(FMath::CeilToFloat(Units.HeroHP)), FormatCount(Units.HeroMaxHP) }),
 			(BarX + X + W - Pad) * Half, BarY + L.BarTextLift, L.SmallText, YJJUI::Paper, Half);
 		Y += H + L.SectionGap;
 	}

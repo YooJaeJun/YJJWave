@@ -1,9 +1,9 @@
 ﻿Key,ko,en,Note
-UI.Level,{0} 레벨,Level {0},물결 레벨
+UI.Level,웨이브 {0}/{1},Wave {0}/{1},스테이지 안 웨이브
 UI.LevelShort,Lv{0},Lv{0},병영 아래 레벨
 UI.Timer,{0}:{1},{0}:{1},레벨 남은 시간 (분:초)
 UI.VS,VS,VS,
-UI.WallHP,{0} / {1},{0} / {1},성벽 체력
+UI.HeroHP,{0} / {1},{0} / {1},영웅 체력
 UI.Speed,x{0},x{0},배속 버튼
 UI.Paused,멈춤,Paused,일시정지
 UI.Owned,x{0},x{0},지은 수
@@ -17,9 +17,11 @@ UI.PlotTitle,{0} Lv{1},{0} Lv{1},
 UI.PlotSpawn,{1}초마다 {0}명,{0} every {1}s,
 UI.PlotUpgrade,클릭: 강화 (금화 {0}),Click: upgrade ({0} gold),
 UI.PlotMax,최대 레벨,Max level,
-UI.GameOver,성벽이 무너졌다!,The wall has fallen!,
-UI.GameOverStats,{0} 레벨 · 처치 {1} · {2}초,Level {0} · {1} kills · {2}s,
-UI.Restart,R: 다시 시작,R: Restart,
+UI.GameOver,영웅이 쓰러졌다!,Your hero has fallen!,
+UI.Victory,스테이지 돌파!,Stage cleared!,
+UI.GameOverStats,{0} · 처치 {1} · {2}초 · 영혼 +{3},{0} · {1} kills · {2}s · souls +{3},
+UI.Restart,R: 다시,R: Retry,
+UI.NextStage,N: 다음 스테이지,N: Next stage,
 UI.Debug1,유닛 {0} · {1} fps · 화살 {2},Units {0} · {1} fps · arrows {2},F3로 끄기
 UI.Debug2,시뮬 {0}ms · 그리기 {1}ms · 대기 {2}ms,Sim {0}ms · draw {1}ms · wait {2}ms,
 Num.Man,{0}만,{0}0k,만 단위 (en은 근사 표기)
@@ -57,7 +59,7 @@ Stat.Multishot,{1} 화살 {0}발,{1} {0} arrows,
 Stat.Splash,{1} 범위 {0},{1} area {0},
 Stat.Gold,처치 금화 {0},Kill gold {0},
 Stat.Souls,처치 영혼 {0},Kill souls {0},
-Stat.WallHP,성벽 체력 {0},Wall health {0},
+Stat.HeroHP,영웅 체력 {0},Hero health {0},
 Stat.SpellPower,스펠 위력 {0},Spell power {0},
 Stat.SpellCooldown,스펠 대기 감소 {0},Spell cooldown -{0},
 Perk.Start,시작 별,Origin,
@@ -82,3 +84,6 @@ Perk.IronWall,철벽,Iron Wall,큰 별
 Perk.ShieldBash,방패 밀치기,Shield Bash,큰 별
 Perk.Charge,전군 돌격,Charge!,큰 별
 Perk.HordeTactics,물량 공세,Horde Tactics,큰 별
+Stage.Meadow,풀밭 어귀,Meadow Gate,스테이지 1
+Stage.SkullHill,해골 언덕,Skull Hill,스테이지 2
+Unit.Hero,대장 졸병,Captain Grunt,내 영웅 (중심)

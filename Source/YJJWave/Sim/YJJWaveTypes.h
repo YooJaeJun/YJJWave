@@ -23,7 +23,7 @@ enum class EYJJStat : uint8
 	Splash,        // 범위 공격 반경 %
 	Gold,          // 처치 금화 %
 	Souls,         // 처치 영혼 %
-	WallHP,        // 성벽 최대 체력 %
+	HeroHP,        // 영웅 최대 체력 %
 	SpellPower,    // 스펠 위력 %
 	SpellCooldown, // 스펠 재사용 대기 감소 %
 	Count
@@ -68,6 +68,7 @@ struct FYJJUnitDef
 	int32 AtlasRow = 0;         // Units.png 줄
 	float DrawSize = 0.f;       // 그릴 크기 (월드)
 	bool bBoss = false;
+	bool bHero = false;         // 내 영웅 (중심, 쓰러지면 패배)
 };
 
 /** Buildings.csv 한 줄 */
@@ -103,6 +104,15 @@ struct FYJJWaveLevel
 {
 	float Duration = 0.f;
 	TArray<FYJJWaveSpawn> Spawns;
+};
+
+/** Stages.csv 한 줄 + 그 스테이지의 웨이브들 (Waves.csv) */
+struct FYJJStageDef
+{
+	FName Id;
+	FString NameKey;
+	float HPScale = 1.f;
+	TArray<FYJJWaveLevel> Waves;   // 0번 = 1웨이브
 };
 
 /** Perks.csv 한 줄 */

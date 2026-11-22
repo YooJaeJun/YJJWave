@@ -1,7 +1,7 @@
 """특성 성좌(Perks.csv)를 만든다. PoE 패시브 트리처럼 중심에서 8갈래로 뻗는다.
 
   중심 별 ─ 안쪽 고리 8개 ─ 갈래마다 작은 별 줄 + 큰 별 2개 ─ 이웃 갈래와 다리
-  갈래: 졸병 · 성벽 · 궁수 · 금고 · 대장간 · 스펠 · 방패 · 전군
+  갈래: 졸병 · 영웅 · 궁수 · 금고 · 대장간 · 스펠 · 방패 · 전군
 
 큰 별 이름은 Localization.csv 의 Perk.<이름> 에 있다.
 별을 늘리려면 아래 SPOKES 의 small / notables 를 고치고 다시 돌린다.
@@ -26,9 +26,9 @@ SPOKES = [
     ("Barracks", 180, [("HP", "Barracks", 0.10), ("Damage", "Barracks", 0.10), ("SpawnRate", "Barracks", 0.08)],
      [("PotHelmet", [("HP", "Barracks", 0.40), ("Damage", "Barracks", 0.20)]),
       ("EndlessGrunts", [("SpawnCount", "Barracks", 2)])]),
-    ("Wall", 225, [("WallHP", "", 0.15)],
-     [("StoneWall", [("WallHP", "", 0.60)]),
-      ("Fortress", [("WallHP", "", 1.00), ("HP", "", 0.05)])]),
+    ("Hero", 225, [("HeroHP", "", 0.15)],
+     [("StoneWall", [("HeroHP", "", 0.60)]),
+      ("Fortress", [("HeroHP", "", 1.00), ("HP", "", 0.05)])]),
     ("Archer", 270, [("Damage", "ArcherPost", 0.10), ("AttackSpeed", "ArcherPost", 0.08)],
      [("DoubleShot", [("Multishot", "ArcherPost", 1)]),
       ("ArrowRain", [("Multishot", "ArcherPost", 1), ("SpawnRate", "ArcherPost", 0.15)])]),

@@ -50,6 +50,12 @@ public:
 	void CycleSpeed();
 	void TogglePause() { bUserPaused = !bUserPaused; }
 	void Restart();
+	/** 스테이지 시작 (지금 영혼·특성을 저장하고 새 판) */
+	void StartStage(int32 Stage);
+	bool HasNextStage() const;
+	void NextStage();
+	/** 영혼·특성·깬 스테이지 저장 (특성을 찍은 뒤에도 부른다) */
+	void SaveProgress();
 	void TakeShot(const FString& Name) const;
 
 private:
@@ -57,6 +63,8 @@ private:
 
 	FYJJBattle Battle;
 	FYJJHordeView View;
+	FYJJProgress Progress;
+	bool bResultSaved = false;
 	UE::Tasks::FTask SimTask;
 	bool bSimRunning = false;
 	float PendingPostDt = 0.f;

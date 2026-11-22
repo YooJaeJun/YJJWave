@@ -119,6 +119,8 @@ private:
 		Tree,
 		TreeClose,
 		Speed,
+		Restart,
+		NextStage,
 	};
 
 	/** 기다리지 않는 판 (Horde 밖 필드만). 유닛은 View() */

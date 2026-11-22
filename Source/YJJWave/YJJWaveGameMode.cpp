@@ -1,6 +1,7 @@
 #include "YJJWaveGameMode.h"
 #include "Data/YJJGameData.h"
 #include "Game/YJJAutoPilot.h"
+#include "Meta/YJJWaveSave.h"
 #include "Misc/Paths.h"
 #include "Player/YJJWavePlayerController.h"
 #include "UI/YJJWaveHUD.h"
@@ -33,9 +34,12 @@ void AYJJWaveGameMode::BeginPlay()
 	{
 		UE_LOG(LogYJJWave, Error, TEXT("[Data] %s"), *Problem);
 	}
-	Battle.Reset();
-	UE_LOG(LogYJJWave, Display, TEXT("[Run] 시작: 유닛 %d종, 병영 %d종, 특성 %d개, 물결 %d레벨"),
-		YJJData::Units().Num(), YJJData::Buildings().Num(), YJJData::Perks().Num(), YJJData::Waves().Num());
+	Progress = UYJJWaveSave::Load();
+	// 아직 안 깬 가장 앞 스테이지부터
+	const int32 First = FMath::Clamp(Progress.Cleared, 0, FMath::Max(YJJData::Stages().Num() - 1, 0));
+	Battle.Reset(First, Progress);
+	UE_LOG(LogYJJWave, Display, TEXT("[Run] 시작: 유닛 %d종, 병영 %d종, 특성 %d개, 스테이지 %d개 (%d번부터)"),
+		YJJData::Units().Num(), YJJData::Buildings().Num(), YJJData::Perks().Num(), YJJData::Stages().Num(), First + 1);
 }
 
 bool AYJJWaveGameMode::IsRunning() const
@@ -74,9 +78,36 @@ void AYJJWaveGameMode::WaitForSim()
 
 void AYJJWaveGameMode::Restart()
 {
+	StartStage(Battle.Stage);
+}
+
+bool AYJJWaveGameMode::HasNextStage() const
+{
+	return Battle.bVictory && YJJData::Stages().IsValidIndex(Battle.Stage + 1);
+}
+
+void AYJJWaveGameMode::NextStage()
+{
+	if (HasNextStage())
+	{
+		StartStage(Battle.Stage + 1);
+	}
+}
+
+void AYJJWaveGameMode::SaveProgress()
+{
 	WaitForSim();
+	Battle.WriteProgress(Progress);
+	UYJJWaveSave::Store(Progress);
+}
+
+void AYJJWaveGameMode::StartStage(int32 Stage)
+{
+	WaitForSim();
+	SaveProgress();
+	bResultSaved = false;
 	PendingPostDt = 0.f;
-	Battle.Reset();
+	Battle.Reset(Stage, Progress);
 	Accumulator = 0.0;
 	bBenchSpawned = false;
 	if (AYJJWaveHUD* HUD = GetWorld()->GetFirstPlayerController() ? Cast<AYJJWaveHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()) : nullptr)
@@ -117,7 +148,7 @@ void AYJJWaveGameMode::SpawnBenchmark(int32 PerTeam)
 	{
 		const float Y = RandomY.FRandRange(T.FieldMargin, Battle.FieldHeight - T.FieldMargin);
 		const float Depth = RandomDepth.FRand() * Battle.FieldWidth * T.BenchDepth;
-		Battle.Horde.Spawn(PlayerUnits[Index % PlayerUnits.Num()], EYJJTeam::Player, FVector2f(Battle.WallX + Depth, Y), Stats);
+		Battle.Horde.Spawn(PlayerUnits[Index % PlayerUnits.Num()], EYJJTeam::Player, FVector2f(Battle.CampEdgeX + Depth, Y), Stats);
 		Battle.Horde.Spawn(EnemyUnits[Index % EnemyUnits.Num()], EYJJTeam::Enemy, FVector2f(Battle.FieldWidth - T.EnemySpawnInset - Depth, Y), Stats);
 	}
 	UE_LOG(LogYJJWave, Display, TEXT("[Bench] 편마다 %d마리 배치 (아군 %d, 적 %d)"), PerTeam, Battle.Horde.Num(EYJJTeam::Player), Battle.Horde.Num(EYJJTeam::Enemy));
@@ -147,6 +178,16 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 	{
 		Battle.PostStep(PendingPostDt);
 		PendingPostDt = 0.f;
+	}
+	// 판이 끝나면 한 번 저장 (깬 스테이지·영혼)
+	if (Battle.bGameOver && !bResultSaved)
+	{
+		bResultSaved = true;
+		if (Battle.bVictory)
+		{
+			Progress.Cleared = FMath::Max(Progress.Cleared, Battle.Stage + 1);
+		}
+		SaveProgress();
 	}
 
 	if (AutoPilot)
@@ -200,5 +241,6 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 void AYJJWaveGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	WaitForSim();
+	SaveProgress();
 	Super::EndPlay(EndPlayReason);
 }

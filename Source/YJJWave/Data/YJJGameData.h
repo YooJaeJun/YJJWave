@@ -14,7 +14,8 @@ class UScriptStruct;
  *
  *   Tuning.csv     규칙 수치 (FYJJTuning)        UILayout.csv   화면 배치·연출·아틀라스 (FYJJUILayout)
  *   Units.csv      병사·몬스터                    Buildings.csv  병영
- *   Waves.csv      물결 레벨별 몬스터             Perks.csv      특성 성좌 (Tools/Data/gen_perks.py)
+ *   Stages.csv     스테이지                       Waves.csv      스테이지·웨이브별 몬스터
+ *   Perks.csv      특성 성좌 (Tools/Data/gen_perks.py)
  * 글자는 Localization.csv (YJJLoc).
  */
 class YJJWAVE_API FYJJGameDatabase
@@ -28,7 +29,7 @@ public:
 	FYJJUILayout Layout;
 	TArray<FYJJUnitDef> Units;
 	TArray<FYJJBuildingDef> Buildings;   // Order 순서
-	TArray<FYJJWaveLevel> Waves;         // 0번 = 1레벨
+	TArray<FYJJStageDef> Stages;         // Order 순서, 웨이브 포함
 	TArray<FYJJPerkDef> Perks;
 
 	/** 읽으면서 생긴 문제 (빠진 이름, 모르는 유닛…) */
@@ -45,7 +46,7 @@ private:
 
 	void LoadUnits();
 	void LoadBuildings();
-	void LoadWaves();
+	void LoadStages();
 	void LoadPerks();
 	int32 FindUnit(const FString& Id, const TCHAR* Where);
 	int32 FindBuilding(const FString& Id, const TCHAR* Where);
@@ -70,7 +71,9 @@ namespace YJJData
 	YJJWAVE_API const FYJJUnitDef& Unit(int32 Index);
 	YJJWAVE_API TConstArrayView<FYJJBuildingDef> Buildings();
 	YJJWAVE_API const FYJJBuildingDef& Building(int32 Index);
-	YJJWAVE_API TConstArrayView<FYJJWaveLevel> Waves();
+	YJJWAVE_API TConstArrayView<FYJJStageDef> Stages();
+	/** 영웅 유닛 번호 (Units.csv Hero=1, 없으면 INDEX_NONE) */
+	YJJWAVE_API int32 HeroUnit();
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Perks();
 
 	/** Perks.csv Stat 열·Localization Stat.<이름> 에 쓰는 이름 */

@@ -1,7 +1,7 @@
 ﻿Name,Kind,X,Y,Stat,Target,Value,Stat2,Target2,Value2,Links,NameKey
 Start,Start,0,0,,,0,,,0,Inner0 Inner1 Inner2 Inner3 Inner4 Inner5 Inner6 Inner7,
 Inner0,Small,-180.0,0.0,HP,,0.04,,,0,Barracks0 Inner1 Inner7 Start,
-Inner1,Small,-127.3,-127.3,Damage,,0.04,,,0,Inner0 Inner2 Start Wall0,
+Inner1,Small,-127.3,-127.3,Damage,,0.04,,,0,Hero0 Inner0 Inner2 Start,
 Inner2,Small,-0.0,-180.0,HP,,0.04,,,0,Archer0 Inner1 Inner3 Start,
 Inner3,Small,127.3,-127.3,Damage,,0.04,,,0,Inner2 Inner4 Start Treasury0,
 Inner4,Small,180.0,0.0,HP,,0.04,,,0,Forge0 Inner3 Inner5 Start,
@@ -14,12 +14,12 @@ Barracks_PotHelmet,Notable,-539.2,-29.1,HP,Barracks,0.4,Damage,Barracks,0.2,Barr
 Barracks3,Small,-658.3,47.5,SpawnRate,Barracks,0.08,,,0,Barracks4 Barracks_PotHelmet,
 Barracks4,Small,-776.7,72.1,HP,Barracks,0.1,,,0,Barracks3 Barracks_EndlessGrunts,
 Barracks_EndlessGrunts,Notable,-899.8,-20.3,SpawnCount,Barracks,2,,,0,Barracks4,Perk.EndlessGrunts
-Wall0,Small,-192.6,-230.0,WallHP,,0.15,,,0,Inner1 Wall1,
-Wall1,Small,-272.9,-319.2,WallHP,,0.15,,,0,Bridge0 Bridge1 Wall0 Wall_StoneWall,
-Wall_StoneWall,Notable,-399.1,-363.7,WallHP,,0.6,,,0,Wall1 Wall3,Perk.StoneWall
-Wall3,Small,-512.2,-416.3,WallHP,,0.15,,,0,Wall4 Wall_StoneWall,
-Wall4,Small,-556.3,-546.7,WallHP,,0.15,,,0,Wall3 Wall_Fortress,
-Wall_Fortress,Notable,-570.9,-695.7,WallHP,,1.0,HP,,0.05,Wall4,Perk.Fortress
+Hero0,Small,-192.6,-230.0,HeroHP,,0.15,,,0,Hero1 Inner1,
+Hero1,Small,-272.9,-319.2,HeroHP,,0.15,,,0,Bridge0 Bridge1 Hero0 Hero_StoneWall,
+Hero_StoneWall,Notable,-399.1,-363.7,HeroHP,,0.6,,,0,Hero1 Hero3,Perk.StoneWall
+Hero3,Small,-512.2,-416.3,HeroHP,,0.15,,,0,Hero4 Hero_StoneWall,
+Hero4,Small,-556.3,-546.7,HeroHP,,0.15,,,0,Hero3 Hero_Fortress,
+Hero_Fortress,Notable,-570.9,-695.7,HeroHP,,1.0,HP,,0.05,Hero4,Perk.Fortress
 Archer0,Small,28.5,-298.6,Damage,ArcherPost,0.1,,,0,Archer1 Inner2,
 Archer1,Small,-6.9,-419.9,AttackSpeed,ArcherPost,0.08,,,0,Archer0 Archer_DoubleShot Bridge1 Bridge2,
 Archer_DoubleShot,Notable,-56.1,-537.1,Multishot,ArcherPost,1,,,0,Archer1 Archer3,Perk.DoubleShot
@@ -56,8 +56,8 @@ Army_Charge,Notable,-374.8,388.7,MoveSpeed,,0.15,AttackSpeed,,0.15,Army1 Army3,P
 Army3,Small,-415.6,512.7,MoveSpeed,,0.05,,,0,Army4 Army_Charge,
 Army4,Small,-530.5,571.8,AttackSpeed,,0.05,,,0,Army3 Army_HordeTactics,
 Army_HordeTactics,Notable,-687.6,580.6,SpawnRate,,0.25,,,0,Army4,Perk.HordeTactics
-Bridge0,Small,-388.0,-160.7,Damage,,0.04,,,0,Barracks1 Wall1,
-Bridge1,Small,-160.7,-388.0,HP,,0.04,,,0,Archer1 Wall1,
+Bridge0,Small,-388.0,-160.7,Damage,,0.04,,,0,Barracks1 Hero1,
+Bridge1,Small,-160.7,-388.0,HP,,0.04,,,0,Archer1 Hero1,
 Bridge2,Small,160.7,-388.0,Damage,,0.04,,,0,Archer1 Treasury1,
 Bridge3,Small,388.0,-160.7,HP,,0.04,,,0,Forge1 Treasury1,
 Bridge4,Small,388.0,160.7,Damage,,0.04,,,0,Forge1 Spells1,

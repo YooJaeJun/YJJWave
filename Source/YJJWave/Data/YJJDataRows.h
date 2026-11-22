@@ -44,6 +44,7 @@ struct FYJJUnitRow : public FTableRowBase
 	UPROPERTY() int32 AtlasRow = 0;
 	UPROPERTY() float DrawSize = 0.f;
 	UPROPERTY() int32 Boss = 0;
+	UPROPERTY() int32 Hero = 0;
 };
 
 /** Buildings.csv */
@@ -70,13 +71,26 @@ struct FYJJBuildingRow : public FTableRowBase
 	UPROPERTY() float BotWeight = 0.f;
 };
 
-/** Waves.csv (행 이름은 아무거나 겹치지 않게: L01_Skeleton …) */
+/** Stages.csv */
+USTRUCT()
+struct FYJJStageRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() int32 Order = 0;
+	UPROPERTY() FString NameKey;
+	UPROPERTY() float HPScale = 1.f;
+	UPROPERTY() FString Note;
+};
+
+/** Waves.csv (행 이름은 아무거나 겹치지 않게: M1_Skeleton …) */
 USTRUCT()
 struct FYJJWaveRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY() int32 Level = 0;
+	UPROPERTY() FString Stage;
+	UPROPERTY() int32 Wave = 0;
 	UPROPERTY() float Duration = 0.f;
 	UPROPERTY() FString Unit;
 	UPROPERTY() float Rate = 0.f;

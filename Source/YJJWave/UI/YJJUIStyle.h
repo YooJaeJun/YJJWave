@@ -18,7 +18,7 @@ namespace YJJUI
 	inline const FLinearColor Shade = FLinearColor(0.f, 0.f, 0.f, 0.55f);
 	inline const FLinearColor BarBack = FLinearColor(0.06f, 0.03f, 0.02f, 0.85f);
 	inline const FLinearColor LevelBar = FLinearColor(1.f, 0.62f, 0.12f, 1.f);
-	inline const FLinearColor WallBar = FLinearColor(0.55f, 0.85f, 1.f, 1.f);
+	inline const FLinearColor HeroBar = FLinearColor(0.55f, 0.85f, 1.f, 1.f);
 	inline const FLinearColor BossBar = FLinearColor(0.85f, 0.15f, 0.35f, 1.f);
 	inline const FLinearColor Highlight = FLinearColor(1.f, 0.9f, 0.35f, 1.f);
 	inline const FLinearColor HitTint = FLinearColor(1.f, 0.35f, 0.3f, 1.f);

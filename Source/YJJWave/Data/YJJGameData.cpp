@@ -114,10 +114,10 @@ void FYJJGameDatabase::Load()
 	FillNameValues(TEXT("UILayout.csv"), FYJJUILayout::StaticStruct(), &Layout);
 	LoadUnits();
 	LoadBuildings();
-	LoadWaves();
+	LoadStages();
 	LoadPerks();
 
-	UE_LOG(LogYJJWave, Display, TEXT("[Data] 유닛 %d, 병영 %d, 물결 %d, 특성 %d, 문제 %d"), Units.Num(), Buildings.Num(), Waves.Num(), Perks.Num(), Problems.Num());
+	UE_LOG(LogYJJWave, Display, TEXT("[Data] 유닛 %d, 병영 %d, 스테이지 %d, 특성 %d, 문제 %d"), Units.Num(), Buildings.Num(), Stages.Num(), Perks.Num(), Problems.Num());
 }
 
 int32 FYJJGameDatabase::FindUnit(const FString& Id, const TCHAR* Where)
@@ -167,6 +167,7 @@ void FYJJGameDatabase::LoadUnits()
 		Def.AtlasRow = Row.AtlasRow;
 		Def.DrawSize = Row.DrawSize;
 		Def.bBoss = Row.Boss != 0;
+		Def.bHero = Row.Hero != 0;
 		if (Row.HP <= 0.f || Row.Radius <= 0.f || Row.Mass <= 0.f || Row.AttackInterval <= 0.f)
 		{
 			Problem(FString::Printf(TEXT("Units.csv %s: 체력·반지름·질량·공격 간격은 0보다 커야 한다"), *Name.ToString()));
@@ -212,38 +213,61 @@ void FYJJGameDatabase::LoadBuildings()
 	}
 }
 
-void FYJJGameDatabase::LoadWaves()
+void FYJJGameDatabase::LoadStages()
 {
-	Waves.Reset();
-	const UDataTable* Table = LoadTable(TEXT("Waves.csv"), FYJJWaveRow::StaticStruct());
-	Table->ForeachRow<FYJJWaveRow>(ContextName, [this](const FName& Name, const FYJJWaveRow& Row)
+	Stages.Reset();
+	const UDataTable* StageTable = LoadTable(TEXT("Stages.csv"), FYJJStageRow::StaticStruct());
+	TArray<TPair<int32, FYJJStageDef>> Sorted;
+	StageTable->ForeachRow<FYJJStageRow>(ContextName, [&Sorted](const FName& Name, const FYJJStageRow& Row)
 	{
-		if (Row.Level < 1)
+		FYJJStageDef Def;
+		Def.Id = Name;
+		Def.NameKey = Row.NameKey;
+		Def.HPScale = Row.HPScale;
+		Sorted.Emplace(Row.Order, Def);
+	});
+	Sorted.StableSort([](const TPair<int32, FYJJStageDef>& A, const TPair<int32, FYJJStageDef>& B) { return A.Key < B.Key; });
+	for (const TPair<int32, FYJJStageDef>& Entry : Sorted)
+	{
+		Stages.Add(Entry.Value);
+	}
+
+	const UDataTable* WaveTable = LoadTable(TEXT("Waves.csv"), FYJJWaveRow::StaticStruct());
+	WaveTable->ForeachRow<FYJJWaveRow>(ContextName, [this](const FName& Name, const FYJJWaveRow& Row)
+	{
+		FYJJStageDef* Stage = Stages.FindByPredicate([&Row](const FYJJStageDef& Def) { return Def.Id == FName(*Row.Stage); });
+		if (!Stage || Row.Wave < 1)
 		{
-			Problem(FString::Printf(TEXT("Waves.csv %s: 레벨은 1부터"), *Name.ToString()));
+			Problem(FString::Printf(TEXT("Waves.csv %s: 모르는 스테이지 %s 또는 웨이브 %d"), *Name.ToString(), *Row.Stage, Row.Wave));
 			return;
 		}
-		if (Waves.Num() < Row.Level)
+		if (Stage->Waves.Num() < Row.Wave)
 		{
-			Waves.SetNum(Row.Level);
+			Stage->Waves.SetNum(Row.Wave);
 		}
-		FYJJWaveLevel& Level = Waves[Row.Level - 1];
-		Level.Duration = FMath::Max(Level.Duration, Row.Duration);
+		FYJJWaveLevel& Wave = Stage->Waves[Row.Wave - 1];
+		Wave.Duration = FMath::Max(Wave.Duration, Row.Duration);
 		FYJJWaveSpawn Spawn;
 		Spawn.Unit = FindUnit(Row.Unit, TEXT("Waves.csv"));
 		Spawn.Rate = Row.Rate;
 		Spawn.Burst = Row.Burst;
 		if (Spawn.Unit != INDEX_NONE)
 		{
-			Level.Spawns.Add(Spawn);
+			Wave.Spawns.Add(Spawn);
 		}
 	});
-	for (int32 Index = 0; Index < Waves.Num(); ++Index)
+	for (const FYJJStageDef& Stage : Stages)
 	{
-		if (Waves[Index].Duration <= 0.f)
+		if (Stage.Waves.Num() == 0)
 		{
-			Problem(FString::Printf(TEXT("Waves.csv: %d레벨이 비었다"), Index + 1));
-			Waves[Index].Duration = Tuning.EndlessLevelDuration;
+			Problem(FString::Printf(TEXT("Waves.csv: %s 스테이지에 웨이브가 없다"), *Stage.Id.ToString()));
+		}
+		for (int32 Index = 0; Index < Stage.Waves.Num(); ++Index)
+		{
+			if (Stage.Waves[Index].Duration <= 0.f)
+			{
+				Problem(FString::Printf(TEXT("Waves.csv: %s %d웨이브가 비었다"), *Stage.Id.ToString(), Index + 1));
+			}
 		}
 	}
 }
@@ -321,7 +345,12 @@ TConstArrayView<FYJJUnitDef> YJJData::Units() { return FYJJGameDatabase::Get().U
 const FYJJUnitDef& YJJData::Unit(int32 Index) { return FYJJGameDatabase::Get().Units[Index]; }
 TConstArrayView<FYJJBuildingDef> YJJData::Buildings() { return FYJJGameDatabase::Get().Buildings; }
 const FYJJBuildingDef& YJJData::Building(int32 Index) { return FYJJGameDatabase::Get().Buildings[Index]; }
-TConstArrayView<FYJJWaveLevel> YJJData::Waves() { return FYJJGameDatabase::Get().Waves; }
+TConstArrayView<FYJJStageDef> YJJData::Stages() { return FYJJGameDatabase::Get().Stages; }
+
+int32 YJJData::HeroUnit()
+{
+	return FYJJGameDatabase::Get().Units.IndexOfByPredicate([](const FYJJUnitDef& Def) { return Def.bHero; });
+}
 TConstArrayView<FYJJPerkDef> YJJData::Perks() { return FYJJGameDatabase::Get().Perks; }
 
 const TCHAR* YJJData::StatKey(EYJJStat Stat)
@@ -338,7 +367,7 @@ const TCHAR* YJJData::StatKey(EYJJStat Stat)
 	case EYJJStat::Splash: return TEXT("Splash");
 	case EYJJStat::Gold: return TEXT("Gold");
 	case EYJJStat::Souls: return TEXT("Souls");
-	case EYJJStat::WallHP: return TEXT("WallHP");
+	case EYJJStat::HeroHP: return TEXT("HeroHP");
 	case EYJJStat::SpellPower: return TEXT("SpellPower");
 	case EYJJStat::SpellCooldown: return TEXT("SpellCooldown");
 	default: return TEXT("");

@@ -40,6 +40,8 @@ private:
 	/** 벤치마크: 전장 전체가 보이게 멀리서 (그리기 최악 조건) */
 	bool bBench = false;
 	float ExitTimer = 0.f;
+	/** 여러 스테이지에 걸친 게임 시간 합 */
+	float TotalTime = 0.f;
 	bool bTreeShot = false;
 
 	// 성능 기록

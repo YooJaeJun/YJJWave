@@ -102,6 +102,8 @@ struct FYJJHordeView
 	int32 Boss = INDEX_NONE;
 	float BossHP = 0.f;
 	float BossMaxHP = 0.f;
+	float HeroHP = 0.f;
+	float HeroMaxHP = 0.f;
 	float StepMs = 0.f;
 	float PhaseMs[static_cast<int32>(EYJJHordePhase::Count)] = {};
 	float ReorderMs = 0.f;
@@ -125,7 +127,6 @@ struct FYJJHordeConfig
 	float AttackAnimTime = 0.f;
 	float ArrowHitRadius = 0.f;
 	float DeathFling = 0.f;
-	float WallAttackReach = 0.f;
 	float BigUnitRadius = 0.f;
 	float MultishotSpread = 0.f;
 	int32 ReorderTicks = 0;
@@ -134,8 +135,14 @@ struct FYJJHordeConfig
 class YJJWAVE_API FYJJHorde
 {
 public:
-	/** 넓이 FieldSize 의 전장, 유닛 최대 Capacity 마리. 성벽은 x = WallX 세로줄 */
-	void Reset(const FVector2f& FieldSize, float InWallX, int32 Capacity);
+	/** 넓이 FieldSize 의 전장, 유닛 최대 Capacity 마리 */
+	void Reset(const FVector2f& FieldSize, int32 Capacity);
+
+	/** 영웅(중심): 자리 Home 에서 Leash 안의 적만 쫓고, 적은 상대가 없으면 영웅을 향해 온다 */
+	void SetHero(int32 Slot, const FVector2f& Home, float Leash, float Arrive);
+	int32 Hero() const { return HeroSlot; }
+	void Heal(int32 Slot, float Amount);
+	void SetMaxHP(int32 Slot, float NewMax);
 
 	/** 빈 슬롯이 없으면 INDEX_NONE */
 	int32 Spawn(int32 Type, EYJJTeam Team, const FVector2f& Pos, const FYJJSpawnStats& Stats);
@@ -176,8 +183,6 @@ public:
 	/** 이번 틱까지 죽은 유닛. 쓰는 쪽(FYJJBattle)이 비운다 */
 	TArray<FYJJDeath> Deaths;
 	TArray<FYJJProjectile> Projectiles;
-	/** 적이 성벽에 넣은 피해 (FYJJBattle이 가져가 0으로) */
-	float WallDamage = 0.f;
 	/** 편별 이동·공격 속도 버프 배율 (스펠) */
 	float MoveBuff[static_cast<int32>(EYJJTeam::Count)] = { 1.f, 1.f };
 	float AttackBuff[static_cast<int32>(EYJJTeam::Count)] = { 1.f, 1.f };
@@ -214,7 +219,7 @@ private:
 	TArray<FVector2f> Impulse;
 	TArray<FVector2f> PosNext;
 	TArray<FVector2f> LastHitDir;
-	/** 이번 틱 공격 대상 (INDEX_NONE 없음, WallTarget 성벽) */
+	/** 이번 틱 공격 대상 (INDEX_NONE 없음) */
 	TArray<int32> Pending;
 	/** 유닛별 한 번 쓰는 효과 표시 (EYJJUnitFlag 비트) */
 	TArray<uint8> Flags;
@@ -228,7 +233,9 @@ private:
 	int32 TeamCount[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	float Front[static_cast<int32>(EYJJTeam::Count)] = { -1.f, -1.f };
 	FVector2f Field = FVector2f::ZeroVector;
-	float WallX = 0.f;
+	FVector2f HeroHome = FVector2f::ZeroVector;
+	float HeroLeash = 0.f;
+	float HeroArrive = 0.f;
 	float MaxNormalRadius = 0.f;
 	float StepMs = 0.f;
 	float PhaseMs[static_cast<int32>(EYJJHordePhase::Count)] = {};
@@ -241,7 +248,6 @@ private:
 	FYJJHordeConfig Config;
 	FYJJGrid Grids[static_cast<int32>(EYJJTeam::Count)];
 
-	static constexpr int32 WallTarget = -2;
 	static constexpr int32 ParallelChunk = 256;
 	static constexpr float NearZero = 1.e-4f;
 	static constexpr double MsPerSecond = 1000.0;

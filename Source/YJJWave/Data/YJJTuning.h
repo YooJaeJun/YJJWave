@@ -24,14 +24,15 @@ struct FYJJTuning
 	UPROPERTY() float FieldWidth = 0.f;   // 전장 너비
 	UPROPERTY() float FieldHeight = 0.f;   // 전장 높이
 	UPROPERTY() float FieldMargin = 0.f;   // 유닛이 못 가는 위아래·양 끝 여백
-	UPROPERTY() float WallX = 0.f;   // 성벽 x
-	UPROPERTY() float WallHP = 0.f;   // 성벽 체력
+	UPROPERTY() float CampEdgeX = 0.f;   // 진지 오른쪽 끝 x (유성은 이보다 오른쪽에만)
+	UPROPERTY() float HeroHomeX = 0.f;   // 영웅이 지키는 자리 x (세로는 가운데)
+	UPROPERTY() float HeroLeash = 0.f;   // 영웅이 자리에서 이만큼까지만 쫓아간다
+	UPROPERTY() float HeroArrive = 0.f;   // 영웅이 자리로 돌아왔다고 보는 거리
+	UPROPERTY() float HeroRegen = 0.f;   // 영웅 초당 체력 회복
 	UPROPERTY() int32 StartGold = 0;   // 시작 금화
 	UPROPERTY() float PassiveGold = 0.f;   // 초당 기본 금화
-	UPROPERTY() float EndlessLevelDuration = 0.f;   // Waves.csv가 비었을 때 레벨 길이
-	UPROPERTY() float EndlessRateGrowth = 0.f;   // 정의된 마지막 레벨 뒤 레벨마다 생산 배율
-	UPROPERTY() float LevelHPGrowth = 0.f;   // 물결 레벨마다 적 체력 배율
-	UPROPERTY() float LevelDamageGrowth = 0.f;   // 물결 레벨마다 적 공격력 배율
+	UPROPERTY() float LevelHPGrowth = 0.f;   // 웨이브마다 적 체력 배율
+	UPROPERTY() float LevelDamageGrowth = 0.f;   // 웨이브마다 적 공격력 배율
 	UPROPERTY() float EnemySpawnInset = 0.f;   // 적이 나오는 곳: 오른쪽 끝에서 이만큼 안
 	UPROPERTY() float SpawnScatter = 0.f;   // 생산 위치 흩뿌림
 	UPROPERTY() float EnemySpawnBand = 0.f;   // 적이 나오는 띠 높이 (전장 높이 비율, 가운데 기준)
@@ -56,7 +57,6 @@ struct FYJJTuning
 	UPROPERTY() float ImpulseDamping = 0.f;   // 밀쳐진 속도가 줄어드는 빠르기 (/초)
 	UPROPERTY() float LateralDrift = 0.f;   // 행군할 때 위아래로 흔들리는 정도 (속도 비율)
 	UPROPERTY() float BigUnitRadius = 0.f;   // 이 반지름 이상은 큰 유닛(보스): 모두가 따로 밀어내기 검사
-	UPROPERTY() float WallAttackReach = 0.f;   // 적이 성벽을 때리는 거리
 	UPROPERTY() float ArrowHitRadius = 0.f;   // 대상이 먼저 죽은 화살이 다른 적을 맞히는 반경
 	UPROPERTY() float MultishotSpread = 0.f;   // 추가 화살이 노리는 대상 주변 반경
 	UPROPERTY() float HitFlashTime = 0.f;   // 맞으면 붉게 깜빡이는 시간
@@ -117,7 +117,6 @@ struct FYJJUILayout
 	UPROPERTY() float AnimIdleSpeed = 0.f;   // 이 속력보다 느리면 숨쉬기 그림
 	UPROPERTY() float AnimIdleFps = 0.f;   // 숨쉬기 초당 칸
 	UPROPERTY() float EmptyPlotCol = 0.f;   // Buildings.png 빈 칸
-	UPROPERTY() float WallCol = 0.f;   // Buildings.png 성벽 조각
 	UPROPERTY() float FxShadow = 0.f;   // Fx 칸: 그림자
 	UPROPERTY() float FxBloodFirst = 0.f;   // Fx 칸: 첫 피 웅덩이
 	UPROPERTY() float FxBloodCount = 0.f;   // 피 웅덩이 종류 수
@@ -134,7 +133,7 @@ struct FYJJUILayout
 	UPROPERTY() float UiRally = 0.f;   // UI 칸: 함성
 	UPROPERTY() float UiStar = 0.f;   // UI 칸: 작은 별
 	UPROPERTY() float UiBigStar = 0.f;   // UI 칸: 큰 별
-	UPROPERTY() float UiWall = 0.f;   // UI 칸: 성벽
+	UPROPERTY() float UiHero = 0.f;   // UI 칸: 영웅 얼굴
 	UPROPERTY() float UiPanel = 0.f;   // UI 칸: 패널 (9칸 늘리기)
 	UPROPERTY() float UiPanelDark = 0.f;   // UI 칸: 어두운 패널
 	UPROPERTY() float UiCard = 0.f;   // UI 칸: 카드
@@ -170,8 +169,6 @@ struct FYJJUILayout
 	UPROPERTY() float PlotLabelZoomMin = 0.f;   // 멀리 볼 때 레벨 글자 최소 배율
 	UPROPERTY() float PlotPickRadius = 0.f;   // 병영 클릭 반경
 	UPROPERTY() float PlotPickLift = 0.f;   // 클릭 판정 중심: 발밑에서 위로
-	UPROPERTY() float WallDrawSize = 0.f;   // 성벽 조각 그림 크기
-	UPROPERTY() float WallSegment = 0.f;   // 성벽 조각 간격
 	UPROPERTY() float MaxDying = 0.f;   // 날아가는 시체 최대 (넘으면 바로 눕는다)
 	UPROPERTY() float DeathJitter = 0.f;   // 죽을 때 흩어지는 속도
 	UPROPERTY() float DeathRise = 0.f;   // 죽을 때 튀어 오르는 속도 (질량 제곱근으로 나눈다)
@@ -207,7 +204,7 @@ struct FYJJUILayout
 	UPROPERTY() float PanelPad = 0.f;   // 패널 안쪽 여백
 	UPROPERTY() float SidePanelW = 0.f;   // 좌측 패널 너비 (모든 UI가 여기. 전장은 나머지 전부)
 	UPROPERTY() float SectionGap = 0.f;   // 패널 칸 사이 간격
-	UPROPERTY() float HeaderH = 0.f;   // 물결 칸 높이
+	UPROPERTY() float HeaderH = 0.f;   // 스테이지·웨이브 칸 높이
 	UPROPERTY() float VsH = 0.f;   // 아군 VS 적 칸 높이
 	UPROPERTY() float BossH = 0.f;   // 보스 칸 높이
 	UPROPERTY() float ResH = 0.f;   // 금화·영혼 칸 높이
@@ -230,7 +227,8 @@ struct FYJJUILayout
 	UPROPERTY() float TipLineH = 0.f;   // 설명창 줄 높이
 	UPROPERTY() float TipOffset = 0.f;   // 설명창: 마우스 오른쪽으로
 	UPROPERTY() float GameOverW = 0.f;   // 패배 패널 너비
-	UPROPERTY() float GameOverH = 0.f;   // 패배 패널 높이
+	UPROPERTY() float GameOverH = 0.f;   // 결과 창 높이
+	UPROPERTY() float ResultButtonH = 0.f;   // 결과 창 버튼 높이
 	UPROPERTY() float GlowSpeed = 0.f;   // 반짝임 속도
 	UPROPERTY() float NumberMan = 0.f;   // 이 이상은 만 단위로
 	UPROPERTY() float NumberEok = 0.f;   // 이 이상은 억 단위로

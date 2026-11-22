@@ -84,7 +84,7 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	if (Battle.Level != LastLevel)
 	{
 		LastLevel = Battle.Level;
-		UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] 레벨 %d: 아군 %d, 적 %d, 병영 %d, 특성 %d, 금화 %.0f, 시뮬 %.2fms"),
+		UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] 웨이브 %d: 아군 %d, 적 %d, 병영 %d, 특성 %d, 금화 %.0f, 시뮬 %.2fms"),
 			Battle.Level, Battle.Horde.Num(EYJJTeam::Player), Battle.Horde.Num(EYJJTeam::Enemy),
 			Battle.Plots.FilterByPredicate([](const FYJJPlot& Plot) { return Plot.Building != INDEX_NONE; }).Num(),
 			Battle.NumAllocated(), Battle.Gold, Battle.Horde.LastStepMs());
@@ -100,7 +100,14 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		}
 	}
 
-	if (Battle.bGameOver || (Duration > 0.f && Battle.Time >= Duration))
+	if (Battle.bGameOver && Mode->HasNextStage())
+	{
+		Mode->TakeShot(FString::Printf(TEXT("%sStage%d"), ShotPrefix, Battle.Stage + 1));
+		Mode->NextStage();
+		return;
+	}
+	TotalTime += RealDeltaSeconds * Mode->GetSpeed();
+	if (Battle.bGameOver || (Duration > 0.f && TotalTime >= Duration))
 	{
 		Finish(Battle);
 	}
@@ -112,7 +119,7 @@ void FYJJAutoPilot::FollowFront(const FYJJBattle& Battle, AYJJWaveHUD* HUD, floa
 	const FYJJTuning& T = YJJData::Tune();
 	const float PlayerFront = Battle.Horde.FrontX(EYJJTeam::Player);
 	const float EnemyFront = Battle.Horde.FrontX(EYJJTeam::Enemy);
-	float X = Battle.WallX;
+	float X = Battle.CampEdgeX;
 	if (PlayerFront > 0.f && EnemyFront > 0.f)
 	{
 		X = (PlayerFront + EnemyFront) * 0.5f;
@@ -232,8 +239,8 @@ void FYJJAutoPilot::Finish(const FYJJBattle& Battle)
 	Mode->TakeShot(FString::Printf(TEXT("%sEnd"), ShotPrefix));
 	const double AvgStep = Samples > 0 ? StepMsSum / Samples : 0.0;
 	const double AvgFrame = Samples > 0 ? FrameMsSum / Samples : 0.0;
-	UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] DONE %s: 레벨 %d, 시간 %.0f초, 처치 %d, 성벽 %.0f/%.0f, 최대 유닛 %d, 시뮬 평균 %.2fms 최악 %.2fms, 프레임 평균 %.1fms (%.0f fps)"),
-		Battle.bGameOver ? TEXT("패배") : TEXT("시간 끝"), Battle.Level, Battle.Time, Battle.Kills, Battle.WallHP, Battle.WallMaxHP,
+	UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] DONE %s: 스테이지 %d 웨이브 %d, 시간 %.0f초, 처치 %d, 영혼 %.0f, 특성 %.0f개, 최대 유닛 %d, 시뮬 평균 %.2fms 최악 %.2fms, 프레임 평균 %.1fms (%.0f fps)"),
+		Battle.bGameOver ? (Battle.bVictory ? TEXT("모든 스테이지 돌파") : TEXT("패배")) : TEXT("시간 끝"), Battle.Stage + 1, Battle.Level, Battle.Time, Battle.Kills, Battle.Souls, static_cast<float>(Battle.NumAllocated()),
 		PeakUnits, AvgStep, WorstStepMs, AvgFrame, AvgFrame > 0.0 ? MsPerSecond / AvgFrame : 0.0);
 	const double DenseStep = DenseSamples > 0 ? DenseStepMsSum / DenseSamples : 0.0;
 	const double DenseFrame = DenseSamples > 0 ? DenseFrameMsSum / DenseSamples : 0.0;

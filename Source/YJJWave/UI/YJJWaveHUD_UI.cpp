@@ -219,9 +219,24 @@ void AYJJWaveHUD::DrawGameOver()
 	const float Y = (VirtualHeight - H) * Half;
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanel));
 	const float Pad = UI().PanelPad;
-	DrawLabel(YJJLoc::Get(TEXT("UI.GameOver")), X + W * Half, Y + Pad * 2.f, UI().TitleText, YJJUI::Bad, Half);
-	DrawLabel(YJJLoc::Format(TEXT("UI.GameOverStats"), { Current->Level, FormatCount(Current->Kills), FMath::RoundToInt(Current->Time) }), X + W * Half, Y + H * Half, UI().MidText, YJJUI::Paper, Half);
-	DrawLabel(YJJLoc::Get(TEXT("UI.Restart")), X + W * Half, Y + H - Pad * 2.f - UI().MidText, UI().MidText, YJJUI::Highlight, Half);
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	DrawLabel(YJJLoc::Get(Current->bVictory ? TEXT("UI.Victory") : TEXT("UI.GameOver")), X + W * Half, Y + Pad * 2.f, UI().TitleText, Current->bVictory ? YJJUI::Highlight : YJJUI::Bad, Half);
+	DrawLabel(YJJLoc::Format(TEXT("UI.GameOverStats"), { YJJLoc::Get(Current->StageDef().NameKey), FormatCount(Current->Kills), FMath::RoundToInt(Current->Time), FormatCount(Current->SoulsEarned) }),
+		X + W * Half, Y + H * Half - UI().MidText * Half, UI().MidText, YJJUI::Paper, Half, W - Pad * 2.f);
+
+	// 버튼: 다시(R) / 다음 스테이지(N)
+	const bool bNext = Mode && Mode->HasNextStage();
+	const int32 NumButtons = bNext ? 2 : 1;
+	const float ButtonW = (W - Pad * 2.f - UI().CardGap * (NumButtons - 1)) / NumButtons;
+	const float ButtonY = Y + H - Pad - UI().ResultButtonH;
+	for (int32 Index = 0; Index < NumButtons; ++Index)
+	{
+		const bool bIsNext = bNext && Index == 1;
+		const float BX = X + Pad + Index * (ButtonW + UI().CardGap);
+		DrawPanel(BX, ButtonY, ButtonW, UI().ResultButtonH, bIsNext ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(UI().UiCard));
+		DrawLabel(YJJLoc::Get(bIsNext ? TEXT("UI.NextStage") : TEXT("UI.Restart")), BX + ButtonW * Half, ButtonY + (UI().ResultButtonH - UI().MidText) * Half, UI().MidText, YJJUI::Paper, Half, ButtonW - Pad);
+		AddButton(bIsNext ? EButton::NextStage : EButton::Restart, 0, BX, ButtonY, ButtonW, UI().ResultButtonH);
+	}
 }
 
 void AYJJWaveHUD::DrawDebugLine()
@@ -427,6 +442,12 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::Speed:
 			Mode->CycleSpeed();
 			break;
+		case EButton::Restart:
+			Mode->Restart();
+			break;
+		case EButton::NextStage:
+			Mode->NextStage();
+			break;
 		}
 		return;
 	}
@@ -434,9 +455,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 	if (bTreeOpen)
 	{
 		const int32 Perk = PerkAt(ToVirtual(Mouse));
-		if (Perk != INDEX_NONE)
+		if (Perk != INDEX_NONE && Current->Allocate(Perk))
 		{
-			Current->Allocate(Perk);
+			Mode->SaveProgress();
 		}
 		return;
 	}
@@ -547,6 +568,10 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	{
 		Mode->Restart();
 	}
+	else if (Key == EKeys::N && Current->bGameOver)
+	{
+		Mode->NextStage();
+	}
 	else if (Key == EKeys::F3)
 	{
 		bShowDebug = !bShowDebug;
@@ -555,7 +580,7 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	{
 		// 전선으로 시점 이동
 		const float Front = Current->Horde.FrontX(EYJJTeam::Enemy);
-		FocusWorld(FVector2f(Front > 0.f ? Front : Current->WallX, Current->FieldHeight * Half), Zoom);
+		FocusWorld(FVector2f(Front > 0.f ? Front : Current->CampEdgeX, Current->FieldHeight * Half), Zoom);
 	}
 }
 

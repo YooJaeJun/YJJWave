@@ -107,7 +107,10 @@ UNITS = [
     dict(name="Fatty", body="#8DBF5A", head="#9CCB68", hat="zombie", weapon="none", scale=1.15, fat=True),
     dict(name="BoneArcher", body="#E9E4D4", head="#F1ECDC", hat="skull", weapon="bonebow", scale=1.0),
     dict(name="BoneKing", body="#E9E4D4", head="#F1ECDC", hat="crown", weapon="greatsword", scale=1.0, cape="#6B3FA0"),
+    # 9: 내 영웅 (중심). 졸병 출신 대장: 금빛 투구 + 깃털, 빨간 망토, 큰 칼
+    dict(name="Hero", body="#FFFFFF", head="#FFFFFF", hat="knight", weapon="greatsword", scale=1.0, cape="#D9453A"),
 ]
+HERO_ROW = 9
 
 
 # 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다)
@@ -251,6 +254,11 @@ def draw_unit(u, pose, dead=False):
     elif hat == "zombie":
         p.stick(hx - hr * 0.4, head_cy - hr * 0.9, hx - hr * 0.1, head_cy - hr * 1.3, 2.5, rgba("#5B3A1E"))
         p.stick(hx + hr * 0.1, head_cy - hr * 0.95, hx + hr * 0.3, head_cy - hr * 1.35, 2.5, rgba("#5B3A1E"))
+    elif hat == "knight":
+        p.poly([(hx - hr, head_cy - hr * 0.05), (hx - hr * 0.9, head_cy - hr * 0.8), (hx, head_cy - hr * 1.12),
+                (hx + hr * 0.9, head_cy - hr * 0.8), (hx + hr, head_cy - hr * 0.05)], rgba("#F2C230"))
+        p.rect(hx - hr * 0.12, head_cy - hr * 1.1, hx + hr * 0.12, head_cy - hr * 0.3, rgba("#D9A93A"), radius=2)
+        p.poly([(hx - hr * 0.1, head_cy - hr * 1.1), (hx - hr * 0.9, head_cy - hr * 1.7), (hx + hr * 0.2, head_cy - hr * 1.35)], rgba("#E04A3A"))
     elif hat == "crown":
         pts = [(hx - hr * 0.8, head_cy - hr * 0.55)]
         for i in range(5):
@@ -514,11 +522,9 @@ def ui_icon(i):
         if i == 7:
             p.ellipse(64, 64, 58, 58, rgba("#FFFFFF", 90), line=False)
         p.poly(star_points(64, 66, 54 if i == 7 else 50, 22 if i == 7 else 20), rgba("#FFFFFF"))
-    elif i == 8:  # 성벽
-        p.rect(18, 46, 110, 112, rgba("#C9C2B6"), radius=6)
-        for x in (18, 52, 86):
-            p.rect(x, 24, x + 24, 48, rgba("#C9C2B6"), radius=3)
-        p.stick(22, 78, 106, 78, 3)
+    elif i == 8:  # 영웅 얼굴
+        face = draw_unit(UNITS[HERO_ROW], IDLE_POSES[0]).crop((8, 0, 120, 112)).resize((C, C), Image.LANCZOS)
+        return face
     elif 9 <= i <= 12:   # 병영 아이콘 = 병사 얼굴
         u = UNITS[i - 9]
         face = draw_unit(u, IDLE_POSES[0]).crop((16, 0, 112, 96)).resize((C, C), Image.LANCZOS)

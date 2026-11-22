@@ -13,7 +13,9 @@ param(
     [string]$Lang = "",
     [string]$Tag = "",
     # 추가 콘솔 명령 (쉼표로). 예: -Exec "stat RHI, stat unit"
-    [string]$Exec = ""
+    [string]$Exec = "",
+    # 오토파일럿 전용 저장 슬롯(AutoPilot.sav)을 지우고 처음부터 (영혼·특성·깬 스테이지 0)
+    [switch]$Fresh
 )
 
 $ProjectDir = Resolve-Path (Join-Path $PSScriptRoot "..")
@@ -22,11 +24,13 @@ $Editor = Join-Path $EngineDir "Binaries\Win64\UnrealEditor.exe"
 $Log = Join-Path $ProjectDir "Saved\Logs\RunGame$Tag.log"
 
 Remove-Item (Join-Path $ProjectDir "Saved\Screenshots\Play_*.png") -ErrorAction SilentlyContinue
+# 실제 진행(YJJWave.sav)은 건드리지 않고 전용 슬롯을 쓴다
+if ($Fresh) { Remove-Item (Join-Path $ProjectDir "Saved\SaveGames\AutoPilot.sav") -ErrorAction SilentlyContinue }
 
 $AllExec = "yjj.AutoPlay 1, yjj.AutoPlayTime $Time, yjj.AutoPlaySpeed $Speed, yjj.ShotInterval $ShotInterval, yjj.Bench $Bench, t.MaxFPS 0, r.VSync 0"
 if ($Exec) { $AllExec += ", $Exec" }
 $GameArgs = @(
-    "`"$Project`"", "-game", "-windowed", "-ResX=$ResX", "-ResY=$ResY", "-WinX=0", "-WinY=0", "-nosplash", "-unattended", "-NoSound",
+    "`"$Project`"", "-game", "-windowed", "-ResX=$ResX", "-ResY=$ResY", "-WinX=0", "-WinY=0", "-nosplash", "-unattended", "-NoSound", "-YJJSave=AutoPilot",
     "-ExecCmds=`"$AllExec`"", "-log", "-abslog=`"$Log`""
 )
 if ($Lang) { $GameArgs += "-yjjlang=$Lang" }
@@ -38,5 +42,5 @@ if (-not $Process.WaitForExit($Limit * 1000)) {
     Write-Host "Timed out"
 }
 
-Select-String -Path $Log -Encoding UTF8 -Pattern "\[AutoPilot\]|\[Bench\]|\[Run\] 시작|\[Data\]|\[Art\]|Error:|Ensure condition failed|Fatal|\[Battle\] 성벽" | ForEach-Object { $_.Line }
+Select-String -Path $Log -Encoding UTF8 -Pattern "\[AutoPilot\]|\[Save\]|\[Battle\] 스테이지|\[Bench\]|\[Run\] 시작|\[Data\]|\[Art\]|Error:|Ensure condition failed|Fatal|\[Battle\] 성벽" | ForEach-Object { $_.Line }
 Get-ChildItem (Join-Path $ProjectDir "Saved\Screenshots\Play_*.png") -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }

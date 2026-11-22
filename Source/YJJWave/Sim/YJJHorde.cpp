@@ -21,7 +21,7 @@ FIntPoint FYJJGrid::CellOf(const FVector2f& P) const
 		FMath::Clamp(FMath::FloorToInt(P.Y * InvCell), 0, H - 1));
 }
 
-void FYJJHorde::Reset(const FVector2f& FieldSize, float InWallX, int32 InCapacity)
+void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 {
 	const FYJJTuning& T = YJJData::Tune();
 	Config.CellSize = T.GridCellSize;
@@ -37,13 +37,11 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, float InWallX, int32 InCapacit
 	Config.AttackAnimTime = T.AttackAnimTime;
 	Config.ArrowHitRadius = T.ArrowHitRadius;
 	Config.DeathFling = T.DeathFling;
-	Config.WallAttackReach = T.WallAttackReach;
 	Config.BigUnitRadius = T.BigUnitRadius;
 	Config.MultishotSpread = T.MultishotSpread;
 	Config.ReorderTicks = T.ReorderTicks;
 
 	Field = FieldSize;
-	WallX = InWallX;
 	Random.Initialize(RandomSeed);
 
 	MaxNormalRadius = 0.f;
@@ -70,7 +68,6 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, float InWallX, int32 InCapacit
 	HighWaterMark = 0;
 	TeamCount[0] = TeamCount[1] = 0;
 	Front[0] = Front[1] = -1.f;
-	WallDamage = 0.f;
 	MoveBuff[0] = MoveBuff[1] = 1.f;
 	AttackBuff[0] = AttackBuff[1] = 1.f;
 	Steps = 0;
@@ -243,6 +240,32 @@ void FYJJHorde::Reorder()
 	HighWaterMark = Count;
 }
 
+void FYJJHorde::SetHero(int32 Slot, const FVector2f& Home, float Leash, float Arrive)
+{
+	HeroSlot = Slot;
+	HeroHome = Home;
+	HeroLeash = Leash;
+	HeroArrive = Arrive;
+}
+
+void FYJJHorde::Heal(int32 Slot, float Amount)
+{
+	if (Alive.IsValidIndex(Slot) && Alive[Slot])
+	{
+		HP[Slot] = FMath::Min(HP[Slot] + Amount, MaxHP[Slot]);
+	}
+}
+
+void FYJJHorde::SetMaxHP(int32 Slot, float NewMax)
+{
+	if (Alive.IsValidIndex(Slot) && Alive[Slot] && NewMax > 0.f)
+	{
+		// 늘어난 만큼 지금 체력도 채운다
+		HP[Slot] = FMath::Min(HP[Slot] + FMath::Max(NewMax - MaxHP[Slot], 0.f), NewMax);
+		MaxHP[Slot] = NewMax;
+	}
+}
+
 void FYJJHorde::CopyTo(FYJJHordeView& View) const
 {
 	const int32 Count = HighWaterMark;
@@ -285,6 +308,9 @@ void FYJJHorde::CopyTo(FYJJHordeView& View) const
 			break;
 		}
 	}
+	const bool bHero = HeroSlot != INDEX_NONE && Alive[HeroSlot];
+	View.HeroHP = bHero ? HP[HeroSlot] : 0.f;
+	View.HeroMaxHP = bHero ? MaxHP[HeroSlot] : 0.f;
 	View.StepMs = StepMs;
 	FMemory::Memcpy(View.PhaseMs, PhaseMs, sizeof(PhaseMs));
 	View.ReorderMs = ReorderMs;
@@ -413,7 +439,12 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	}
 	if (bTargetDied || (Steps + Slot) % Config.RetargetTicks == 0)
 	{
-		const int32 Found = FindNearestEnemy(Slot, Def.Sight);
+		int32 Found = FindNearestEnemy(Slot, Def.Sight);
+		// 영웅은 자리를 지킨다: 자리에서 너무 먼 적은 쫓지 않는다
+		if (Slot == HeroSlot && Found != INDEX_NONE && FVector2f::DistSquared(Pos[Found], HeroHome) > HeroLeash * HeroLeash)
+		{
+			Found = INDEX_NONE;
+		}
 		Target[Slot] = Found;
 		TargetGen[Slot] = Found != INDEX_NONE ? Gen[Found] : 0;
 	}
@@ -445,16 +476,21 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 		}
 		FaceLeft[Slot] = Delta.X < 0.f ? 1 : 0;
 	}
-	else if (MyTeam == EYJJTeam::Enemy && P.X - Def.Radius <= WallX + Config.WallAttackReach)
+	else if (Slot == HeroSlot)
 	{
-		// 성벽에 붙은 적은 성벽을 때린다
-		if (Cooldown[Slot] <= 0.f)
-		{
-			Pending[Slot] = WallTarget;
-			Cooldown[Slot] = AttackInterval[Slot];
-			AttackAnim[Slot] = Config.AttackAnimTime;
-		}
-		FaceLeft[Slot] = 1;
+		// 영웅: 싸울 적이 없으면 자리로 돌아간다
+		const FVector2f Home = HeroHome - P;
+		const float Dist = Home.Size();
+		Desired = Dist > HeroArrive ? Home * (MoveSpeed / Dist) : FVector2f::ZeroVector;
+	}
+	else if (MyTeam == EYJJTeam::Enemy && HeroSlot != INDEX_NONE && Alive[HeroSlot])
+	{
+		// 적: 싸울 상대가 없으면 영웅(중심)을 향해 간다
+		const FVector2f ToHero = Pos[HeroSlot] - P;
+		const float Dist = ToHero.Size();
+		const float Drift = FMath::Sin(static_cast<float>(Steps) * Dt * DriftPhaseSpeed + Seed[Slot]) * Config.LateralDrift;
+		Desired = Dist > NearZero ? ToHero * (MoveSpeed / Dist) + FVector2f(0.f, Drift * MoveSpeed) : FVector2f::ZeroVector;
+		FaceLeft[Slot] = ToHero.X < 0.f ? 1 : 0;
 	}
 	else
 	{
@@ -472,8 +508,7 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	WalkPhase[Slot] += NewVel.Size() * Dt / FMath::Max(Def.DrawSize, NearZero);
 
 	FVector2f Next = P + (NewVel + Kick) * Dt + Separation(Slot);
-	const float MinX = MyTeam == EYJJTeam::Enemy ? WallX + Def.Radius : Config.FieldMargin;
-	Next.X = FMath::Clamp(Next.X, MinX, Field.X - Config.FieldMargin);
+	Next.X = FMath::Clamp(Next.X, Config.FieldMargin, Field.X - Config.FieldMargin);
 	Next.Y = FMath::Clamp(Next.Y, Config.FieldMargin, Field.Y - Config.FieldMargin);
 	PosNext[Slot] = Next;
 }
@@ -586,11 +621,6 @@ void FYJJHorde::ApplyAttacks()
 		{
 			continue;
 		}
-		if (Victim == WallTarget)
-		{
-			WallDamage += Damage[Slot];
-			continue;
-		}
 		const FYJJUnitDef& Def = YJJData::Unit(Type[Slot]);
 		if (Def.ProjectileSpeed > 0.f)
 		{
@@ -671,6 +701,10 @@ void FYJJHorde::CollectDead()
 		--TeamCount[TeamIndex(MyTeam)];
 		FreeSlots.Add(Slot);
 		BigUnits.RemoveSwap(Slot, EAllowShrinking::No);
+		if (Slot == HeroSlot)
+		{
+			HeroSlot = INDEX_NONE;
+		}
 	}
 }
 

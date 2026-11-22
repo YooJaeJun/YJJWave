@@ -7,16 +7,17 @@ int32 FYJJBattle::ModIndex(EYJJStat Stat, int32 Column) const
 	return static_cast<int32>(Stat) * (YJJData::Buildings().Num() + 1) + Column;
 }
 
-void FYJJBattle::Reset()
+void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 {
 	const FYJJTuning& T = YJJData::Tune();
 	Random.Initialize(RandomSeed);
+	Stage = FMath::Clamp(InStage, 0, FMath::Max(YJJData::Stages().Num() - 1, 0));
 	FieldWidth = T.FieldWidth;
 	FieldHeight = T.FieldHeight;
-	WallX = T.WallX;
-	Horde.Reset(FVector2f(FieldWidth, FieldHeight), WallX, T.UnitCapacity);
+	CampEdgeX = T.CampEdgeX;
+	Horde.Reset(FVector2f(FieldWidth, FieldHeight), T.UnitCapacity);
 
-	// 진지 칸: 성벽 왼쪽에 Columns x Rows, 세로 가운데 정렬
+	// 진지 칸: 진지 끝 왼쪽에 Columns x Rows, 세로 가운데 정렬
 	Plots.Reset();
 	const float GridHeight = (T.PlotRows - 1) * T.PlotSpacingY;
 	for (int32 Row = 0; Row < T.PlotRows; ++Row)
@@ -24,7 +25,7 @@ void FYJJBattle::Reset()
 		for (int32 Column = 0; Column < T.PlotColumns; ++Column)
 		{
 			FYJJPlot& Plot = Plots.AddDefaulted_GetRef();
-			Plot.Pos = FVector2f(T.PlotStartX + Column * T.PlotSpacingX, FieldHeight * 0.5f - GridHeight * 0.5f + Row * T.PlotSpacingY);
+			Plot.Pos = FVector2f(T.PlotStartX + Column * T.PlotSpacingX, FieldHeight * Half - GridHeight * Half + Row * T.PlotSpacingY);
 		}
 	}
 
@@ -32,17 +33,20 @@ void FYJJBattle::Reset()
 	RecentDeaths.Reset();
 	RecentCraters.Reset();
 	Gold = T.StartGold;
-	Souls = 0.0;
+	Souls = Progress.Souls;
+	SoulsEarned = 0.0;
 	Kills = 0;
 	Spawned[0] = Spawned[1] = 0;
 	Time = 0.f;
 	bGameOver = false;
+	bVictory = false;
 	RallyTime = 0.f;
 	for (float& Cooldown : Cooldowns)
 	{
 		Cooldown = 0.f;
 	}
 
+	// 특성: 시작 별 + 저장된 별 (비용 없이 다시 적용)
 	Mods.Reset();
 	Mods.AddZeroed(static_cast<int32>(EYJJStat::Count) * (YJJData::Buildings().Num() + 1));
 	PerkAllocated.Reset();
@@ -50,15 +54,20 @@ void FYJJBattle::Reset()
 	PerksTaken = 0;
 	for (int32 Perk = 0; Perk < YJJData::Perks().Num(); ++Perk)
 	{
-		if (YJJData::Perks()[Perk].Kind == EYJJPerkKind::Start)
+		const FYJJPerkDef& Def = YJJData::Perks()[Perk];
+		if (Def.Kind == EYJJPerkKind::Start)
 		{
 			PerkAllocated[Perk] = 1;
 		}
+		else if (Progress.Perks.Contains(Def.Id))
+		{
+			ApplyPerk(Perk);
+		}
 	}
 
-	WallMaxHP = WallHP = T.WallHP;
 	EnemyCarry.Reset();
 	EnemyCarry.AddZeroed(YJJData::Units().Num());
+	SpawnHero();
 	StartLevel(1);
 }
 
@@ -76,7 +85,7 @@ void FYJJBattle::PreStep(float Dt)
 	Gold += T.PassiveGold * Dt * (1.f + Bonus(EYJJStat::Gold, INDEX_NONE));
 
 	LevelTime += Dt;
-	if (LevelTime >= LevelDuration())
+	if (LevelTime >= LevelDuration() && Level < NumWaves())
 	{
 		StartLevel(Level + 1);
 	}
@@ -90,6 +99,10 @@ void FYJJBattle::PreStep(float Dt)
 	Horde.MoveBuff[PlayerTeam] = RallyTime > 0.f ? T.RallyMoveSpeed : 1.f;
 	Horde.AttackBuff[PlayerTeam] = RallyTime > 0.f ? T.RallyAttackSpeed : 1.f;
 
+	if (Horde.Hero() != INDEX_NONE)
+	{
+		Horde.Heal(Horde.Hero(), T.HeroRegen * Dt);
+	}
 	TickPlots(Dt);
 	TickEnemies(Dt);
 }
@@ -109,14 +122,47 @@ void FYJJBattle::PostStep(float Dt)
 	}
 	TickEffects(Dt);
 	CollectRewards();
+	CheckVictory();
+}
 
-	WallHP -= Horde.WallDamage;
-	Horde.WallDamage = 0.f;
-	if (WallHP <= 0.f)
+void FYJJBattle::CheckVictory()
+{
+	// 마지막 웨이브가 끝났고 남은 적이 없으면 돌파
+	if (!bGameOver && Level >= NumWaves() && LevelTime >= LevelDuration() && Horde.Num(EYJJTeam::Enemy) == 0)
 	{
-		WallHP = 0.f;
-		bGameOver = true;
-		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 성벽 무너짐: 레벨 %d, 처치 %d, 시간 %.0f초"), Level, Kills, Time);
+		Finish(true);
+	}
+}
+
+void FYJJBattle::Finish(bool bWon)
+{
+	bGameOver = true;
+	bVictory = bWon;
+	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 스테이지 %d %s: 웨이브 %d/%d, 처치 %d, 시간 %.0f초, 영혼 +%.0f"),
+		Stage + 1, bWon ? TEXT("돌파") : TEXT("패배 (영웅 쓰러짐)"), Level, NumWaves(), Kills, Time, SoulsEarned);
+}
+
+void FYJJBattle::SpawnHero()
+{
+	const FYJJTuning& T = YJJData::Tune();
+	const int32 HeroUnit = YJJData::HeroUnit();
+	if (HeroUnit == INDEX_NONE)
+	{
+		return;
+	}
+	FYJJSpawnStats Stats;
+	Stats.HP = 1.f + Bonus(EYJJStat::HeroHP, INDEX_NONE);
+	const FVector2f Home(T.HeroHomeX, FieldHeight * Half);
+	const int32 Slot = Horde.Spawn(HeroUnit, EYJJTeam::Player, Home, Stats);
+	Horde.SetHero(Slot, Home, T.HeroLeash, T.HeroArrive);
+}
+
+void FYJJBattle::RecomputeHero()
+{
+	const int32 HeroUnit = YJJData::HeroUnit();
+	if (HeroUnit != INDEX_NONE)
+	{
+		Horde.SetMaxHP(Horde.Hero(), YJJData::Unit(HeroUnit).HP * (1.f + Bonus(EYJJStat::HeroHP, INDEX_NONE)));
 	}
 }
 
@@ -124,31 +170,33 @@ void FYJJBattle::StartLevel(int32 NewLevel)
 {
 	Level = NewLevel;
 	LevelTime = 0.f;
-	const int32 Wave = WaveIndex();
-	if (Wave == INDEX_NONE)
+	if (NumWaves() == 0)
 	{
 		return;
 	}
-	for (const FYJJWaveSpawn& Spawn : YJJData::Waves()[Wave].Spawns)
+	for (const FYJJWaveSpawn& Spawn : StageDef().Waves[Level - 1].Spawns)
 	{
 		for (int32 Index = 0; Index < Spawn.Burst; ++Index)
 		{
 			SpawnEnemy(Spawn.Unit);
 		}
 	}
-	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 레벨 %d 시작 (아군 %d, 적 %d, 금화 %.0f)"), Level, Horde.Num(EYJJTeam::Player), Horde.Num(EYJJTeam::Enemy), Gold);
+	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 스테이지 %d 웨이브 %d/%d 시작 (아군 %d, 적 %d, 금화 %.0f)"), Stage + 1, Level, NumWaves(), Horde.Num(EYJJTeam::Player), Horde.Num(EYJJTeam::Enemy), Gold);
 }
 
-int32 FYJJBattle::WaveIndex() const
+const FYJJStageDef& FYJJBattle::StageDef() const
 {
-	const int32 NumWaves = YJJData::Waves().Num();
-	return NumWaves == 0 ? INDEX_NONE : FMath::Min(Level, NumWaves) - 1;
+	return YJJData::Stages()[Stage];
+}
+
+int32 FYJJBattle::NumWaves() const
+{
+	return YJJData::Stages().IsValidIndex(Stage) ? StageDef().Waves.Num() : 0;
 }
 
 float FYJJBattle::LevelDuration() const
 {
-	const int32 Wave = WaveIndex();
-	return Wave == INDEX_NONE ? YJJData::Tune().EndlessLevelDuration : YJJData::Waves()[Wave].Duration;
+	return NumWaves() > 0 ? StageDef().Waves[FMath::Clamp(Level, 1, NumWaves()) - 1].Duration : 0.f;
 }
 
 void FYJJBattle::SpawnEnemy(int32 Unit)
@@ -159,7 +207,7 @@ void FYJJBattle::SpawnEnemy(int32 Unit)
 		return;
 	}
 	FYJJSpawnStats Stats;
-	Stats.HP = FMath::Pow(T.LevelHPGrowth, static_cast<float>(Level - 1));
+	Stats.HP = FMath::Pow(T.LevelHPGrowth, static_cast<float>(Level - 1)) * StageDef().HPScale;
 	Stats.Damage = FMath::Pow(T.LevelDamageGrowth, static_cast<float>(Level - 1));
 	// 전장 가운데 띠에서 나온다 (위아래로 다 퍼지면 아군 시야 밖으로 빠져나간다)
 	const float Band = FieldHeight * T.EnemySpawnBand * 0.5f;
@@ -173,25 +221,21 @@ void FYJJBattle::SpawnEnemy(int32 Unit)
 	if (YJJData::Unit(Unit).bBoss)
 	{
 		AddEffect(EYJJEffectKind::Build, Pos, T.BuildEffectTime, YJJData::Unit(Unit).DrawSize * BossEffectRadiusScale);
-		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 보스 등장: %s (레벨 %d)"), *YJJData::Unit(Unit).Id.ToString(), Level);
+		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 보스 등장: %s (웨이브 %d)"), *YJJData::Unit(Unit).Id.ToString(), Level);
 	}
 }
 
 void FYJJBattle::TickEnemies(float Dt)
 {
-	const FYJJTuning& T = YJJData::Tune();
-	const int32 Wave = WaveIndex();
-	if (Wave == INDEX_NONE)
+	// 마지막 웨이브는 시간이 다 되면 더 나오지 않는다 (남은 적을 다 잡으면 돌파)
+	if (NumWaves() == 0 || LevelTime >= LevelDuration())
 	{
 		return;
 	}
-	// 정의된 마지막 레벨을 넘으면 같은 구성을 점점 빠르게
-	const int32 Extra = FMath::Max(Level - YJJData::Waves().Num(), 0);
-	const float RateScale = FMath::Pow(T.EndlessRateGrowth, static_cast<float>(Extra));
-	for (const FYJJWaveSpawn& Spawn : YJJData::Waves()[Wave].Spawns)
+	for (const FYJJWaveSpawn& Spawn : StageDef().Waves[Level - 1].Spawns)
 	{
 		float& Carry = EnemyCarry[Spawn.Unit];
-		Carry += Spawn.Rate * RateScale * Dt;
+		Carry += Spawn.Rate * Dt;
 		while (Carry >= 1.f)
 		{
 			Carry -= 1.f;
@@ -275,12 +319,17 @@ void FYJJBattle::CollectRewards()
 	const float SoulScale = 1.f + Bonus(EYJJStat::Souls, INDEX_NONE);
 	for (const FYJJDeath& Death : Horde.Deaths)
 	{
+		const FYJJUnitDef& Def = YJJData::Unit(Death.Type);
 		if (Death.Team == EYJJTeam::Enemy)
 		{
-			const FYJJUnitDef& Def = YJJData::Unit(Death.Type);
 			Gold += Def.Bounty * GoldScale;
 			Souls += Def.Souls * SoulScale;
+			SoulsEarned += Def.Souls * SoulScale;
 			++Kills;
+		}
+		else if (Def.bHero && !bGameOver)
+		{
+			Finish(false);
 		}
 	}
 	RecentDeaths.Append(Horde.Deaths);
@@ -423,13 +472,13 @@ bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
 	Cooldowns[static_cast<int32>(Spell)] = CooldownMax(Spell);
 	if (Spell == EYJJSpell::Meteor)
 	{
-		const FVector2f Target(FMath::Clamp(Where.X, WallX, FieldWidth), FMath::Clamp(Where.Y, 0.f, FieldHeight));
+		const FVector2f Target(FMath::Clamp(Where.X, CampEdgeX, FieldWidth), FMath::Clamp(Where.Y, 0.f, FieldHeight));
 		AddEffect(EYJJEffectKind::MeteorFall, Target, T.MeteorFallTime, T.MeteorRadius, T.MeteorDamage * Power);
 	}
 	else
 	{
 		RallyTime = T.RallyDuration * Power;
-		AddEffect(EYJJEffectKind::Rally, FVector2f(WallX, FieldHeight * 0.5f), T.RallyEffectTime, FieldHeight);
+		AddEffect(EYJJEffectKind::Rally, FVector2f(CampEdgeX, FieldHeight * Half), T.RallyEffectTime, FieldHeight);
 	}
 	return true;
 }
@@ -461,7 +510,8 @@ bool FYJJBattle::IsReachable(int32 Perk) const
 
 bool FYJJBattle::CanAllocate(int32 Perk) const
 {
-	return !bGameOver && IsReachable(Perk) && Souls >= PerkCost();
+	// 판이 끝난 뒤(결과 창)에도 찍을 수 있다: 영혼은 판을 하며 모으고 다음 판에도 남는다
+	return IsReachable(Perk) && Souls >= PerkCost();
 }
 
 bool FYJJBattle::Allocate(int32 Perk)
@@ -471,14 +521,32 @@ bool FYJJBattle::Allocate(int32 Perk)
 		return false;
 	}
 	Souls -= PerkCost();
+	ApplyPerk(Perk);
+	return true;
+}
+
+void FYJJBattle::ApplyPerk(int32 Perk)
+{
 	PerkAllocated[Perk] = 1;
 	++PerksTaken;
 	for (const FYJJPerkDef::FMod& Mod : YJJData::Perks()[Perk].Mods)
 	{
 		Mods[ModIndex(Mod.Stat, Mod.Building + 1)] += Mod.Value;
 	}
-	RecomputeWall();
-	return true;
+	RecomputeHero();
+}
+
+void FYJJBattle::WriteProgress(FYJJProgress& Progress) const
+{
+	Progress.Souls = Souls;
+	Progress.Perks.Reset();
+	for (int32 Perk = 0; Perk < PerkAllocated.Num(); ++Perk)
+	{
+		if (PerkAllocated[Perk] && YJJData::Perks()[Perk].Kind != EYJJPerkKind::Start)
+		{
+			Progress.Perks.Add(YJJData::Perks()[Perk].Id);
+		}
+	}
 }
 
 float FYJJBattle::Bonus(EYJJStat Stat, int32 Building) const
@@ -489,15 +557,4 @@ float FYJJBattle::Bonus(EYJJStat Stat, int32 Building) const
 	}
 	const float Common = Mods[ModIndex(Stat, 0)];
 	return Building == INDEX_NONE ? Common : Common + Mods[ModIndex(Stat, Building + 1)];
-}
-
-void FYJJBattle::RecomputeWall()
-{
-	const float NewMax = YJJData::Tune().WallHP * (1.f + Bonus(EYJJStat::WallHP, INDEX_NONE));
-	if (NewMax > WallMaxHP)
-	{
-		WallHP += NewMax - WallMaxHP;
-	}
-	WallMaxHP = NewMax;
-	WallHP = FMath::Min(WallHP, WallMaxHP);
 }

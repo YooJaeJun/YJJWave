@@ -50,19 +50,7 @@ void AYJJWaveHUD::DrawCamp()
 	{
 		return;
 	}
-	const int32 WallPieces = FMath::CeilToInt(Current->FieldHeight / UI().WallSegment) + 1;
-	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, Current->Plots.Num() + WallPieces);
-
-	// 성벽: 체력이 줄수록 붉어진다 (병영보다 먼저 = 뒤에)
-	const float WallFraction = Current->WallMaxHP > 0.f ? Current->WallHP / Current->WallMaxHP : 0.f;
-	const FLinearColor WallColor = FMath::Lerp(YJJUI::HitTint, FLinearColor::White, WallFraction);
-	const float WallSize = UI().WallDrawSize * Zoom;
-	const FVector2f WallUV = BuildingAtlas.UV(FMath::RoundToInt(UI().WallCol), 0);
-	for (int32 Piece = 0; Piece < WallPieces; ++Piece)
-	{
-		const FVector2f Feet = WorldToScreen(FVector2f(Current->WallX, Piece * UI().WallSegment));
-		AddQuad(Batch, FVector2f(Feet.X - WallSize * Half, Feet.Y - WallSize * UI().PlotAnchor), FVector2f(WallSize), WallUV, BuildingAtlas.CellUV, WallColor, false);
-	}
+	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, Current->Plots.Num());
 
 	// 진지 칸과 병영. 병사를 내보낼 때 한 번 들썩인다
 	for (int32 PlotIndex = 0; PlotIndex < Current->Plots.Num(); ++PlotIndex)

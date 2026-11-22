@@ -8,14 +8,15 @@ MaxUnitsPerTeam,18000,편마다 최대 유닛 (넘으면 생산을 쉰다)
 FieldWidth,3600,전장 너비
 FieldHeight,1300,전장 높이
 FieldMargin,30,유닛이 못 가는 위아래·양 끝 여백
-WallX,520,성벽 x
-WallHP,2000,성벽 체력
+CampEdgeX,520,진지 오른쪽 끝 x (유성은 이보다 오른쪽에만)
+HeroHomeX,640,영웅이 지키는 자리 x (세로는 가운데)
+HeroLeash,380,영웅이 자리에서 이만큼까지만 쫓아간다
+HeroArrive,16,영웅이 자리로 돌아왔다고 보는 거리
+HeroRegen,12,영웅 초당 체력 회복
 StartGold,200,시작 금화
 PassiveGold,4,초당 기본 금화
-EndlessLevelDuration,30,Waves.csv가 비었을 때 레벨 길이
-EndlessRateGrowth,1.15,정의된 마지막 레벨 뒤 레벨마다 생산 배율
-LevelHPGrowth,1.1,물결 레벨마다 적 체력 배율
-LevelDamageGrowth,1.06,물결 레벨마다 적 공격력 배율
+LevelHPGrowth,1.1,웨이브마다 적 체력 배율
+LevelDamageGrowth,1.06,웨이브마다 적 공격력 배율
 EnemySpawnInset,40,적이 나오는 곳: 오른쪽 끝에서 이만큼 안
 SpawnScatter,30,생산 위치 흩뿌림
 EnemySpawnBand,0.6,"적이 나오는 띠 높이 (전장 높이 비율, 가운데 기준)"
@@ -38,7 +39,6 @@ UnitAcceleration,8,원하는 속도로 붙는 빠르기 (/초)
 ImpulseDamping,5,밀쳐진 속도가 줄어드는 빠르기 (/초)
 LateralDrift,0.25,행군할 때 위아래로 흔들리는 정도 (속도 비율)
 BigUnitRadius,20,이 반지름 이상은 큰 유닛(보스): 모두가 따로 밀어내기 검사
-WallAttackReach,8,적이 성벽을 때리는 거리
 ArrowHitRadius,18,대상이 먼저 죽은 화살이 다른 적을 맞히는 반경
 MultishotSpread,80,추가 화살이 노리는 대상 주변 반경
 HitFlashTime,0.12,맞으면 붉게 깜빡이는 시간

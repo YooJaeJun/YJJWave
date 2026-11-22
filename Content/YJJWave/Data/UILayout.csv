@@ -16,7 +16,6 @@ AnimIdleFrames,2,숨쉬기 칸 수
 AnimIdleSpeed,6,이 속력보다 느리면 숨쉬기 그림
 AnimIdleFps,2.5,숨쉬기 초당 칸
 EmptyPlotCol,4,Buildings.png 빈 칸
-WallCol,5,Buildings.png 성벽 조각
 FxShadow,0,Fx 칸: 그림자
 FxBloodFirst,1,Fx 칸: 첫 피 웅덩이
 FxBloodCount,4,피 웅덩이 종류 수
@@ -33,7 +32,7 @@ UiMeteor,4,UI 칸: 유성
 UiRally,5,UI 칸: 함성
 UiStar,6,UI 칸: 작은 별
 UiBigStar,7,UI 칸: 큰 별
-UiWall,8,UI 칸: 성벽
+UiHero,8,UI 칸: 영웅 얼굴
 UiPanel,13,UI 칸: 패널 (9칸 늘리기)
 UiPanelDark,14,UI 칸: 어두운 패널
 UiCard,15,UI 칸: 카드
@@ -67,8 +66,6 @@ PlotLabelSize,20,레벨 글자 크기
 PlotLabelZoomMin,0.6,멀리 볼 때 레벨 글자 최소 배율
 PlotPickRadius,55,병영 클릭 반경
 PlotPickLift,50,클릭 판정 중심: 발밑에서 위로
-WallDrawSize,110,성벽 조각 그림 크기
-WallSegment,70,성벽 조각 간격
 MaxDying,1500,날아가는 시체 최대 (넘으면 바로 눕는다)
 DeathJitter,40,죽을 때 흩어지는 속도
 DeathRise,260,죽을 때 튀어 오르는 속도 (질량 제곱근으로 나눈다)
@@ -103,7 +100,7 @@ TinyText,16,아주 작은 글자
 PanelPad,14,패널 안쪽 여백
 SidePanelW,420,좌측 패널 너비 (모든 UI가 여기. 전장은 나머지 전부)
 SectionGap,12,패널 칸 사이 간격
-HeaderH,104,물결 칸 높이
+HeaderH,120,스테이지·웨이브 칸 높이
 VsH,100,아군 VS 적 칸 높이
 BossH,54,보스 칸 높이
 ResH,76,금화·영혼 칸 높이
@@ -126,7 +123,8 @@ TipW,380,설명창 너비
 TipLineH,30,설명창 줄 높이
 TipOffset,24,설명창: 마우스 오른쪽으로
 GameOverW,760,패배 패널 너비
-GameOverH,300,패배 패널 높이
+GameOverH,300,결과 창 높이
+ResultButtonH,64,결과 창 버튼 높이
 GlowSpeed,5,반짝임 속도
 NumberMan,10000,이 이상은 만 단위로
 NumberEok,100000000,이 이상은 억 단위로
