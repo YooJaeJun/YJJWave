@@ -45,13 +45,13 @@ void AYJJWaveHUD::DrawSidePanel()
 		DrawIcon(FMath::RoundToInt(L.UiSkull), X + W - Pad - Icon, Y + Pad, Icon);
 		DrawLabel(FormatCount(Units.Num(EYJJTeam::Enemy)), X + W - Pad - Icon - L.IconGap, Y + Pad, L.BigText, YJJUI::Enemy, 1.f);
 
-		const float SmallIcon = Icon * L.SmallIconScale;
-		const float BarY = Y + H - Pad - L.BarH;
-		const float BarX = X + Pad + SmallIcon + L.IconGap;
-		DrawIcon(FMath::RoundToInt(L.UiHero), X + Pad, BarY + (L.BarH - SmallIcon) * Half, SmallIcon);
-		DrawBar(BarX, BarY, X + W - Pad - BarX, L.BarH, Units.HeroHP / FMath::Max(Units.HeroMaxHP, KINDA_SMALL_NUMBER), YJJUI::HeroBar);
-		DrawLabel(YJJLoc::Format(TEXT("UI.HeroHP"), { FormatCount(FMath::CeilToFloat(Units.HeroHP)), FormatCount(Units.HeroMaxHP) }),
-			(BarX + X + W - Pad) * Half, BarY + L.BarTextLift, L.SmallText, YJJUI::Paper, Half);
+		// 영웅 체력: 숫자가 들어가는 게이지는 숫자 크기에 맞춰 두껍게
+		const float BarH = L.TextBarH;
+		const float BarY = Y + H - Pad - BarH;
+		const float BarX = X + Pad + BarH + L.IconGap;
+		DrawIcon(FMath::RoundToInt(L.UiHero), X + Pad, BarY, BarH);
+		DrawBar(BarX, BarY, X + W - Pad - BarX, BarH, Units.HeroHP / FMath::Max(Units.HeroMaxHP, KINDA_SMALL_NUMBER), YJJUI::HeroBar);
+		DrawBarLabel(YJJLoc::Format(TEXT("UI.HeroHP"), { FormatCount(FMath::CeilToFloat(Units.HeroHP)), FormatCount(Units.HeroMaxHP) }), BarX, BarY, X + W - Pad - BarX, BarH);
 		Y += H + L.SectionGap;
 	}
 
@@ -60,9 +60,11 @@ void AYJJWaveHUD::DrawSidePanel()
 	{
 		const float H = L.BossH;
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
-		DrawLabel(YJJLoc::Get(YJJData::Unit(Units.Type[Units.Boss]).NameKey), X + Pad, Y + (H - L.MidText) * Half, L.MidText, YJJUI::Bad, 0.f, W * L.BossBarSplit);
+		DrawLabel(YJJLoc::Get(YJJData::Unit(Units.Type[Units.Boss]).NameKey), X + Pad, Y + (H - L.MidText) * Half, L.MidText, YJJUI::BossText, 0.f, W * L.BossBarSplit);
 		const float BarX = X + W * L.BossBarSplit + Pad;
-		DrawBar(BarX, Y + (H - L.BarH) * Half, X + W - Pad - BarX, L.BarH, Units.BossHP / FMath::Max(Units.BossMaxHP, KINDA_SMALL_NUMBER), YJJUI::BossBar);
+		const float BarY = Y + (H - L.TextBarH) * Half;
+		DrawBar(BarX, BarY, X + W - Pad - BarX, L.TextBarH, Units.BossHP / FMath::Max(Units.BossMaxHP, KINDA_SMALL_NUMBER), YJJUI::BossBar);
+		DrawBarLabel(FormatCount(FMath::CeilToFloat(Units.BossHP)), BarX, BarY, X + W - Pad - BarX, L.TextBarH);
 		Y += H + L.SectionGap;
 	}
 

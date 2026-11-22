@@ -182,6 +182,8 @@ private:
 	void DrawPanel(float X, float Y, float W, float H, const FLinearColor& Color, int32 Cell);
 	void DrawBox(float X, float Y, float W, float H, const FLinearColor& Color);
 	void DrawBar(float X, float Y, float W, float H, float Fraction, const FLinearColor& Color);
+	/** 게이지 안 숫자: 게이지 높이에 맞춘 크기, 세로 가운데 */
+	void DrawBarLabel(const FString& Text, float X, float Y, float W, float H);
 	void DrawIcon(int32 Cell, float X, float Y, float Size, const FLinearColor& Color = FLinearColor::White);
 	void DrawLabel(const FString& Text, float X, float Y, float Size, const FLinearColor& Color, float AlignX = 0.f, float MaxWidth = 0.f);
 	void DrawLine(const FVector2f& A, const FVector2f& B, const FLinearColor& Color, float Thickness);

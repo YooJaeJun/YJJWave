@@ -17,9 +17,11 @@ namespace YJJUI
 	inline const FLinearColor PanelTint = FLinearColor(1.f, 1.f, 1.f, 1.f);
 	inline const FLinearColor Shade = FLinearColor(0.f, 0.f, 0.f, 0.55f);
 	inline const FLinearColor BarBack = FLinearColor(0.06f, 0.03f, 0.02f, 0.85f);
-	inline const FLinearColor LevelBar = FLinearColor(1.f, 0.62f, 0.12f, 1.f);
-	inline const FLinearColor HeroBar = FLinearColor(0.55f, 0.85f, 1.f, 1.f);
-	inline const FLinearColor BossBar = FLinearColor(0.85f, 0.15f, 0.35f, 1.f);
+	// 게이지 색은 화면에 보이는 색(sRGB)으로 적는다. 선형 값으로 적으면 화면에서 흐린 파스텔이 된다
+	inline const FLinearColor LevelBar = FLinearColor(FColor(255, 190, 40));          // 남은 시간 글자와 같은 노랑
+	inline const FLinearColor HeroBar = FLinearColor(FColor(46, 146, 52));            // 진한 초록: 흰 숫자가 잘 보이게
+	inline const FLinearColor BossBar = FLinearColor(FColor(190, 30, 52));
+	inline const FLinearColor BossText = FLinearColor(FColor(255, 96, 110));          // 보스 이름: 게이지와 같은 붉은 계열
 	inline const FLinearColor Highlight = FLinearColor(1.f, 0.9f, 0.35f, 1.f);
 	inline const FLinearColor HitTint = FLinearColor(1.f, 0.35f, 0.3f, 1.f);
 	inline const FLinearColor Field = FLinearColor(0.09f, 0.16f, 0.05f, 1.f);           // 전장 밖 바탕

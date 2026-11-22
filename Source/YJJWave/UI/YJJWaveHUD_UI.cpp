@@ -73,6 +73,13 @@ void AYJJWaveHUD::DrawBar(float X, float Y, float W, float H, float Fraction, co
 	DrawBox(X, Y, W * FMath::Clamp(Fraction, 0.f, 1.f), H * UI().BarShineHeight, YJJUI::WithAlpha(FLinearColor::White, UI().BarShineAlpha));
 }
 
+void AYJJWaveHUD::DrawBarLabel(const FString& Text, float X, float Y, float W, float H)
+{
+	// 게이지 높이에 맞춘 글자 크기, 세로 가운데. 흰 글자 + 진한 외곽선 (게이지 색과 겹치지 않게)
+	const float Size = H * UI().BarTextScale;
+	DrawLabel(Text, X + W * Half, Y + (H - Size * UI().TextLineRatio) * Half + UI().BarTextLift, Size, YJJUI::Paper, Half, W - UI().PanelPad);
+}
+
 void AYJJWaveHUD::DrawIcon(int32 Cell, float X, float Y, float Size, const FLinearColor& Color)
 {
 	if (!UiAtlas.Texture)
