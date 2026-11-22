@@ -99,19 +99,23 @@ class Pen:
 # ------------------------------------------------------------------------------------------------
 # 유닛
 
+# 병영 병사: 고양이 입 (맞으면 울먹, 디버프면 헤벌레). 상위 병사·영웅: 열혈 (입을 크게 벌린 기합)
+CAT_FACES = dict(walk="cat", idle="cat", attack="cat", hit="cry", dazed="derp")
+HOTBLOOD_FACES = dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")
+
 UNITS = [
     # 줄, 몸색, 머리색, 모자, 무기, 크기, 특징
-    dict(name="Grunt", body="#FFFFFF", head="#FFFFFF", hat="pot", weapon="club", scale=1.0, faces=dict(walk="cat", idle="cat", attack="cat", hit="cry", dazed="derp")),
-    dict(name="Archer", body="#FFFFFF", head="#FFFFFF", hat="hood", weapon="bow", scale=1.0, faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
-    dict(name="Shield", body="#FFFFFF", head="#FFFFFF", hat="helm", weapon="shield", scale=1.05, faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
-    dict(name="Brute", body="#F3D7B0", head="#F6DDBA", hat="beard", weapon="hammer", scale=1.15, faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
+    dict(name="Grunt", body="#FFFFFF", head="#FFFFFF", hat="pot", weapon="club", scale=1.0, faces=CAT_FACES),
+    dict(name="Archer", body="#FFFFFF", head="#FFFFFF", hat="hood", weapon="bow", scale=1.0, faces=CAT_FACES),
+    dict(name="Shield", body="#FFFFFF", head="#FFFFFF", hat="helm", weapon="shield", scale=1.05, faces=CAT_FACES),
+    dict(name="Brute", body="#F3D7B0", head="#F6DDBA", hat="beard", weapon="hammer", scale=1.15, faces=CAT_FACES),
     dict(name="Skeleton", body="#E9E4D4", head="#F1ECDC", hat="skull", weapon="bone", scale=1.0),
     dict(name="Imp", body="#E2483A", head="#EA5444", hat="horns", weapon="claw", scale=0.9),
     dict(name="Fatty", body="#8DBF5A", head="#9CCB68", hat="zombie", weapon="none", scale=1.15, fat=True),
     dict(name="BoneArcher", body="#E9E4D4", head="#F1ECDC", hat="skull", weapon="bonebow", scale=1.0),
     dict(name="BoneKing", body="#E9E4D4", head="#F1ECDC", hat="crown", weapon="greatsword", scale=1.0, cape="#6B3FA0"),
     # 9: 내 영웅 (중심). 졸병 출신 대장: 금빛 투구 + 깃털, 빨간 망토, 큰 칼
-    dict(name="Hero", body="#FFFFFF", head="#FFFFFF", hat="knight", weapon="greatsword", scale=1.0, cape="#D9453A", faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
+    dict(name="Hero", body="#FFFFFF", head="#FFFFFF", hat="knight", weapon="greatsword", scale=1.0, cape="#D9453A", faces=HOTBLOOD_FACES),
 ]
 HERO_ROW = 9
 # 10: 강령술사 (적). 보라 두건 + 해골 지팡이
@@ -267,7 +271,7 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
                 (hx + hr * 0.85, head_cy - hr * 0.85), (hx + hr, head_cy - hr * 0.1)], rgba("#3F74C9"))
         p.stick(hx, head_cy - hr * 1.1, hx, head_cy - hr * 1.45, 3, rgba("#E04A3A"))
     elif hat == "beard":
-        p.poly([(hx - hr * 0.6, head_cy + hr * 0.2), (hx + hr * 0.9, head_cy + hr * 0.15), (hx + hr * 0.3, head_cy + hr * 1.05)], rgba("#8B5A2B"))
+        p.poly([(hx - hr * 0.45, head_cy + hr * 0.84), (hx + hr * 0.95, head_cy + hr * 0.8), (hx + hr * 0.35, head_cy + hr * 1.4)], rgba("#8B5A2B"))   # 턱수염 (입 아래)
         p.poly([(hx - hr * 0.9, head_cy - hr * 0.5), (hx + hr * 0.9, head_cy - hr * 0.5), (hx, head_cy - hr * 1.0)], rgba("#C0392B"))
     elif hat == "horns":
         p.poly([(hx - hr * 0.6, head_cy - hr * 0.7), (hx - hr * 0.9, head_cy - hr * 1.5), (hx - hr * 0.2, head_cy - hr * 0.9)], rgba("#FFF4D6"))
@@ -303,6 +307,8 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
         for ox in (-hr * 0.28, hr * 0.28):
             p.stick(ex + ox - 3, ey - 3, ex + ox + 3, ey + 3, 2)
             p.stick(ex + ox - 3, ey + 3, ex + ox + 3, ey - 3, 2)
+    elif hat == "crown":
+        draw_boss_face(p, hx, head_cy, hr, pose)
     elif hat in ("skull", "crown"):
         p.dot(ex - hr * 0.3, ey, hr * 0.2)
         p.dot(ex + hr * 0.3, ey, hr * 0.2)
@@ -382,11 +388,12 @@ def draw_face(p, hx, hy, hr, style, pose):
         dots(eye * 1.1)
         for ox, d in ((-gap, 1), (gap, -1)):   # 치켜 올린 굵은 눈썹
             p.stick(ex + ox - hr * 0.2 * d, ey - hr * 0.32, ex + ox + hr * 0.16 * d, ey - hr * 0.18, 3.4)
-        if attack:
-            open_mouth(hr * 0.32, hr * 0.28)
-        else:
-            p.rect(ex - hr * 0.26, my - hr * 0.07, ex + hr * 0.26, my + hr * 0.12, rgba("#FFFFFF"), radius=2)   # 앙다문 이
-            p.stick(ex, my - hr * 0.07, ex, my + hr * 0.12, 1.4)
+        # 윗변이 평평한 D자 입을 크게 벌린 기합 (공격 때 더 크게)
+        w = hr * (0.34 if attack else 0.27)
+        h = hr * (0.42 if attack else 0.3)
+        top = my - hr * 0.06
+        p.d.chord([p.s(ex - w), p.s(top - h), p.s(ex + w), p.s(top + h)], 0, 180, fill=MOUTH, outline=INK, width=int(p.s(1.8)))
+        p.d.chord([p.s(ex - w * 0.6), p.s(top + h * 0.35), p.s(ex + w * 0.6), p.s(top + h * 1.05)], 180, 360, fill=TONGUE)
     elif style == "cry":
         for ox, d in ((-gap, 1), (gap, -1)):   # > <
             p.stick(ex + ox - 3 * d, ey - 3, ex + ox + 3 * d, ey, 1.9)
@@ -410,6 +417,54 @@ def draw_face(p, hx, hy, hr, style, pose):
             open_mouth(hr * 0.3, hr * 0.32)
         else:
             omega(my - hr * 0.02, hr * 0.15)
+
+
+BOSS_GLOW = rgba("#B44DFF")
+BOSS_GLOW_HOT = rgba("#FF4D6A")
+BOSS_SOCKET = rgba("#2A1830")
+BONE_SHADE = rgba("#CFC6AE")
+
+
+def draw_boss_face(p, hx, hy, hr, pose):
+    """해골왕: 깊은 눈구멍 속 보랏빛 눈, 노려보는 눈썹뼈, 코 구멍, 이빨 턱, 이마의 금.
+    공격하면 턱이 떨어지고 눈이 붉게 타오른다, 맞으면 눈이 작아진다"""
+    kind = pose.get("kind", "idle")
+    attack = kind == "attack" and pose.get("mouth") == "open"
+    ex = hx + hr * 0.2
+    ey = hy + hr * 0.02
+    gap = hr * 0.36
+    # 광대·턱 그늘
+    p.ellipse(ex, hy + hr * 0.55, hr * 0.62, hr * 0.32, BONE_SHADE, line=False)
+    # 눈구멍 (안쪽으로 기운 눈물방울) + 빛나는 눈
+    glow = BOSS_GLOW_HOT if attack else BOSS_GLOW
+    pupil = hr * (0.13 if attack else 0.06 if kind == "hit" else 0.1)
+    for ox, d in ((-gap, 1), (gap, -1)):
+        cx = ex + ox
+        p.poly([(cx - hr * 0.24, ey - hr * 0.06), (cx + hr * 0.02 * d, ey - hr * 0.2), (cx + hr * 0.24, ey - hr * 0.04),
+                (cx + hr * 0.16, ey + hr * 0.2), (cx - hr * 0.16, ey + hr * 0.2)], BOSS_SOCKET)
+        p.ellipse(cx + hr * 0.03, ey + hr * 0.03, pupil * 1.9, pupil * 1.9, rgba("#B44DFF", 90), line=False)
+        p.ellipse(cx + hr * 0.03, ey + hr * 0.03, pupil, pupil, glow, line=False)
+        p.ellipse(cx + hr * 0.01, ey, pupil * 0.4, pupil * 0.4, rgba("#FFFFFF"), line=False)
+        # 미간으로 내려 꽂히는 눈썹뼈
+        p.stick(cx - hr * 0.26 * d, ey - hr * 0.3, cx + hr * 0.2 * d, ey - hr * 0.16, 3.6)
+    # 코 구멍 (거꾸로 된 하트)
+    ny = ey + hr * 0.3
+    p.poly([(ex - hr * 0.09, ny), (ex, ny + hr * 0.15), (ex + hr * 0.09, ny), (ex, ny + hr * 0.04)], BOSS_SOCKET)
+    # 턱: 이빨 줄 (공격하면 아래턱이 떨어져 벌어진다)
+    jy = ey + hr * 0.52
+    jaw = hr * (0.3 if attack else 0.0)
+    tw = hr * 0.44
+    if attack:
+        p.rect(ex - tw * 0.9, jy, ex + tw * 0.9, jy + jaw, BOSS_SOCKET, radius=3)
+    for row, y in enumerate((jy - hr * 0.08, jy + jaw)):
+        p.rect(ex - tw, y, ex + tw, y + hr * 0.13, rgba("#FFFDF2"), radius=2)
+        for i in range(1, 6):
+            x = ex - tw + i * tw * 2 / 6
+            p.stick(x, y + hr * 0.01, x, y + hr * 0.12, 1.4)
+    # 이마의 금 + 해묵은 이 빠짐
+    p.stick(hx - hr * 0.35, hy - hr * 0.5, hx - hr * 0.2, hy - hr * 0.32, 1.8)
+    p.stick(hx - hr * 0.2, hy - hr * 0.32, hx - hr * 0.3, hy - hr * 0.18, 1.8)
+    p.stick(hx - hr * 0.2, hy - hr * 0.32, hx - hr * 0.06, hy - hr * 0.26, 1.4)
 
 
 def corpse(u, out=UNIT_CELL):
