@@ -514,6 +514,43 @@ int32 FYJJBattle::BuildingCount(int32 Building) const
 	return Count;
 }
 
+int32 FYJJBattle::BuyCost(int32 Building, int32 Count) const
+{
+	return YJJData::Buildings().IsValidIndex(Building) ? YJJData::Building(Building).BuyCost * Count : 0;
+}
+
+bool FYJJBattle::CanBuy(int32 Building, int32 Count) const
+{
+	return !bGameOver && Count > 0 && YJJData::Buildings().IsValidIndex(Building) && Gold >= BuyCost(Building, Count)
+		&& Horde.Num(EYJJTeam::Player) + Count <= YJJData::Tune().MaxUnitsPerTeam;
+}
+
+bool FYJJBattle::Buy(int32 Building, int32 Count)
+{
+	if (!CanBuy(Building, Count))
+	{
+		return false;
+	}
+	const FYJJTuning& T = YJJData::Tune();
+	Gold -= BuyCost(Building, Count);
+	int32 BestLevel = 1;
+	for (const FYJJPlot& Plot : Plots)
+	{
+		BestLevel = Plot.Building == Building ? FMath::Max(BestLevel, Plot.Level) : BestLevel;
+	}
+	const FYJJSpawnStats Stats = PlayerStats(Building, BestLevel);
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		const FVector2f Pos(CampEdgeX + Random.FRandRange(0.f, T.SpawnScatter), FieldHeight * Half + Random.FRandRange(-T.BuySpread, T.BuySpread));
+		if (Horde.Spawn(YJJData::Building(Building).Unit, EYJJTeam::Player, Pos, Stats) != INDEX_NONE)
+		{
+			++Spawned[static_cast<int32>(EYJJTeam::Player)];
+		}
+	}
+	AddEffect(EYJJEffectKind::Build, FVector2f(CampEdgeX, FieldHeight * Half), T.BuildEffectTime, T.PlotSize);
+	return true;
+}
+
 int32 FYJJBattle::BuildCost(int32 Building) const
 {
 	const FYJJBuildingDef& Def = YJJData::Building(Building);

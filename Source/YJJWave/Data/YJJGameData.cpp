@@ -207,6 +207,7 @@ void FYJJGameDatabase::LoadBuildings()
 		Def.AtlasCol = Row.AtlasCol;
 		Def.IconCol = Row.IconCol;
 		Def.BotWeight = Row.BotWeight;
+		Def.BuyCost = Row.BuyCost;
 		if (Def.Unit == INDEX_NONE || Def.SpawnInterval <= 0.f)
 		{
 			Problem(FString::Printf(TEXT("Buildings.csv %s: 유닛이 없거나 생산 주기가 0"), *Name.ToString()));

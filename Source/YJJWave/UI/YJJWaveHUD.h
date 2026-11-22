@@ -133,6 +133,7 @@ private:
 		Restart,
 		NextStage,
 		Card,
+		Buy,
 	};
 
 	/** 기다리지 않는 판 (Horde 밖 필드만). 유닛은 View() */

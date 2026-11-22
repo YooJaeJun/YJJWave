@@ -528,6 +528,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::Card:
 			Current->PickCard(Button->Index);
 			break;
+		case EButton::Buy:
+			Current->Buy(SelectedBuilding, Button->Index);
+			break;
 		}
 		return;
 	}
@@ -783,6 +786,7 @@ void AYJJWaveHUD::DrawBanners()
 		// 처음엔 크게 튀어나왔다가 끝에 사라진다
 		const float Pop = 1.f + FMath::Max(0.f, 1.f - T * L.BannerPopSpeed) * L.BannerPop;
 		const float Alpha = FMath::Clamp((1.f - T) * L.BannerFadeSharpness, 0.f, 1.f);
-		DrawLabel(Banner.Text, WorldCenterVirtualX(), L.BannerY + Index * L.BannerText, L.BannerText * Pop, YJJUI::WithAlpha(Banner.Color, Alpha), Half);
+		// 줄 간격은 튀어나온 최대 크기 기준 (겹치지 않게)
+		DrawLabelCentered(Banner.Text, WorldCenterVirtualX(), L.BannerY + Index * L.BannerText * (1.f + L.BannerPop), L.BannerText * Pop, YJJUI::WithAlpha(Banner.Color, Alpha));
 	}
 }

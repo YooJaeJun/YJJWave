@@ -218,6 +218,12 @@ void FYJJAutoPilot::SpendGold(FYJJBattle& Battle)
 	{
 		Battle.Upgrade(Cheapest);
 	}
+	// 금화가 남으면 병사를 바로 산다 (사람이 x10을 누르듯)
+	const FYJJTuning& T = YJJData::Tune();
+	if (Building != INDEX_NONE && Battle.Gold >= T.BotBuyGold)
+	{
+		Battle.Buy(Building, FMath::RoundToInt(YJJData::Layout().BuyCountC));
+	}
 }
 
 void FYJJAutoPilot::SpendSouls(FYJJBattle& Battle)

@@ -113,6 +113,30 @@ void AYJJWaveHUD::DrawSidePanel()
 		}
 		const int32 Rows = FMath::DivideAndRoundUp(Defs.Num(), 2);
 		Y += Rows * (L.CardH + L.CardGap) - L.CardGap + L.SectionGap;
+
+		// 고른 병영의 병사 즉시 구매: x3 · x5 · x10 + 금화
+		if (Defs.IsValidIndex(SelectedBuilding))
+		{
+			const int32 Counts[] = { FMath::RoundToInt(L.BuyCountA), FMath::RoundToInt(L.BuyCountB), FMath::RoundToInt(L.BuyCountC) };
+			const int32 NumButtons = UE_ARRAY_COUNT(Counts);
+			const float ButtonW = (W - L.CardGap * (NumButtons - 1)) / NumButtons;
+			const float H = L.BuyH;
+			for (int32 Index = 0; Index < NumButtons; ++Index)
+			{
+				const int32 Count = Counts[Index];
+				const int32 Cost = Current->BuyCost(SelectedBuilding, Count);
+				const bool bCan = Current->CanBuy(SelectedBuilding, Count);
+				const float BX = X + Index * (ButtonW + L.CardGap);
+				DrawPanel(BX, Y, ButtonW, H, bCan ? YJJUI::PanelTint : YJJUI::Muted, FMath::RoundToInt(L.UiCard));
+				const float RowH = H * Half;
+				DrawLabelCentered(YJJLoc::Format(TEXT("UI.BuyCount"), { Count }), BX + ButtonW * Half, Y + RowH * L.BuyTopRow, L.MidText, YJJUI::Paper, ButtonW - Pad);
+				const float CostCY = Y + H - RowH * L.BuyBottomRow;
+				DrawIcon(FMath::RoundToInt(L.UiCoin), BX + Pad, CostCY - L.SmallText * Half, L.SmallText);
+				DrawLabelLeftMiddle(FormatCount(Cost), BX + ButtonW - Pad, CostCY, L.SmallText, bCan ? YJJUI::Gold : YJJUI::Bad, 1.f);
+				AddButton(EButton::Buy, Count, BX, Y, ButtonW, H);
+			}
+			Y += H + L.SectionGap;
+		}
 	}
 
 	// ---- 스펠 Q·E + 특성 T (3칸) ----

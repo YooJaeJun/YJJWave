@@ -71,6 +71,7 @@ struct FYJJBuildingRow : public FTableRowBase
 	UPROPERTY() int32 AtlasCol = 0;
 	UPROPERTY() int32 IconCol = 0;
 	UPROPERTY() float BotWeight = 0.f;
+	UPROPERTY() int32 BuyCost = 0;
 };
 
 /** Stages.csv */

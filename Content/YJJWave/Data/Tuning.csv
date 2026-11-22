@@ -15,10 +15,11 @@ HeroArrive,16,영웅이 자리로 돌아왔다고 보는 거리
 HeroRegen,12,영웅 초당 체력 회복
 StartGold,200,시작 금화
 PassiveGold,4,초당 기본 금화
-LevelHPGrowth,1.1,웨이브마다 적 체력 배율
-LevelDamageGrowth,1.06,웨이브마다 적 공격력 배율
+LevelHPGrowth,1.15,웨이브마다 적 체력 배율
+LevelDamageGrowth,1.08,웨이브마다 적 공격력 배율
 EnemySpawnInset,40,적이 나오는 곳: 오른쪽 끝에서 이만큼 안
 SpawnScatter,30,생산 위치 흩뿌림
+BuySpread,260,즉시 구매 병사가 진지 끝 가운데에서 위아래로 퍼지는 폭
 EnemySpawnBand,0.6,"적이 나오는 띠 높이 (전장 높이 비율, 가운데 기준)"
 MaxPendingDeaths,20000,HUD가 안 가져간 죽음 기록 최대
 PlotColumns,4,건설 칸 가로 수
@@ -65,7 +66,7 @@ BuildEffectTime,0.5,건설 먼지 연출 시간
 RescueEffectTime,0.6,최후의 저항·부활 고리 연출 시간
 RescueEffectSize,70,최후의 저항·부활 고리 크기
 CardChoices,3,웨이브가 바뀔 때 고르는 카드 수
-FrontBonusMax,1.5,아군 앞줄이 적 끝까지 밀면 금화·영혼 +이 비율 (영웅 자리 0 ~ 오른쪽 끝 최대)
+FrontBonusMax,0.6,아군 앞줄이 적 끝까지 밀면 금화·영혼 +이 비율 (영웅 자리 0 ~ 오른쪽 끝 최대)
 MaxCorpses,3000,강령술사가 일으킬 수 있는 시체 기억 수
 NecroRaiseInterval,3,강령술사가 시체를 일으키는 간격
 NecroRaiseCount,4,한 번에 일으키는 시체 수
@@ -79,6 +80,7 @@ BotCameraFollow,1.5,봇 카메라가 전선을 따라가는 빠르기
 BotCameraZoom,0.85,봇 카메라 확대
 BotMeteorLead,60,봇 유성: 적 앞줄보다 이만큼 뒤
 BotRallyRatio,1.2,적 수가 아군의 이 배를 넘으면 함성
+BotBuyGold,500,봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 BotExitDelay,2,끝나고 종료까지 기다리는 실제 시간
 BenchDepth,0.25,벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
 BenchCameraZoom,0.85,벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)

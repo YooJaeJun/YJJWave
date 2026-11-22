@@ -149,6 +149,7 @@ struct FYJJBuildingDef
 	int32 AtlasCol = 0;         // Buildings.png 칸
 	int32 IconCol = 0;          // UI.png 칸
 	float BotWeight = 0.f;      // 오토파일럿이 짓는 비중
+	int32 BuyCost = 0;          // 병사 즉시 구매: 한 마리 값
 };
 
 /** Waves.csv: 물결 레벨별로 나오는 몬스터 */

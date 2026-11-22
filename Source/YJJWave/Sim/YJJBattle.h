@@ -72,6 +72,10 @@ public:
 	bool CanUpgrade(int32 Plot) const;
 	bool Upgrade(int32 Plot);
 	int32 BuildingCount(int32 Building) const;
+	/** 병사 즉시 구매: 이 병영 병사 Count 마리를 진지 끝에서 바로 내보낸다 (능력치는 그 병영의 가장 높은 레벨) */
+	int32 BuyCost(int32 Building, int32 Count) const;
+	bool CanBuy(int32 Building, int32 Count) const;
+	bool Buy(int32 Building, int32 Count);
 	/** 지금 레벨에서 한 번에 내보내는 수와 주기 */
 	int32 SpawnCount(int32 Plot) const;
 	float SpawnInterval(int32 Plot) const;

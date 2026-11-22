@@ -111,6 +111,12 @@ VsH,112,아군 VS 적 칸 높이
 BossH,54,보스 칸 높이
 ResH,76,금화·영혼 칸 높이
 SpellH,120,스펠·특성 칸 높이
+BuyH,72,병사 즉시 구매 버튼 높이
+BuyCountA,3,구매 버튼 1: 마리 수
+BuyCountB,5,구매 버튼 2: 마리 수
+BuyCountC,10,구매 버튼 3: 마리 수
+BuyTopRow,0.62,구매 버튼 위 줄(x3) 가운데 높이 (반 칸 비율)
+BuyBottomRow,0.55,구매 버튼 아래 줄(금화) 가운데 높이 (아래에서 반 칸 비율)
 DebugLineGap,4,성능 줄 사이
 IconSize,48,아이콘 크기
 IconGap,8,아이콘과 글자 사이
