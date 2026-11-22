@@ -311,7 +311,16 @@ struct FYJJUILayout
 	UPROPERTY() float CutBoxW = 0.f;   // 대사 상자 너비
 	UPROPERTY() float CutBoxH = 0.f;   // 대사 상자 높이
 	UPROPERTY() float CutPortrait = 0.f;   // 초상화 크기
-	UPROPERTY() float CutNarratorInset = 0.f;   // 해설 별 아이콘 안쪽 여백 비율
+	UPROPERTY() float CutTitleFade = 0.f;   // 장 제목 카드: 서서히 나타나는 시간
+	UPROPERTY() float CutSubDelay = 0.f;   // 장 제목 카드: 아래 줄이 늦게 나오는 시간
+	UPROPERTY() float CutTitleShade = 0.f;   // 장 제목 카드: 전장 어둡게
+	UPROPERTY() float CutTitleY = 0.f;   // 장 제목 카드: 제목 높이 (화면 높이 비율)
+	UPROPERTY() float CutTitleScale = 0.f;   // 장 제목 카드: 제목 글자 배율 (TitleText 기준)
+	UPROPERTY() float CutRuleW = 0.f;   // 장 제목 카드: 제목 아래 줄 너비 (전장 너비 비율)
+	UPROPERTY() float CutRuleH = 0.f;   // 장 제목 카드: 제목 아래 줄 두께
+	UPROPERTY() float CutRuleAlpha = 0.f;   // 장 제목 카드: 제목 아래 줄 진하기
+	UPROPERTY() float CutSubGap = 0.f;   // 장 제목 카드: 제목·줄·아래 글 사이
+	UPROPERTY() float CutSubW = 0.f;   // 장 제목 카드: 아래 글 줄바꿈 너비 (전장 너비 비율)
 	UPROPERTY() float CutTypeSpeed = 0.f;   // 대사 글자가 초당 나오는 수
 	UPROPERTY() float CutCameraFollow = 0.f;   // 컷씬 카메라가 목표로 가는 빠르기
 	// ---- 옵션 화면 ----

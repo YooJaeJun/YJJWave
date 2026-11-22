@@ -229,6 +229,8 @@ private:
 	static bool NeedsAim(EYJJSpell Spell) { return Spell != EYJJSpell::Rally; }
 	void DrawCardPick();
 	void DrawCutscene();
+	/** 장 제목 카드: 전장을 어둡게 하고 가운데 제목 + 아래 한 줄이 서서히 나타난다 */
+	void DrawChapterCard(const FYJJCutLine& Line, float Time);
 	void UpdateCutsceneCamera(float Dt);
 	void DrawOptions();
 	void HandleOption(int32 Index);

@@ -224,6 +224,8 @@ struct FYJJWaveLevel
 struct FYJJCutLine
 {
 	int32 Speaker = INDEX_NONE;
+	/** 장 제목 카드 (Speaker 열 Title): 화자 없이 가운데 큰 제목 + 아래 한 줄 (글자의 첫 줄 = 제목) */
+	bool bTitle = false;
 	FName VoiceKey;
 	FString TextKey;
 	float Duration = 0.f;

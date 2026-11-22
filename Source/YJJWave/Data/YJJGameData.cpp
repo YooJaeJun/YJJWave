@@ -279,8 +279,8 @@ void FYJJGameDatabase::LoadStages()
 			return;
 		}
 		FYJJCutLine Line;
-		const bool bNarrator = Row.Speaker == NarratorName;
-		Line.Speaker = bNarrator ? INDEX_NONE : FindUnit(Row.Speaker, TEXT("Cutscenes.csv"));
+		Line.bTitle = Row.Speaker == TitleName;
+		Line.Speaker = Line.bTitle ? INDEX_NONE : FindUnit(Row.Speaker, TEXT("Cutscenes.csv"));
 		Line.VoiceKey = FName(*(FString(TEXT("Voice_")) + Row.Speaker));
 		Line.TextKey = Row.TextKey;
 		Line.Duration = Row.Duration;

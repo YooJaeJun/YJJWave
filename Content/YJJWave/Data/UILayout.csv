@@ -179,7 +179,16 @@ CutBarH,90,위아래 검은 띠 높이
 CutBoxW,1100,대사 상자 너비
 CutBoxH,190,대사 상자 높이
 CutPortrait,160,초상화 크기
-CutNarratorInset,0.2,해설 별 아이콘 안쪽 여백 비율
+CutTitleFade,0.7,장 제목 카드: 서서히 나타나는 시간
+CutSubDelay,0.6,장 제목 카드: 아래 줄이 늦게 나오는 시간
+CutTitleShade,0.55,장 제목 카드: 전장 어둡게
+CutTitleY,0.38,장 제목 카드: 제목 높이 (화면 높이 비율)
+CutTitleScale,1.5,장 제목 카드: 제목 글자 배율 (TitleText 기준)
+CutRuleW,0.32,장 제목 카드: 제목 아래 줄 너비 (전장 너비 비율)
+CutRuleH,3,장 제목 카드: 제목 아래 줄 두께
+CutRuleAlpha,0.7,장 제목 카드: 제목 아래 줄 진하기
+CutSubGap,22,장 제목 카드: 제목·줄·아래 글 사이
+CutSubW,0.6,장 제목 카드: 아래 글 줄바꿈 너비 (전장 너비 비율)
 CutTypeSpeed,22,대사 글자가 초당 나오는 수
 CutCameraFollow,2.5,컷씬 카메라가 목표로 가는 빠르기
 OptionsW,720,옵션 창 너비

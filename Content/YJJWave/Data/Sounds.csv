@@ -29,4 +29,4 @@ Voice_Fatty,VO_Fatty_0,0.4,Voice,0.8,0.9,1.05,뚱보 좀비
 Voice_BoneArcher,VO_Skeleton_0,0.3,Voice,0.6,1.05,1.25,해골 궁수
 Voice_Necro,VO_Necro_0,0.5,Voice,1,0.95,1.05,강령술사
 Voice_BoneKing,VO_BoneKing_0,0.85,Voice,1,1,1,해골 왕
-Voice_Narrator,VO_Narrator_0,0.6,Voice,0,1,1,컷씬 해설
+Voice_Title,VO_Narrator_0,0.6,Voice,0,1,1,컷씬 해설
