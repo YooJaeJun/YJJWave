@@ -192,9 +192,15 @@ int32 AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot) const
 	const FYJJUILayout& L = UI();
 	const FYJJTuning& T = YJJData::Tune();
 	auto Step = [](float Fraction, float Frames) { return FMath::Clamp(FMath::FloorToInt(Fraction * Frames), 0, FMath::Max(FMath::RoundToInt(Frames) - 1, 0)); };
+	if (Horde.Knock[Slot] >= L.AnimDazedImpulse)
+	{
+		// 세게 밀려 휘청 (헤벌레)
+		const float Wobble = FMath::Frac(AnimClock * L.AnimDazedFps / FMath::Max(L.AnimDazedFrames, 1.f) + Horde.WalkPhase[Slot]);
+		return FMath::RoundToInt(L.AnimDazedFirst) + Step(Wobble, L.AnimDazedFrames);
+	}
 	if (Horde.AttackAnim[Slot] > 0.f)
 	{
-		const float Done = 1.f - Horde.AttackAnim[Slot] / FMath::Max(T.AttackAnimTime, KINDA_SMALL_NUMBER);
+		const float Done = 1.f - Horde.AttackAnim[Slot] / FMath::Max(Horde.AttackLen[Slot], KINDA_SMALL_NUMBER);
 		return FMath::RoundToInt(L.AnimAttackFirst) + Step(Done, L.AnimAttackFrames);
 	}
 	if (Horde.Flash[Slot] > 0.f)

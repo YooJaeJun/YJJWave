@@ -40,6 +40,11 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Config.BigUnitRadius = T.BigUnitRadius;
 	Config.MultishotSpread = T.MultishotSpread;
 	Config.ReorderTicks = T.ReorderTicks;
+	Config.AttackAnimShare = T.AttackAnimShare;
+	Config.AttackAnimMax = T.AttackAnimMax;
+	Config.WalkStrideScale = T.WalkStrideScale;
+	Config.WalkStrideMin = T.WalkStrideMin;
+	Config.WalkStrideMax = T.WalkStrideMax;
 
 	Field = FieldSize;
 	Random.Initialize(RandomSeed);
@@ -56,7 +61,7 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	// 다시 시작할 때 이전 판 값이 남지 않게 비우고 0으로 채운다
 	auto Resize = [InCapacity](auto& Array) { Array.Reset(); Array.AddZeroed(InCapacity); };
 	Resize(Alive); Resize(Team); Resize(Type); Resize(Pos); Resize(Vel); Resize(HP); Resize(MaxHP);
-	Resize(Flash); Resize(AttackAnim); Resize(WalkPhase); Resize(FaceLeft);
+	Resize(Flash); Resize(AttackAnim); Resize(AttackLen); Resize(WalkPhase); Resize(FaceLeft);
 	Resize(Gen); Resize(Target); Resize(TargetGen); Resize(Cooldown); Resize(Damage); Resize(AttackInterval);
 	Resize(Speed); Resize(Splash); Resize(Multishot); Resize(Impulse); Resize(PosNext); Resize(LastHitDir); Resize(Pending); Resize(Flags); Resize(Seed);
 	HeroSlot = INDEX_NONE;
@@ -212,7 +217,7 @@ void FYJJHorde::Reorder()
 		}
 	};
 	Permute(Alive); Permute(Team); Permute(Type); Permute(Pos); Permute(Vel); Permute(HP); Permute(MaxHP);
-	Permute(Flash); Permute(AttackAnim); Permute(WalkPhase); Permute(FaceLeft); Permute(Gen); Permute(Target);
+	Permute(Flash); Permute(AttackAnim); Permute(AttackLen); Permute(WalkPhase); Permute(FaceLeft); Permute(Gen); Permute(Target);
 	Permute(TargetGen); Permute(Cooldown); Permute(Damage); Permute(AttackInterval); Permute(Speed); Permute(Splash);
 	Permute(Multishot); Permute(Impulse); Permute(PosNext); Permute(LastHitDir); Permute(Flags); Permute(Seed);
 	for (int32 Slot = Count; Slot < HighWaterMark; ++Slot)
@@ -288,6 +293,12 @@ void FYJJHorde::CopyTo(FYJJHordeView& View) const
 	Copy(View.Flash, Flash);
 	Copy(View.AttackAnim, AttackAnim);
 	Copy(View.WalkPhase, WalkPhase);
+	Copy(View.AttackLen, AttackLen);
+	View.Knock.SetNumUninitialized(Count, EAllowShrinking::No);
+	for (int32 Slot = 0; Slot < Count; ++Slot)
+	{
+		View.Knock[Slot] = Impulse[Slot].Size();
+	}
 	View.MoveSpeed.SetNumUninitialized(Count, EAllowShrinking::No);
 	for (int32 Slot = 0; Slot < Count; ++Slot)
 	{
@@ -474,7 +485,7 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 		{
 			Pending[Slot] = Victim;
 			Cooldown[Slot] = AttackInterval[Slot];
-			AttackAnim[Slot] = Config.AttackAnimTime;
+			StartAttackAnim(Slot);
 		}
 		FaceLeft[Slot] = Delta.X < 0.f ? 1 : 0;
 	}
@@ -507,7 +518,9 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	Vel[Slot] = NewVel;
 	const FVector2f Kick = Impulse[Slot];
 	Impulse[Slot] = Kick * FMath::Max(1.f - Config.ImpulseDamping * Dt, 0.f);
-	WalkPhase[Slot] += NewVel.Size() * Dt / FMath::Max(Def.DrawSize, NearZero);
+	// 걸음 한 바퀴 거리: 그림 크기에 비례하되 너무 길지 않게 (큰 보스가 멈춘 듯 보이지 않게)
+	const float Stride = FMath::Clamp(Def.DrawSize * Config.WalkStrideScale, Config.WalkStrideMin, Config.WalkStrideMax);
+	WalkPhase[Slot] += NewVel.Size() * Dt / FMath::Max(Stride, NearZero);
 
 	FVector2f Next = P + (NewVel + Kick) * Dt + Separation(Slot);
 	Next.X = FMath::Clamp(Next.X, Config.FieldMargin, Field.X - Config.FieldMargin);
@@ -549,6 +562,12 @@ void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From, int32 Att
 const FYJJUnitSpecial& FYJJHorde::SpecialOf(int32 Slot) const
 {
 	return Specials.IsValidIndex(Type[Slot]) ? Specials[Type[Slot]] : NoSpecial;
+}
+
+void FYJJHorde::StartAttackAnim(int32 Slot)
+{
+	AttackLen[Slot] = FMath::Clamp(AttackInterval[Slot] * Config.AttackAnimShare, Config.AttackAnimTime, Config.AttackAnimMax);
+	AttackAnim[Slot] = AttackLen[Slot];
 }
 
 float FYJJHorde::AttackDamage(int32 Slot) const

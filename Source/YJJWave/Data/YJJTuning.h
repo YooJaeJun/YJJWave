@@ -60,7 +60,12 @@ struct FYJJTuning
 	UPROPERTY() float ArrowHitRadius = 0.f;   // 대상이 먼저 죽은 화살이 다른 적을 맞히는 반경
 	UPROPERTY() float MultishotSpread = 0.f;   // 추가 화살이 노리는 대상 주변 반경
 	UPROPERTY() float HitFlashTime = 0.f;   // 맞으면 붉게 깜빡이는 시간
-	UPROPERTY() float AttackAnimTime = 0.f;   // 공격 그림을 보여 주는 시간
+	UPROPERTY() float AttackAnimTime = 0.f;   // 공격 동작 최소 길이
+	UPROPERTY() float AttackAnimShare = 0.f;   // 공격 동작 길이 = 공격 간격 x 이 비율 (큰 유닛은 느릿하게 휘두른다)
+	UPROPERTY() float AttackAnimMax = 0.f;   // 공격 동작 최대 길이
+	UPROPERTY() float WalkStrideScale = 0.f;   // 걸음 한 바퀴 거리 = 그림 크기 x 이 비율
+	UPROPERTY() float WalkStrideMin = 0.f;   // 걸음 한 바퀴 최소 거리
+	UPROPERTY() float WalkStrideMax = 0.f;   // 걸음 한 바퀴 최대 거리 (큰 보스도 다리가 보이게 움직인다)
 	UPROPERTY() float DeathFling = 0.f;   // 죽을 때 맞은 방향으로 날아가는 속도
 	// ---- 스펠 ----
 	UPROPERTY() float MeteorDamage = 0.f;   // 유성 피해
@@ -127,6 +132,10 @@ struct FYJJUILayout
 	UPROPERTY() float AnimIdleFrames = 0.f;   // 숨쉬기 칸 수
 	UPROPERTY() float AnimIdleSpeed = 0.f;   // 이 속력보다 느리면 숨쉬기 그림
 	UPROPERTY() float AnimIdleFps = 0.f;   // 숨쉬기 초당 칸
+	UPROPERTY() float AnimDazedFirst = 0.f;   // 헤벌레(세게 밀려 휘청) 첫 칸
+	UPROPERTY() float AnimDazedFrames = 0.f;   // 헤벌레 칸 수
+	UPROPERTY() float AnimDazedImpulse = 0.f;   // 밀쳐진 속력이 이보다 크면 헤벌레 그림
+	UPROPERTY() float AnimDazedFps = 0.f;   // 헤벌레 초당 칸
 	UPROPERTY() float EmptyPlotCol = 0.f;   // Buildings.png 빈 칸
 	UPROPERTY() float FxShadow = 0.f;   // Fx 칸: 그림자
 	UPROPERTY() float FxBloodFirst = 0.f;   // Fx 칸: 첫 피 웅덩이
@@ -224,11 +233,14 @@ struct FYJJUILayout
 	UPROPERTY() float IconSize = 0.f;   // 아이콘 크기
 	UPROPERTY() float IconGap = 0.f;   // 아이콘과 글자 사이
 	UPROPERTY() float SmallIconScale = 0.f;   // 작은 아이콘 배율
-	UPROPERTY() float BarH = 0.f;   // 막대 높이
+	UPROPERTY() float BarH = 0.f;   // 숫자 없는 게이지 높이 (웨이브 시간)
 	UPROPERTY() float BarBorder = 0.f;   // 막대 테두리
 	UPROPERTY() float BarShineHeight = 0.f;   // 막대 반짝 띠 높이 비율
 	UPROPERTY() float BarShineAlpha = 0.f;   // 막대 반짝 띠 진하기
-	UPROPERTY() float BarTextLift = 0.f;   // 막대 위 글자 y 보정
+	UPROPERTY() float BarTextLift = 0.f;   // 게이지 안 글자 y 보정
+	UPROPERTY() float TextBarH = 0.f;   // 숫자가 들어가는 게이지 높이 (영웅·보스)
+	UPROPERTY() float BarTextScale = 0.f;   // 게이지 안 글자 크기 = 게이지 높이 x 이 비율
+	UPROPERTY() float TextLineRatio = 0.f;   // 글자 크기 대비 실제 줄 높이 (세로 가운데 맞춤)
 	UPROPERTY() float SpeedButtonW = 0.f;   // 배속 버튼 너비
 	UPROPERTY() float BossBarSplit = 0.f;   // 보스 이름 / 막대 나누는 비율
 	UPROPERTY() float CardH = 0.f;   // 카드 높이

@@ -95,6 +95,8 @@ struct FYJJHordeView
 	TArray<float> Flash;
 	TArray<float> AttackAnim;
 	TArray<float> WalkPhase;
+	TArray<float> AttackLen;   // 이번 공격 동작 길이 (AttackAnim 진행도 = 1 - AttackAnim/AttackLen)
+	TArray<float> Knock;       // 밀쳐진 속력 (크면 휘청 그림)
 	TArray<FYJJProjectile> Projectiles;
 	int32 Count[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	float Front[static_cast<int32>(EYJJTeam::Count)] = { -1.f, -1.f };
@@ -130,6 +132,11 @@ struct FYJJHordeConfig
 	float BigUnitRadius = 0.f;
 	float MultishotSpread = 0.f;
 	int32 ReorderTicks = 0;
+	float AttackAnimShare = 0.f;
+	float AttackAnimMax = 0.f;
+	float WalkStrideScale = 0.f;
+	float WalkStrideMin = 0.f;
+	float WalkStrideMax = 0.f;
 };
 
 class YJJWAVE_API FYJJHorde
@@ -183,6 +190,7 @@ public:
 	TArray<float> Flash;       // 맞은 뒤 남은 깜빡임 시간
 	TArray<float> AttackAnim;  // 휘두르는 그림을 보여 줄 남은 시간
 	TArray<float> WalkPhase;   // 걷기 그림 넘김
+	TArray<float> AttackLen;   // 이번 공격 동작 길이 (공격 간격에 비례, 큰 유닛은 느릿하게)
 	TArray<uint8> FaceLeft;
 
 	/** 이번 틱까지 죽은 유닛. 쓰는 쪽(FYJJBattle)이 비운다 */
@@ -209,6 +217,8 @@ private:
 	const FYJJUnitSpecial& SpecialOf(int32 Slot) const;
 	/** 분노까지 더한 이번 공격 피해 */
 	float AttackDamage(int32 Slot) const;
+	/** 공격 동작을 시작한다 (길이는 공격 간격에 비례) */
+	void StartAttackAnim(int32 Slot);
 	void UpdateProjectiles(float Dt);
 	void CollectDead();
 	bool IsValidTarget(int32 Slot, uint32 Gen) const;

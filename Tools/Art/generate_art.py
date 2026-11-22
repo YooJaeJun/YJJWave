@@ -1,6 +1,6 @@
 """YJJWave 그림을 Pillow로 만든다 → Content/YJJWave/Art/*.png (게임이 실행 중에 바로 읽는다).
 
-  Units.png      128px 칸, 16열. 줄 = Units.csv AtlasRow, 열 0~5 걷기 6~9 공격 10~11 맞음 12 시체 13~14 숨쉬기. 15번 줄 = 투사체
+  Units.png      128px 칸, 32열. 줄 = Units.csv AtlasRow, 열 0~7 걷기 8~13 공격 14~15 맞음 16~17 헤벌레(밀려 넘어짐) 18 시체 19~22 숨쉬기. 15번 줄 = 투사체
   Fx.png         128px 칸: 0 그림자 1~4 피 5 그을음 6 먼지 7 고리 8 운석 9 폭발
   Buildings.png  256px 칸: 0 졸병 막사 1 궁수 초소 2 방패 막사 3 대장간 4 빈 칸 5 성벽 조각
   UI.png         128px 칸: 0 금화 1 영혼 2 칼 3 해골 4 유성 5 뿔나팔 6 별 7 큰 별 8 성벽 9~12 병영 아이콘 13 패널 14 어두운 패널 15 카드
@@ -22,7 +22,7 @@ INK = (46, 28, 22, 255)      # 먹선
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "..", "Content", "YJJWave", "Art")
 
 UNIT_CELL = 128
-UNIT_COLS = 16
+UNIT_COLS = 32
 UNIT_ROWS = 16
 PROJECTILE_ROW = 15
 FOOT = 0.92
@@ -98,48 +98,56 @@ class Pen:
 
 UNITS = [
     # 줄, 몸색, 머리색, 모자, 무기, 크기, 특징
-    dict(name="Grunt", body="#FFFFFF", head="#FFFFFF", hat="pot", weapon="club", scale=1.0),
-    dict(name="Archer", body="#FFFFFF", head="#FFFFFF", hat="hood", weapon="bow", scale=1.0),
-    dict(name="Shield", body="#FFFFFF", head="#FFFFFF", hat="helm", weapon="shield", scale=1.05),
-    dict(name="Brute", body="#F3D7B0", head="#F6DDBA", hat="beard", weapon="hammer", scale=1.15),
+    dict(name="Grunt", body="#FFFFFF", head="#FFFFFF", hat="pot", weapon="club", scale=1.0, faces=dict(walk="cat", idle="cat", attack="cat", hit="cry", dazed="derp")),
+    dict(name="Archer", body="#FFFFFF", head="#FFFFFF", hat="hood", weapon="bow", scale=1.0, faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
+    dict(name="Shield", body="#FFFFFF", head="#FFFFFF", hat="helm", weapon="shield", scale=1.05, faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
+    dict(name="Brute", body="#F3D7B0", head="#F6DDBA", hat="beard", weapon="hammer", scale=1.15, faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
     dict(name="Skeleton", body="#E9E4D4", head="#F1ECDC", hat="skull", weapon="bone", scale=1.0),
     dict(name="Imp", body="#E2483A", head="#EA5444", hat="horns", weapon="claw", scale=0.9),
     dict(name="Fatty", body="#8DBF5A", head="#9CCB68", hat="zombie", weapon="none", scale=1.15, fat=True),
     dict(name="BoneArcher", body="#E9E4D4", head="#F1ECDC", hat="skull", weapon="bonebow", scale=1.0),
     dict(name="BoneKing", body="#E9E4D4", head="#F1ECDC", hat="crown", weapon="greatsword", scale=1.0, cape="#6B3FA0"),
     # 9: 내 영웅 (중심). 졸병 출신 대장: 금빛 투구 + 깃털, 빨간 망토, 큰 칼
-    dict(name="Hero", body="#FFFFFF", head="#FFFFFF", hat="knight", weapon="greatsword", scale=1.0, cape="#D9453A"),
+    dict(name="Hero", body="#FFFFFF", head="#FFFFFF", hat="knight", weapon="greatsword", scale=1.0, cape="#D9453A", faces=dict(walk="hotblood", idle="hotblood", attack="shout", hit="cry", dazed="derp")),
 ]
 HERO_ROW = 9
 # 10: 강령술사 (적). 보라 두건 + 해골 지팡이
 UNITS.append(dict(name="Necro", body="#6B3FA0", head="#E9E4D4", hat="necro", weapon="staff", scale=1.0))
 
 
-# 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다)
+# 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다). kind는 표정 고르기에 쓴다 (UNITS faces)
 def walk_pose(i, n):
     t = i / n * math.tau
     s = math.sin(t)
-    return dict(step=(-7 * s, 7 * s), lean=1, swing=0.08 * s, bob=abs(math.cos(t)) * 2.5)
+    return dict(kind="walk", step=(-8 * s, 8 * s), lean=1.5, swing=0.1 * s, bob=abs(math.cos(t)) * 3)
 
 
 ATTACK_POSES = [
-    dict(step=(-3, 3), lean=-3, swing=-0.5),                 # 들어 올림
-    dict(step=(-2, 4), lean=2, swing=0.2),                   # 내리치는 중
-    dict(step=(-4, 6), lean=6, swing=1.0, mouth="open"),     # 때림
-    dict(step=(-3, 4), lean=3, swing=0.6, mouth="open"),     # 돌아옴
+    dict(kind="attack", step=(-2, 2), lean=-2, swing=-0.35),                 # 준비
+    dict(kind="attack", step=(-3, 3), lean=-4, swing=-0.6),                  # 크게 들어 올림
+    dict(kind="attack", step=(-2, 4), lean=2, swing=0.2, mouth="open"),      # 내리치는 중
+    dict(kind="attack", step=(-4, 7), lean=7, swing=1.0, mouth="open"),      # 때림
+    dict(kind="attack", step=(-4, 6), lean=5, swing=0.85, mouth="open"),     # 여운
+    dict(kind="attack", step=(-3, 4), lean=2, swing=0.4),                    # 돌아옴
 ]
 HIT_POSES = [
-    dict(step=(3, -2), lean=-7, swing=-0.2, eyes="squint", mouth="open"),
-    dict(step=(2, -1), lean=-4, swing=-0.1, eyes="squint"),
+    dict(kind="hit", step=(3, -2), lean=-7, swing=-0.2, mouth="open"),
+    dict(kind="hit", step=(2, -1), lean=-4, swing=-0.1),
 ]
-IDLE_POSES = [
-    dict(step=(-2, 2), lean=0, swing=0, bob=0),
-    dict(step=(-2, 2), lean=0, swing=0.04, bob=1.2),
+DAZED_POSES = [   # 세게 밀려 휘청: 헤벌레
+    dict(kind="dazed", step=(5, -4), lean=-9, swing=-0.4, bob=1),
+    dict(kind="dazed", step=(-3, 5), lean=-5, swing=-0.25, bob=0),
 ]
-WALK_FRAMES = 6
-FRAME_LAYOUT = ([walk_pose(i, WALK_FRAMES) for i in range(WALK_FRAMES)] + ATTACK_POSES + HIT_POSES)   # 0~11
-CORPSE_COL = 12
-IDLE_COL = 13
+IDLE_POSES = [    # 숨쉬기 4칸
+    dict(kind="idle", step=(-2, 2), lean=0, swing=0, bob=0),
+    dict(kind="idle", step=(-2, 2), lean=0, swing=0.03, bob=0.7),
+    dict(kind="idle", step=(-2, 2), lean=0.5, swing=0.05, bob=1.3),
+    dict(kind="idle", step=(-2, 2), lean=0, swing=0.03, bob=0.7),
+]
+WALK_FRAMES = 8
+FRAME_LAYOUT = ([walk_pose(i, WALK_FRAMES) for i in range(WALK_FRAMES)] + ATTACK_POSES + HIT_POSES + DAZED_POSES)   # 0~17
+CORPSE_COL = 18
+IDLE_COL = 19
 
 
 def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
@@ -283,7 +291,7 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
     # 얼굴: 점 눈 (해골은 큰 구멍)
     ex = hx + hr * 0.25
     ey = head_cy + hr * 0.05
-    if pose.get("eyes") == "squint" and not dead:
+    if pose.get("kind") == "hit" and not u.get("faces") and not face and hat not in ("skull", "crown", "horns") and not dead:
         for ox, d in ((-hr * 0.28, 1), (hr * 0.28, -1)):
             p.stick(ex + ox - 3 * d, ey - 3, ex + ox + 3 * d, ey, 2)
             p.stick(ex + ox + 3 * d, ey, ex + ox - 3 * d, ey + 3, 2)
@@ -301,8 +309,8 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
         p.dot(ex + hr * 0.3, ey, 3.2, rgba("#FFF27A"))
         p.dot(ex - hr * 0.25, ey, 1.6)
         p.dot(ex + hr * 0.3, ey, 1.6)
-    elif (face or u.get("face")) and not dead:
-        draw_face(p, hx, head_cy, hr, face or u.get("face"), pose)
+    elif (face or u.get("faces")) and not dead:
+        draw_face(p, hx, head_cy, hr, face or u["faces"].get(pose.get("kind", "idle"), "cat"), pose)
     else:
         p.dot(ex - hr * 0.28, ey, 2.6)
         p.dot(ex + hr * 0.28, ey, 2.6)

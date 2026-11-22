@@ -1,5 +1,5 @@
 ﻿Name,Team,NameKey,HP,Damage,AttackInterval,Range,Sight,Speed,Radius,Mass,Splash,Knockback,ProjectileSpeed,ProjectileFrame,Bounty,Souls,AtlasRow,DrawSize,Boss,Hero,RaiseUnit
-Grunt,Player,Unit.Grunt,40,8,0.9,4,700,55,7,1,0,0,0,0,0,0,0,55,0,0,
+Grunt,Player,Unit.Grunt,40,8,0.9,4,700,55,7,1,0,0,0,0,0,0,0,61,0,0,
 Archer,Player,Unit.Archer,25,7,1.4,260,800,50,7,1,0,0,520,0,0,0,1,55,0,0,
 Shield,Player,Unit.Shield,140,6,1.2,4,650,40,9,3,0,0,0,0,0,0,2,65,0,0,
 Brute,Player,Unit.Brute,220,30,1.8,6,700,45,11,5,34,700,0,0,0,0,3,82,0,0,

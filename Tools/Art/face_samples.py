@@ -13,6 +13,8 @@ from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, os.path.dirname(__file__))
 import generate_art as art  # noqa: E402
 
+CONCEPT_OUT = os.path.join(os.path.dirname(__file__), "Samples", "concept_frames.png")
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 FONT = os.path.join(ROOT, "Content", "YJJWave", "Fonts", "Jua-Regular.ttf")
 OUT = os.path.join(os.path.dirname(__file__), "Samples", "grunt_faces.png")
@@ -56,4 +58,30 @@ def main():
     print(OUT)
 
 
-main()
+
+def concept():
+    """확정 컨셉: 졸병(고양이 입·울먹·헤벌레)과 특수 병졸(열혈·함성)의 칸 줄"""
+    names = ["Grunt", "Archer", "Shield", "Brute", "Hero"]
+    cols = [0, 2, 4, 6, 8, 11, 14, 16, 19]   # 걷기·걷기·걷기·걷기·준비·때림·맞음·헤벌레·숨쉬기
+    size = 170
+    font = ImageFont.truetype(FONT, 26)
+    sheet = Image.new("RGBA", (size * len(cols), LABEL_H + size * len(names)), BG)
+    draw = ImageDraw.Draw(sheet)
+    labels = ["걷기", "", "", "", "공격 준비", "때림 (함성)", "맞음 (울먹)", "밀림 (헤벌레)", "숨쉬기"]
+    for i, label in enumerate(labels):
+        draw.text((i * size + 10, 8), label, font=font, fill=(255, 245, 220, 255), stroke_width=3, stroke_fill=(46, 28, 22, 255))
+    layout = art.FRAME_LAYOUT
+    for r, name in enumerate(names):
+        u = next(x for x in art.UNITS if x["name"] == name)
+        for i, col in enumerate(cols):
+            pose = layout[col] if col < len(layout) else art.IDLE_POSES[col - art.IDLE_COL]
+            sheet.alpha_composite(art.draw_unit(u, pose, out=size), (i * size, LABEL_H + r * size))
+    sheet.save(CONCEPT_OUT)
+    print(CONCEPT_OUT)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "concept":
+        concept()
+    else:
+        main()
