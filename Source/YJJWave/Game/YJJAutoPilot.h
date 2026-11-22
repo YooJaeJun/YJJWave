@@ -43,6 +43,8 @@ private:
 	/** 여러 스테이지에 걸친 게임 시간 합 */
 	float TotalTime = 0.f;
 	bool bTreeShot = false;
+	bool bCardShot = false;
+	float CardShotWait = 0.f;
 
 	// 성능 기록
 	double StepMsSum = 0.0;

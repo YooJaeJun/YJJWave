@@ -60,6 +60,14 @@ struct FYJJQuadBatch
 	const FTexture* Texture = nullptr;
 };
 
+/** 화면 위쪽 큰 글자 (물량 돌파·학살·보스 처치) */
+struct FYJJBanner
+{
+	FString Text;
+	FLinearColor Color = FLinearColor::White;
+	float Age = 0.f;
+};
+
 /** 화면 버튼 영역 (마우스 판정) */
 struct FYJJButton
 {
@@ -123,6 +131,7 @@ private:
 		Speed,
 		Restart,
 		NextStage,
+		Card,
 	};
 
 	/** 기다리지 않는 판 (Horde 밖 필드만). 유닛은 View() */
@@ -186,6 +195,13 @@ private:
 	FVector2f PerkToVirtual(const FVector2f& PerkPos) const;
 	int32 PerkAt(const FVector2f& Virtual) const;
 	FString PerkText(int32 Perk) const;
+	/** 특성·카드 공통: 능력치 줄 + 특수 효과 줄 */
+	FString EffectText(const FYJJPerkDef& Def) const;
+	void DrawCardPick();
+	void DrawBanners();
+	void UpdateBanners(float Dt);
+	void AddBanner(const FString& Text, const FLinearColor& Color);
+	void Shake();
 	float PerkRadius(EYJJPerkKind Kind) const;
 	FVector2f WorldToVirtual(const FVector2f& World) const;
 
@@ -244,6 +260,15 @@ private:
 	float UnitDrawMs = 0.f;
 	/** 숨쉬기 그림 시계 (실제 시간) */
 	float AnimClock = 0.f;
+
+	// 물량 연출
+	TArray<FYJJBanner> Banners;
+	float NextMilestone = 0.f;
+	float KillWindow = 0.f;
+	int32 KillsAtWindow = 0;
+	bool bBossSeen = false;
+	float ShakeLeft = 0.f;
+	FVector2f ShakeOffset = FVector2f::ZeroVector;
 
 	// 그리기용 임시 배열 (매 프레임 다시 쓴다)
 	TArray<int32> Visible;

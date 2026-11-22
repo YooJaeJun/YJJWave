@@ -106,3 +106,19 @@ Special.MeteorTwice,유성이 {3}초 뒤 한 번 더 떨어짐,Meteor strikes ag
 Special.RallyHeal,돌격 함성 때 아군 전체 최대 체력의 {1}% 회복,War Cry heals all troops {1}%,
 Special.Thorns,{0}가 근접으로 맞은 피해의 {1}%를 되돌려줌,{0} reflect {1}% melee damage,
 Special.Lifesteal,{0}가 준 피해의 {1}%만큼 회복,{0} heal {1}% of damage dealt,
+Unit.Necro,강령술사,Necromancer,시체를 해골로 일으킨다
+UI.FrontBonus,전선 보너스 x{0},Front bonus x{0},금화·영혼 배율
+UI.CardTitle,카드 고르기 (1 · 2 · 3),Pick a card (1 · 2 · 3),웨이브가 바뀔 때
+UI.Milestone,아군 {0} 돌파!,{0} troops!,물량 배너
+UI.Massacre,학살! {0}마리,Massacre! {0},1초에 많이 잡으면
+UI.BossDown,보스 처치!,Boss down!,
+Card.Flood,물량 폭주,Flood,
+Card.QuickFeet,날쌘 다리,Quick Feet,
+Card.ThickArmor,두꺼운 갑옷,Thick Armor,
+Card.SharpBlades,날 선 무기,Sharp Blades,
+Card.FireArrows,불화살,Fire Arrows,
+Card.BloodRite,피의 의식,Blood Rite,
+Card.SecondWind,다시 일어나라,Second Wind,
+Card.GoldRain,금화 비,Gold Rain,
+Card.CaptainRage,대장의 분노,Captain's Rage,
+Card.BigSwing,대회전,Big Swing,

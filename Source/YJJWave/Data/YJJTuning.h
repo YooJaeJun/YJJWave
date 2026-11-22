@@ -78,6 +78,15 @@ struct FYJJTuning
 	UPROPERTY() float BuildEffectTime = 0.f;   // 건설 먼지 연출 시간
 	UPROPERTY() float RescueEffectTime = 0.f;   // 최후의 저항·부활 고리 연출 시간
 	UPROPERTY() float RescueEffectSize = 0.f;   // 최후의 저항·부활 고리 크기
+	// ---- 재미: 카드·전선·강령술·물량 연출 ----
+	UPROPERTY() int32 CardChoices = 0;   // 웨이브가 바뀔 때 고르는 카드 수
+	UPROPERTY() float FrontBonusMax = 0.f;   // 아군 앞줄이 적 끝까지 밀면 금화·영혼 +이 비율 (영웅 자리 0 ~ 오른쪽 끝 최대)
+	UPROPERTY() int32 MaxCorpses = 0;   // 강령술사가 일으킬 수 있는 시체 기억 수
+	UPROPERTY() float NecroRaiseInterval = 0.f;   // 강령술사가 시체를 일으키는 간격
+	UPROPERTY() int32 NecroRaiseCount = 0;   // 한 번에 일으키는 시체 수
+	UPROPERTY() float NecroRaiseRadius = 0.f;   // 강령술사 둘레 이 안의 시체만
+	UPROPERTY() float RaiseEffectTime = 0.f;   // 되살아나는 연기 연출 시간
+	UPROPERTY() float RaiseEffectSize = 0.f;   // 되살아나는 연기 크기
 	// ---- 특성 성좌 ----
 	UPROPERTY() float PerkCostBase = 0.f;   // 첫 별 영혼 비용
 	UPROPERTY() float PerkCostGrowth = 0.f;   // 별을 찍을 때마다 비용 배율
@@ -234,6 +243,24 @@ struct FYJJUILayout
 	UPROPERTY() float GlowSpeed = 0.f;   // 반짝임 속도
 	UPROPERTY() float NumberMan = 0.f;   // 이 이상은 만 단위로
 	UPROPERTY() float NumberEok = 0.f;   // 이 이상은 억 단위로
+	// ---- 카드·배너·흔들림 ----
+	UPROPERTY() float CardW = 0.f;   // 카드 너비
+	UPROPERTY() float CardPickH = 0.f;   // 카드 높이
+	UPROPERTY() float CardPickGap = 0.f;   // 카드 사이
+	UPROPERTY() float CardTitleY = 0.f;   // 카드 고르기 제목 y
+	UPROPERTY() float BannerY = 0.f;   // 물량 배너 y
+	UPROPERTY() float BannerTime = 0.f;   // 배너가 떠 있는 시간
+	UPROPERTY() float BannerText = 0.f;   // 배너 글자 크기
+	UPROPERTY() float BannerPop = 0.f;   // 배너가 처음 튀어나오는 크기 (+비율)
+	UPROPERTY() float BannerPopSpeed = 0.f;   // 튀어나온 크기가 줄어드는 빠르기
+	UPROPERTY() float BannerFadeSharpness = 0.f;   // 끝에 사라지는 빠르기 (클수록 늦게까지 또렷)
+	UPROPERTY() float MilestoneFirst = 0.f;   // 첫 물량 배너: 아군이 이 수를 넘을 때
+	UPROPERTY() float MilestoneFactor = 0.f;   // 다음 물량 배너는 이 배수
+	UPROPERTY() float MassacreWindow = 0.f;   // 학살 판정 시간 창 (초)
+	UPROPERTY() float MassacreKills = 0.f;   // 이 시간 안에 이만큼 처치하면 학살 배너
+	UPROPERTY() float ShakeTime = 0.f;   // 화면 흔들림 시간
+	UPROPERTY() float ShakePixels = 0.f;   // 화면 흔들림 세기 (픽셀)
+	UPROPERTY() float DeathRiseFromFling = 0.f;   // 세게 맞아 날아갈수록 더 높이 튄다 (밀쳐진 속도 비율)
 	// ---- 특성 성좌 화면 ----
 	UPROPERTY() float TreeTitleY = 0.f;   // 성좌 제목 y
 	UPROPERTY() float TreeCenterY = 0.f;   // 성좌 중심 y

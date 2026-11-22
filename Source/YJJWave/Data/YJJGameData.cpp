@@ -116,6 +116,7 @@ void FYJJGameDatabase::Load()
 	LoadBuildings();
 	LoadStages();
 	LoadPerks();
+	LoadCards();
 
 	UE_LOG(LogYJJWave, Display, TEXT("[Data] 유닛 %d, 병영 %d, 스테이지 %d, 특성 %d, 문제 %d"), Units.Num(), Buildings.Num(), Stages.Num(), Perks.Num(), Problems.Num());
 }
@@ -143,8 +144,9 @@ int32 FYJJGameDatabase::FindBuilding(const FString& Id, const TCHAR* Where)
 void FYJJGameDatabase::LoadUnits()
 {
 	Units.Reset();
+	TArray<FString> RaiseNames;
 	const UDataTable* Table = LoadTable(TEXT("Units.csv"), FYJJUnitRow::StaticStruct());
-	Table->ForeachRow<FYJJUnitRow>(ContextName, [this](const FName& Name, const FYJJUnitRow& Row)
+	Table->ForeachRow<FYJJUnitRow>(ContextName, [this, &RaiseNames](const FName& Name, const FYJJUnitRow& Row)
 	{
 		FYJJUnitDef& Def = Units.AddDefaulted_GetRef();
 		Def.Id = Name;
@@ -168,11 +170,16 @@ void FYJJGameDatabase::LoadUnits()
 		Def.DrawSize = Row.DrawSize;
 		Def.bBoss = Row.Boss != 0;
 		Def.bHero = Row.Hero != 0;
+		RaiseNames.Add(Row.RaiseUnit);
 		if (Row.HP <= 0.f || Row.Radius <= 0.f || Row.Mass <= 0.f || Row.AttackInterval <= 0.f)
 		{
 			Problem(FString::Printf(TEXT("Units.csv %s: 체력·반지름·질량·공격 간격은 0보다 커야 한다"), *Name.ToString()));
 		}
 	});
+	for (int32 Unit = 0; Unit < Units.Num(); ++Unit)
+	{
+		Units[Unit].RaiseUnit = RaiseNames[Unit].IsEmpty() ? INDEX_NONE : FindUnit(RaiseNames[Unit], TEXT("Units.csv RaiseUnit"));
+	}
 }
 
 void FYJJGameDatabase::LoadBuildings()
@@ -298,6 +305,54 @@ bool FYJJGameDatabase::ParseSpecial(const FString& Name, EYJJSpecial& Out)
 	return false;
 }
 
+void FYJJGameDatabase::ReadEffects(const TCHAR* File, const FName& Name, const FYJJEffectRow& Row, FYJJPerkDef& Def)
+{
+	Def.NameKey = Row.NameKey;
+	auto AddMod = [this, File, &Def, &Name](const FString& Stat, const FString& Target, float Value)
+	{
+		if (Stat.IsEmpty())
+		{
+			return;
+		}
+		FYJJPerkDef::FMod Mod;
+		if (!ParseStat(Stat, Mod.Stat))
+		{
+			Problem(FString::Printf(TEXT("%s %s: 모르는 능력치 %s"), File, *Name.ToString(), *Stat));
+			return;
+		}
+		Mod.Building = Target.IsEmpty() ? INDEX_NONE : FindBuilding(Target, File);
+		Mod.Value = Value;
+		Def.Mods.Add(Mod);
+	};
+	AddMod(Row.Stat, Row.Target, Row.Value);
+	AddMod(Row.Stat2, Row.Target2, Row.Value2);
+	if (!Row.Special.IsEmpty())
+	{
+		if (!ParseSpecial(Row.Special, Def.Special.Kind))
+		{
+			Problem(FString::Printf(TEXT("%s %s: 모르는 특수 효과 %s"), File, *Name.ToString(), *Row.Special));
+		}
+		Def.Special.Target = Row.SpecialTarget.IsEmpty() ? INDEX_NONE
+			: Row.SpecialTarget == TEXT("Hero") ? FYJJPerkDef::HeroTarget
+			: FindBuilding(Row.SpecialTarget, File);
+		Def.Special.A = Row.SpecialA;
+		Def.Special.B = Row.SpecialB;
+	}
+}
+
+void FYJJGameDatabase::LoadCards()
+{
+	Cards.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Cards.csv"), FYJJCardRow::StaticStruct());
+	Table->ForeachRow<FYJJCardRow>(ContextName, [this](const FName& Name, const FYJJCardRow& Row)
+	{
+		FYJJPerkDef& Def = Cards.AddDefaulted_GetRef();
+		Def.Id = Name;
+		Def.Kind = EYJJPerkKind::Notable;
+		ReadEffects(TEXT("Cards.csv"), Name, Row, Def);
+	});
+}
+
 void FYJJGameDatabase::LoadPerks()
 {
 	Perks.Reset();
@@ -312,37 +367,7 @@ void FYJJGameDatabase::LoadPerks()
 			: Row.Kind == TEXT("Keystone") ? EYJJPerkKind::Keystone
 			: EYJJPerkKind::Small;
 		Def.Pos = FVector2f(Row.X, Row.Y);
-		Def.NameKey = Row.NameKey;
-		auto AddMod = [this, &Def, &Name](const FString& Stat, const FString& Target, float Value)
-		{
-			if (Stat.IsEmpty())
-			{
-				return;
-			}
-			FYJJPerkDef::FMod Mod;
-			if (!ParseStat(Stat, Mod.Stat))
-			{
-				Problem(FString::Printf(TEXT("Perks.csv %s: 모르는 능력치 %s"), *Name.ToString(), *Stat));
-				return;
-			}
-			Mod.Building = Target.IsEmpty() ? INDEX_NONE : FindBuilding(Target, TEXT("Perks.csv"));
-			Mod.Value = Value;
-			Def.Mods.Add(Mod);
-		};
-		AddMod(Row.Stat, Row.Target, Row.Value);
-		AddMod(Row.Stat2, Row.Target2, Row.Value2);
-		if (!Row.Special.IsEmpty())
-		{
-			if (!ParseSpecial(Row.Special, Def.Special.Kind))
-			{
-				Problem(FString::Printf(TEXT("Perks.csv %s: 모르는 특수 효과 %s"), *Name.ToString(), *Row.Special));
-			}
-			Def.Special.Target = Row.SpecialTarget.IsEmpty() ? INDEX_NONE
-				: Row.SpecialTarget == TEXT("Hero") ? FYJJPerkDef::HeroTarget
-				: FindBuilding(Row.SpecialTarget, TEXT("Perks.csv"));
-			Def.Special.A = Row.SpecialA;
-			Def.Special.B = Row.SpecialB;
-		}
+		ReadEffects(TEXT("Perks.csv"), Name, Row, Def);
 		LinkNames.Add(Row.Links);
 	});
 
@@ -380,6 +405,7 @@ int32 YJJData::HeroUnit()
 	return FYJJGameDatabase::Get().Units.IndexOfByPredicate([](const FYJJUnitDef& Def) { return Def.bHero; });
 }
 TConstArrayView<FYJJPerkDef> YJJData::Perks() { return FYJJGameDatabase::Get().Perks; }
+TConstArrayView<FYJJPerkDef> YJJData::Cards() { return FYJJGameDatabase::Get().Cards; }
 
 const TCHAR* YJJData::StatKey(EYJJStat Stat)
 {

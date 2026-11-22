@@ -111,6 +111,8 @@ UNITS = [
     dict(name="Hero", body="#FFFFFF", head="#FFFFFF", hat="knight", weapon="greatsword", scale=1.0, cape="#D9453A"),
 ]
 HERO_ROW = 9
+# 10: 강령술사 (적). 보라 두건 + 해골 지팡이
+UNITS.append(dict(name="Necro", body="#6B3FA0", head="#E9E4D4", hat="necro", weapon="staff", scale=1.0))
 
 
 # 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다)
@@ -140,7 +142,7 @@ CORPSE_COL = 12
 IDLE_COL = 13
 
 
-def draw_unit(u, pose, dead=False):
+def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
     """오른쪽을 보는 졸라맨. pose: step(뒷발,앞발 x), lean(앞으로 기울기), swing(-0.5 들어 올림 ~ 1 때림), bob, eyes, mouth"""
     p = Pen(UNIT_CELL, UNIT_CELL, lw=3.2)
     k = u["scale"]
@@ -225,6 +227,14 @@ def draw_unit(u, pose, dead=False):
         sx = cx + bw * 0.55 + lean + 5 * max(swing, 0)
         p.ellipse(sx, body_cy + 2, 12 * k, 16 * k, rgba("#B8834C"))
         p.ellipse(sx, body_cy + 2, 4 * k, 4 * k, rgba("#8A8F99"))
+    elif weapon == "staff":
+        top = wy - 34 * k - 10 * max(swing, 0)
+        p.stick(wx, wy + 16, wx + 4 * swing, top, 3.5, rgba("#5B3A1E"))
+        p.ellipse(wx + 4 * swing, top - 4, 7 * k, 6 * k, rgba("#F1ECDC"))
+        p.dot(wx + 4 * swing - 2, top - 4, 1.4)
+        p.dot(wx + 4 * swing + 2, top - 4, 1.4)
+        if swing > 0.5:
+            p.ellipse(wx + 4 * swing + 10, top - 6, 6, 6, rgba("#C77DFF", 200), line=False)
     elif weapon == "claw":
         for i in range(3):
             a = math.radians(-30 + i * 25 + 20 * swing)
@@ -254,6 +264,9 @@ def draw_unit(u, pose, dead=False):
     elif hat == "zombie":
         p.stick(hx - hr * 0.4, head_cy - hr * 0.9, hx - hr * 0.1, head_cy - hr * 1.3, 2.5, rgba("#5B3A1E"))
         p.stick(hx + hr * 0.1, head_cy - hr * 0.95, hx + hr * 0.3, head_cy - hr * 1.35, 2.5, rgba("#5B3A1E"))
+    elif hat == "necro":
+        p.poly([(hx - hr * 1.05, head_cy + hr * 0.35), (hx - hr * 0.8, head_cy - hr * 0.9), (hx + hr * 0.05, head_cy - hr * 1.45),
+                (hx + hr * 0.95, head_cy - hr * 0.75), (hx + hr * 0.75, head_cy - hr * 0.3), (hx - hr * 0.55, head_cy - hr * 0.35)], rgba("#4B2A78"))
     elif hat == "knight":
         p.poly([(hx - hr, head_cy - hr * 0.05), (hx - hr * 0.9, head_cy - hr * 0.8), (hx, head_cy - hr * 1.12),
                 (hx + hr * 0.9, head_cy - hr * 0.8), (hx + hr, head_cy - hr * 0.05)], rgba("#F2C230"))
@@ -288,6 +301,8 @@ def draw_unit(u, pose, dead=False):
         p.dot(ex + hr * 0.3, ey, 3.2, rgba("#FFF27A"))
         p.dot(ex - hr * 0.25, ey, 1.6)
         p.dot(ex + hr * 0.3, ey, 1.6)
+    elif (face or u.get("face")) and not dead:
+        draw_face(p, hx, head_cy, hr, face or u.get("face"), pose)
     else:
         p.dot(ex - hr * 0.28, ey, 2.6)
         p.dot(ex + hr * 0.28, ey, 2.6)
@@ -296,7 +311,94 @@ def draw_unit(u, pose, dead=False):
         else:
             p.stick(ex - 3, ey + hr * 0.42, ex + 3, ey + hr * 0.42, 1.6)
 
-    return p.done(UNIT_CELL, UNIT_CELL)
+    return p.done(out, out)
+
+
+MOUTH = rgba("#5A1E18")
+TONGUE = rgba("#F27A7A")
+BLUSH = rgba("#FF9A9A", 150)
+SWEAT = rgba("#8FD3FF")
+
+
+def draw_face(p, hx, hy, hr, style, pose):
+    """냥코풍 톤 얼굴: 머리 아래쪽에 멀리 떨어진 작은 점 눈, 표정은 입이 다 한다.
+    style: blank 멍 / shout 함성 / smug 뻔뻔 / derp 헤벌레 / hotblood 열혈 / cry 울먹 / shock 벙찜 / cat 오메가 입"""
+    ex = hx + hr * 0.18          # 오른쪽을 보므로 얼굴이 살짝 오른쪽
+    ey = hy + hr * 0.18          # 눈은 머리 가운데보다 아래
+    gap = hr * 0.46              # 눈 사이가 멀다
+    my = ey + hr * 0.40          # 입 높이
+    eye = hr * 0.15
+    attack = pose.get("mouth") == "open"
+
+    def dots(r=eye):
+        p.dot(ex - gap, ey, r)
+        p.dot(ex + gap, ey, r)
+
+    def omega(y, w):
+        # ω 입: 작은 반원 두 개
+        for ox in (-w, w):
+            p.d.arc([p.s(ex + ox - w), p.s(y - w), p.s(ex + ox + w), p.s(y + w)], 0, 180, fill=INK, width=int(p.s(2.4)))
+
+    def open_mouth(w, h, tongue=True):
+        p.ellipse(ex, my + h * 0.3, w, h, MOUTH, line=False)
+        if tongue:
+            p.ellipse(ex, my + h * 0.75, w * 0.6, h * 0.38, TONGUE, line=False)
+
+    if style == "blank":
+        dots()
+        if attack:
+            open_mouth(hr * 0.28, hr * 0.3)
+        else:
+            omega(my, hr * 0.14)
+    elif style == "shout":
+        dots()
+        # 얼굴 절반을 차지하는 함성 입 (냥코 기본 고양이의 '와아' 느낌)
+        open_mouth(hr * (0.42 if attack else 0.34), hr * (0.42 if attack else 0.32))
+    elif style == "smug":
+        for ox in (-gap, gap):   # 반쯤 감은 눈
+            p.d.arc([p.s(ex + ox - eye * 2.2), p.s(ey - eye * 1.4), p.s(ex + ox + eye * 2.2), p.s(ey + eye * 1.8)], 200, 340, fill=INK, width=int(p.s(1.8)))
+        p.d.arc([p.s(ex - hr * 0.16), p.s(my - hr * 0.18), p.s(ex + hr * 0.16), p.s(my + hr * 0.06)], 20, 160, fill=INK, width=int(p.s(1.8)))
+        for ox in (-gap * 1.25, gap * 1.25):
+            p.ellipse(ex + ox, ey + hr * 0.22, hr * 0.13, hr * 0.07, BLUSH, line=False)
+        if attack:
+            open_mouth(hr * 0.16, hr * 0.14, tongue=False)
+    elif style == "derp":
+        p.dot(ex - gap, ey, eye * 1.5)
+        p.dot(ex + gap, ey + eye * 0.6, eye * 0.7)
+        open_mouth(hr * 0.12, hr * (0.2 if attack else 0.12))
+        p.stick(ex + hr * 0.06, my + hr * 0.2, ex + hr * 0.08, my + hr * 0.42, 2.2, SWEAT, line=False)   # 침
+    elif style == "hotblood":
+        dots(eye * 1.1)
+        for ox, d in ((-gap, 1), (gap, -1)):   # 치켜 올린 굵은 눈썹
+            p.stick(ex + ox - hr * 0.2 * d, ey - hr * 0.32, ex + ox + hr * 0.16 * d, ey - hr * 0.18, 3.4)
+        if attack:
+            open_mouth(hr * 0.32, hr * 0.28)
+        else:
+            p.rect(ex - hr * 0.26, my - hr * 0.07, ex + hr * 0.26, my + hr * 0.12, rgba("#FFFFFF"), radius=2)   # 앙다문 이
+            p.stick(ex, my - hr * 0.07, ex, my + hr * 0.12, 1.4)
+    elif style == "cry":
+        for ox, d in ((-gap, 1), (gap, -1)):   # > <
+            p.stick(ex + ox - 3 * d, ey - 3, ex + ox + 3 * d, ey, 1.9)
+            p.stick(ex + ox + 3 * d, ey, ex + ox - 3 * d, ey + 3, 1.9)
+        zig = [(ex - hr * 0.18 + i * hr * 0.09, my + (hr * 0.05 if i % 2 else -hr * 0.03)) for i in range(5)]
+        for a, b in zip(zig, zig[1:]):
+            p.stick(a[0], a[1], b[0], b[1], 1.6)
+        p.ellipse(hx - hr * 0.7, hy - hr * 0.2, hr * 0.09, hr * 0.14, SWEAT, line=False)
+    elif style == "shock":
+        for ox in (-gap, gap):   # 흰자 큰 눈 + 작은 눈동자
+            p.ellipse(ex + ox, ey, eye * 2.4, eye * 2.6, rgba("#FFFFFF"))
+            p.dot(ex + ox + eye * 0.4, ey, eye * 0.7)
+        p.ellipse(ex, my + hr * 0.04, hr * 0.08, hr * 0.11, MOUTH, line=False)
+        for i in range(3):
+            p.stick(hx - hr * 0.95 + i * 3, hy - hr * 0.55 - i * 2, hx - hr * 1.05 + i * 3, hy - hr * 0.35 - i * 2, 1.2)
+    elif style == "cat":
+        dots(eye * 0.9)
+        for ox in (-gap, gap):   # 위로 올라간 짧은 눈썹
+            p.stick(ex + ox - eye * 1.3, ey - hr * 0.28, ex + ox + eye * 1.3, ey - hr * 0.34, 2.4)
+        if attack:
+            open_mouth(hr * 0.3, hr * 0.32)
+        else:
+            omega(my - hr * 0.02, hr * 0.15)
 
 
 def corpse(u):
@@ -319,6 +421,15 @@ def projectile(kind):
     return p.done(UNIT_CELL, UNIT_CELL)
 
 
+def orb():
+    """강령술사 투사체: 보라 구슬 (오른쪽으로 꼬리)"""
+    p = Pen(UNIT_CELL, UNIT_CELL, lw=2.4)
+    p.poly([(30, 64), (70, 52), (70, 76)], rgba("#C77DFF", 150), line=False)
+    p.ellipse(78, 64, 16, 16, rgba("#9B4DFF"))
+    p.ellipse(73, 59, 5, 5, rgba("#E6C8FF"), line=False)
+    return p.done(UNIT_CELL, UNIT_CELL)
+
+
 def units_atlas():
     atlas = Image.new("RGBA", (UNIT_CELL * UNIT_COLS, UNIT_CELL * UNIT_ROWS), (0, 0, 0, 0))
     for row, u in enumerate(UNITS):
@@ -329,6 +440,7 @@ def units_atlas():
             atlas.alpha_composite(draw_unit(u, pose), ((IDLE_COL + i) * UNIT_CELL, row * UNIT_CELL))
     for kind in range(2):
         atlas.alpha_composite(projectile(kind), (kind * UNIT_CELL, PROJECTILE_ROW * UNIT_CELL))
+    atlas.alpha_composite(orb(), (2 * UNIT_CELL, PROJECTILE_ROW * UNIT_CELL))
     return atlas
 
 
@@ -603,4 +715,5 @@ def main():
         print("wrote", name)
 
 
-main()
+if __name__ == "__main__":
+    main()

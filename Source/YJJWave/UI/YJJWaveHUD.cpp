@@ -103,6 +103,12 @@ void AYJJWaveHUD::ResetBattleView()
 {
 	Dying.Reset();
 	Stamps.Reset();
+	Banners.Reset();
+	NextMilestone = UI().MilestoneFirst;
+	KillWindow = 0.f;
+	KillsAtWindow = 0;
+	bBossSeen = false;
+	ShakeLeft = 0.f;
 	bGroundReady = false;
 	bTreeOpen = false;
 	bAimingMeteor = false;
@@ -183,6 +189,7 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 	TakeDeaths();
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	UpdateDying(Mode && Mode->IsRunning() ? DeltaSeconds * Mode->GetSpeed() : 0.f);
+	UpdateBanners(DeltaSeconds);
 	BakeStamps();
 }
 
@@ -201,7 +208,16 @@ void AYJJWaveHUD::DrawHUD()
 	VirtualW = ScreenSize.X / ViewScale;
 	Buttons.Reset();
 
+	// 화면 흔들림: 전장만 흔든다 (UI는 그대로)
+	ShakeOffset = ShakeLeft > 0.f
+		? FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * UI().ShakePixels * ViewScale * (ShakeLeft / FMath::Max(UI().ShakeTime, KINDA_SMALL_NUMBER))
+		: FVector2f::ZeroVector;
 	DrawWorld();
+	DrawBanners();
+	if (Battle()->bCardPending && !Battle()->bGameOver)
+	{
+		DrawCardPick();
+	}
 
 	if (bTreeOpen)
 	{
@@ -223,7 +239,7 @@ FVector2f AYJJWaveHUD::WorldViewCenter() const
 {
 	// 전장은 좌측 패널 오른쪽 전부
 	const float Left = UI().SidePanelW * ViewScale;
-	return FVector2f(Left + (ScreenSize.X - Left) * Half, ScreenSize.Y * Half);
+	return FVector2f(Left + (ScreenSize.X - Left) * Half, ScreenSize.Y * Half) + ShakeOffset;
 }
 
 FVector2f AYJJWaveHUD::WorldViewSize() const
@@ -327,13 +343,18 @@ void AYJJWaveHUD::TakeDeaths()
 		FYJJDying& Body = Dying.AddDefaulted_GetRef();
 		Body.Pos = Death.Pos;
 		Body.Vel = Death.Fling + FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * UI().DeathJitter;
-		Body.Rise = UI().DeathRise * Random.FRandRange(UI().DeathRiseMin, 1.f) / FMath::Max(FMath::Sqrt(Def.Mass), 1.f);
+		// 세게 맞아 날아갈수록 높이 튄다 (망치·유성)
+		Body.Rise = (UI().DeathRise * Random.FRandRange(UI().DeathRiseMin, 1.f) + Death.Fling.Size() * UI().DeathRiseFromFling) / FMath::Max(FMath::Sqrt(Def.Mass), 1.f);
 		Body.Spin = Random.FRandRange(-1.f, 1.f) * UI().DeathSpin;
 		Body.Type = Death.Type;
 		Body.bFaceLeft = Death.bFaceLeft;
 	}
 	Current->RecentDeaths.Reset();
 
+	if (Current->RecentCraters.Num() > 0)
+	{
+		Shake();
+	}
 	for (const FVector2f& Crater : Current->RecentCraters)
 	{
 		FYJJStamp& Stamp = Stamps.AddDefaulted_GetRef();

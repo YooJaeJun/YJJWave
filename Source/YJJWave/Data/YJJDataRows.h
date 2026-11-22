@@ -45,6 +45,7 @@ struct FYJJUnitRow : public FTableRowBase
 	UPROPERTY() float DrawSize = 0.f;
 	UPROPERTY() int32 Boss = 0;
 	UPROPERTY() int32 Hero = 0;
+	UPROPERTY() FString RaiseUnit;
 };
 
 /** Buildings.csv */
@@ -97,15 +98,12 @@ struct FYJJWaveRow : public FTableRowBase
 	UPROPERTY() int32 Burst = 0;
 };
 
-/** Perks.csv (Tools/Data/gen_perks.py 가 만든다) */
+/** 효과 열 (Perks.csv·Cards.csv 공통): 능력치 2개 + 특수 효과 1개 */
 USTRUCT()
-struct FYJJPerkRow : public FTableRowBase
+struct FYJJEffectRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY() FString Kind;
-	UPROPERTY() float X = 0.f;
-	UPROPERTY() float Y = 0.f;
 	UPROPERTY() FString Stat;
 	UPROPERTY() FString Target;
 	UPROPERTY() float Value = 0.f;
@@ -116,6 +114,24 @@ struct FYJJPerkRow : public FTableRowBase
 	UPROPERTY() FString SpecialTarget;
 	UPROPERTY() float SpecialA = 0.f;
 	UPROPERTY() float SpecialB = 0.f;
-	UPROPERTY() FString Links;
 	UPROPERTY() FString NameKey;
+};
+
+/** Perks.csv (Tools/Data/gen_perks.py 가 만든다) */
+USTRUCT()
+struct FYJJPerkRow : public FYJJEffectRow
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString Kind;
+	UPROPERTY() float X = 0.f;
+	UPROPERTY() float Y = 0.f;
+	UPROPERTY() FString Links;
+};
+
+/** Cards.csv: 웨이브가 바뀔 때 고르는 이번 판 한정 카드 */
+USTRUCT()
+struct FYJJCardRow : public FYJJEffectRow
+{
+	GENERATED_BODY()
 };

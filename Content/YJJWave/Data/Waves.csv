@@ -27,3 +27,7 @@ S6_Imp,SkullHill,6,40,Imp,7,0
 S6_BoneArcher,SkullHill,6,40,BoneArcher,3,0
 S6_Fatty,SkullHill,6,40,Fatty,1.6,0
 S6_BoneKing,SkullHill,6,40,BoneKing,0,2
+S3_Necro,SkullHill,3,25,Necro,0.15,0
+S4_Necro,SkullHill,4,30,Necro,0.25,0
+S5_Necro,SkullHill,5,30,Necro,0.35,0
+S6_Necro,SkullHill,6,40,Necro,0.4,0

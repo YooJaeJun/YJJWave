@@ -285,7 +285,11 @@ int32 AYJJWaveHUD::PerkAt(const FVector2f& Virtual) const
 
 FString AYJJWaveHUD::PerkText(int32 Perk) const
 {
-	const FYJJPerkDef& Def = YJJData::Perks()[Perk];
+	return EffectText(YJJData::Perks()[Perk]);
+}
+
+FString AYJJWaveHUD::EffectText(const FYJJPerkDef& Def) const
+{
 	TArray<FString> Lines;
 	for (const FYJJPerkDef::FMod& Mod : Def.Mods)
 	{
@@ -475,6 +479,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::NextStage:
 			Mode->NextStage();
 			break;
+		case EButton::Card:
+			Current->PickCard(Button->Index);
+			break;
 		}
 		return;
 	}
@@ -551,6 +558,11 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 		return;
 	}
 	const int32 BuildingIndex = BuildingIndexForKey(Key);
+	// 카드를 고르는 중이면 1·2·3 은 카드
+	if (Current->bCardPending && Current->PickCard(BuildingIndex))
+	{
+		return;
+	}
 	if (YJJData::Buildings().IsValidIndex(BuildingIndex))
 	{
 		SelectedBuilding = BuildingIndex;
@@ -620,4 +632,111 @@ int32 AYJJWaveHUD::BuildingIndexForKey(const FKey& Key)
 	if (Key == EKeys::Five) { return 4; }
 	if (Key == EKeys::Six) { return 5; }
 	return INDEX_NONE;
+}
+
+// ---------------------------------------------------------------------------------------------
+// 카드·배너
+
+void AYJJWaveHUD::DrawCardPick()
+{
+	const FYJJBattle* Current = Battle();
+	const FYJJUILayout& L = UI();
+	const float Pad = L.PanelPad;
+	DrawBox(L.SidePanelW, 0.f, VirtualW - L.SidePanelW, VirtualHeight, YJJUI::Shade);
+	DrawLabel(YJJLoc::Get(TEXT("UI.CardTitle")), WorldCenterVirtualX(), L.CardTitleY, L.TitleText, YJJUI::Highlight, Half);
+
+	const int32 Count = Current->CardOffer.Num();
+	const float Total = Count * L.CardW + (Count - 1) * L.CardPickGap;
+	const float Y = L.CardTitleY + L.TitleText + Pad * 2.f;
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		const FYJJPerkDef& Def = YJJData::Cards()[Current->CardOffer[Index]];
+		const float X = WorldCenterVirtualX() - Total * Half + Index * (L.CardW + L.CardPickGap);
+		DrawPanel(X, Y, L.CardW, L.CardPickH, YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
+		DrawLabel(FString::FromInt(Index + 1), X + Pad, Y + Pad, L.MidText, YJJUI::Highlight);
+		DrawLabel(YJJLoc::Get(Def.NameKey), X + L.CardW * Half, Y + Pad, L.MidText, YJJUI::Paper, Half, L.CardW - Pad * 4.f);
+		TArray<FString> Lines;
+		EffectText(Def).ParseIntoArrayLines(Lines);
+		for (int32 Line = 0; Line < Lines.Num(); ++Line)
+		{
+			DrawLabel(Lines[Line], X + Pad, Y + Pad * 2.f + L.MidText + Line * L.TipLineH, L.SmallText, YJJUI::Paper, 0.f, L.CardW - Pad * 2.f);
+		}
+		AddButton(EButton::Card, Index, X, Y, L.CardW, L.CardPickH);
+	}
+}
+
+void AYJJWaveHUD::AddBanner(const FString& Text, const FLinearColor& Color)
+{
+	FYJJBanner& Banner = Banners.AddDefaulted_GetRef();
+	Banner.Text = Text;
+	Banner.Color = Color;
+	Shake();
+}
+
+void AYJJWaveHUD::Shake()
+{
+	ShakeLeft = UI().ShakeTime;
+}
+
+void AYJJWaveHUD::UpdateBanners(float Dt)
+{
+	const FYJJUILayout& L = UI();
+	ShakeLeft = FMath::Max(ShakeLeft - Dt, 0.f);
+	for (int32 Index = Banners.Num() - 1; Index >= 0; --Index)
+	{
+		Banners[Index].Age += Dt;
+		if (Banners[Index].Age >= L.BannerTime)
+		{
+			Banners.RemoveAt(Index);
+		}
+	}
+
+	const FYJJBattle* Current = Battle();
+	const FYJJHordeView& Units = View();
+	// 아군 수가 처음으로 500·1000·2000… 을 넘을 때
+	const int32 Allies = Units.Num(EYJJTeam::Player);
+	if (NextMilestone > 0.f && Allies >= NextMilestone)
+	{
+		AddBanner(YJJLoc::Format(TEXT("UI.Milestone"), { FormatCount(NextMilestone) }), YJJUI::Ally);
+		NextMilestone *= FMath::Max(L.MilestoneFactor, 1.f + KINDA_SMALL_NUMBER);
+	}
+	// 짧은 시간에 많이 잡으면 학살
+	KillWindow += Dt;
+	if (KillWindow >= L.MassacreWindow)
+	{
+		const int32 Delta = Current->Kills - KillsAtWindow;
+		if (Delta >= L.MassacreKills)
+		{
+			AddBanner(YJJLoc::Format(TEXT("UI.Massacre"), { FormatCount(Delta) }), YJJUI::Bad);
+		}
+		KillWindow = 0.f;
+		KillsAtWindow = Current->Kills;
+	}
+	// 보스가 사라지면 (쓰러뜨림)
+	if (Units.Boss != INDEX_NONE)
+	{
+		bBossSeen = true;
+	}
+	else if (bBossSeen)
+	{
+		bBossSeen = false;
+		if (!Current->bGameOver || Current->bVictory)
+		{
+			AddBanner(YJJLoc::Get(TEXT("UI.BossDown")), YJJUI::Highlight);
+		}
+	}
+}
+
+void AYJJWaveHUD::DrawBanners()
+{
+	const FYJJUILayout& L = UI();
+	for (int32 Index = 0; Index < Banners.Num(); ++Index)
+	{
+		const FYJJBanner& Banner = Banners[Index];
+		const float T = Banner.Age / FMath::Max(L.BannerTime, KINDA_SMALL_NUMBER);
+		// 처음엔 크게 튀어나왔다가 끝에 사라진다
+		const float Pop = 1.f + FMath::Max(0.f, 1.f - T * L.BannerPopSpeed) * L.BannerPop;
+		const float Alpha = FMath::Clamp((1.f - T) * L.BannerFadeSharpness, 0.f, 1.f);
+		DrawLabel(Banner.Text, WorldCenterVirtualX(), L.BannerY + Index * L.BannerText, L.BannerText * Pop, YJJUI::WithAlpha(Banner.Color, Alpha), Half);
+	}
 }

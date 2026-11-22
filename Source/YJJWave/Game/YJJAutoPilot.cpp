@@ -83,6 +83,24 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		FollowFront(Battle, HUD, RealDeltaSeconds);
 	}
 
+	// 카드: 아무거나 하나
+	if (Battle.bCardPending)
+	{
+		// 처음 한 번은 카드 화면을 찍고 조금 뒤에 고른다 (스크린샷이 저장될 시간)
+		if (!bCardShot)
+		{
+			bCardShot = true;
+			CardShotWait = YJJData::Tune().BotExitDelay;
+			Mode->TakeShot(FString::Printf(TEXT("%sCard"), ShotPrefix));
+		}
+		CardShotWait -= RealDeltaSeconds;
+		if (CardShotWait > 0.f)
+		{
+			return;
+		}
+		Battle.PickCard(Random.RandHelper(Battle.CardOffer.Num()));
+	}
+
 	ThinkTimer -= RealDeltaSeconds * Mode->GetSpeed();
 	if (ThinkTimer <= 0.f)
 	{

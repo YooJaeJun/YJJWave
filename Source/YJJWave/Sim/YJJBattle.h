@@ -22,6 +22,7 @@ enum class EYJJEffectKind : uint8
 	Rally,        // 함성 고리
 	Build,        // 건설·레벨업 먼지
 	Rescue,       // 최후의 저항·부활 (초록 고리)
+	Raise,        // 강령술사가 시체를 일으킴 (보라 연기)
 };
 
 /** 화면 연출 (규칙에 쓰이는 것은 MeteorFall 이 끝날 때의 피해뿐) */
@@ -92,6 +93,12 @@ public:
 	/** 특성이 올린 비율 합 (Building = INDEX_NONE 이면 모든 병영 공통분만) */
 	float Bonus(EYJJStat Stat, int32 Building) const;
 
+	// ---- 카드 (웨이브가 바뀔 때 3장 중 1장, 이번 판 한정) ----
+	bool bCardPending = false;
+	TArray<int32> CardOffer;
+	TArray<int32> CardsTaken;
+	bool PickCard(int32 Choice);
+
 	// ---- 상태 ----
 	FYJJHorde Horde;
 	TArray<FYJJPlot> Plots;
@@ -110,6 +117,8 @@ public:
 	float LevelTime = 0.f;
 	float Time = 0.f;
 	int32 Kills = 0;
+	/** 아군 앞줄이 밀고 나간 만큼 금화·영혼 배율 (1 ~ 1+FrontBonusMax) */
+	float FrontBonus = 1.f;
 	int32 Spawned[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	bool bGameOver = false;
 	bool bVictory = false;
@@ -129,6 +138,10 @@ private:
 	void CheckVictory();
 	void StartLevel(int32 NewLevel);
 	void SpawnEnemy(int32 Unit);
+	int32 SpawnEnemyAt(int32 Unit, const FVector2f& Pos);
+	void OfferCards();
+	void TickNecro(float Dt);
+	void ApplySpecialDef(const FYJJPerkDef& Def, TArray<FYJJUnitSpecial>& Specials);
 	void SpawnHero();
 	FYJJSpawnStats PlayerStats(int32 Building, int32 BuildingLevel) const;
 	void AddEffect(EYJJEffectKind Kind, const FVector2f& Pos, float Life, float Radius, float Power = 0.f);
@@ -155,6 +168,11 @@ private:
 	float SoulBurstMult = 1.f;
 	float MeteorTwiceDelay = 0.f;
 	float RallyHealFraction = 0.f;
+
+	// 강령술: 쓰러진 자리 (오래된 것부터 덮어쓴다)
+	TArray<FVector2f> Corpses;
+	int32 CorpseCursor = 0;
+	float NecroTimer = 0.f;
 
 	int32 ModIndex(EYJJStat Stat, int32 Column) const;
 

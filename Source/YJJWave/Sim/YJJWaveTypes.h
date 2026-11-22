@@ -126,6 +126,7 @@ struct FYJJUnitDef
 	float DrawSize = 0.f;       // 그릴 크기 (월드)
 	bool bBoss = false;
 	bool bHero = false;         // 내 영웅 (중심, 쓰러지면 패배)
+	int32 RaiseUnit = INDEX_NONE; // 강령술사: 시체를 이 유닛으로 일으킨다
 };
 
 /** Buildings.csv 한 줄 */

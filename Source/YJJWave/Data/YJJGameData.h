@@ -31,6 +31,8 @@ public:
 	TArray<FYJJBuildingDef> Buildings;   // Order 순서
 	TArray<FYJJStageDef> Stages;         // Order 순서, 웨이브 포함
 	TArray<FYJJPerkDef> Perks;
+	/** Cards.csv: 이번 판 한정 카드 (효과 구조는 특성과 같다) */
+	TArray<FYJJPerkDef> Cards;
 
 	/** 읽으면서 생긴 문제 (빠진 이름, 모르는 유닛…) */
 	TArray<FString> Problems;
@@ -48,6 +50,9 @@ private:
 	void LoadBuildings();
 	void LoadStages();
 	void LoadPerks();
+	void LoadCards();
+	/** 능력치 2개 + 특수 효과를 Def에 읽는다 (Perks·Cards 공통) */
+	void ReadEffects(const TCHAR* File, const FName& Name, const struct FYJJEffectRow& Row, FYJJPerkDef& Def);
 	int32 FindUnit(const FString& Id, const TCHAR* Where);
 	int32 FindBuilding(const FString& Id, const TCHAR* Where);
 	bool ParseStat(const FString& Name, EYJJStat& Out);
@@ -76,6 +81,7 @@ namespace YJJData
 	/** 영웅 유닛 번호 (Units.csv Hero=1, 없으면 INDEX_NONE) */
 	YJJWAVE_API int32 HeroUnit();
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Perks();
+	YJJWAVE_API TConstArrayView<FYJJPerkDef> Cards();
 
 	/** Perks.csv Stat 열·Localization Stat.<이름> 에 쓰는 이름 */
 	YJJWAVE_API const TCHAR* StatKey(EYJJStat Stat);
