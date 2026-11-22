@@ -61,9 +61,9 @@ PerkCostBase,15,첫 별 영혼 비용
 PerkCostGrowth,1.12,별을 찍을 때마다 비용 배율
 BotThinkInterval,0.5,봇 판단 간격 (게임 시간)
 BotCameraFollow,1.5,봇 카메라가 전선을 따라가는 빠르기
-BotCameraZoom,0.7,봇 카메라 확대
+BotCameraZoom,0.85,봇 카메라 확대
 BotMeteorLead,60,봇 유성: 적 앞줄보다 이만큼 뒤
 BotRallyRatio,1.2,적 수가 아군의 이 배를 넘으면 함성
 BotExitDelay,2,끝나고 종료까지 기다리는 실제 시간
 BenchDepth,0.25,벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
-BenchCameraZoom,0.5,벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)
+BenchCameraZoom,0.85,벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)

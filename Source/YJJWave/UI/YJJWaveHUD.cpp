@@ -195,8 +195,10 @@ void AYJJWaveHUD::DrawHUD()
 	}
 	ScreenSize = FVector2f(Canvas->ClipX, Canvas->ClipY);
 	AnimClock = GetWorld()->GetRealTimeSeconds();
-	ViewScale = FMath::Min(ScreenSize.X / VirtualWidth, ScreenSize.Y / VirtualHeight);
-	ViewOffset = FVector2f((ScreenSize.X - VirtualWidth * ViewScale) * Half, (ScreenSize.Y - VirtualHeight * ViewScale) * Half);
+	// UI는 화면 높이 1080 기준으로 늘리고 왼쪽에 붙인다. 가상 너비는 화면 비율대로
+	ViewScale = ScreenSize.Y / VirtualHeight;
+	ViewOffset = FVector2f::ZeroVector;
+	VirtualW = ScreenSize.X / ViewScale;
 	Buttons.Reset();
 
 	DrawWorld();
@@ -207,11 +209,9 @@ void AYJJWaveHUD::DrawHUD()
 	}
 	else
 	{
-		DrawTopBar();
-		DrawBossBar();
-		DrawBottomBar();
 		DrawPlotTooltip();
 	}
+	DrawSidePanel();
 	DrawGameOver();
 	DrawDebugLine();
 }
@@ -219,14 +219,31 @@ void AYJJWaveHUD::DrawHUD()
 // ---------------------------------------------------------------------------------------------
 // 카메라
 
+FVector2f AYJJWaveHUD::WorldViewCenter() const
+{
+	// 전장은 좌측 패널 오른쪽 전부
+	const float Left = UI().SidePanelW * ViewScale;
+	return FVector2f(Left + (ScreenSize.X - Left) * Half, ScreenSize.Y * Half);
+}
+
+FVector2f AYJJWaveHUD::WorldViewSize() const
+{
+	return FVector2f(ScreenSize.X - UI().SidePanelW * ViewScale, ScreenSize.Y);
+}
+
+float AYJJWaveHUD::WorldCenterVirtualX() const
+{
+	return (UI().SidePanelW + VirtualW) * Half;
+}
+
 FVector2f AYJJWaveHUD::WorldToScreen(const FVector2f& World) const
 {
-	return (World - CamCenter) * Zoom + ScreenSize * Half;
+	return (World - CamCenter) * Zoom + WorldViewCenter();
 }
 
 FVector2f AYJJWaveHUD::ScreenToWorld(const FVector2f& Screen) const
 {
-	return (Screen - ScreenSize * Half) / Zoom + CamCenter;
+	return (Screen - WorldViewCenter()) / Zoom + CamCenter;
 }
 
 void AYJJWaveHUD::FocusWorld(const FVector2f& World, float NewZoom)
@@ -243,9 +260,15 @@ void AYJJWaveHUD::ClampCamera()
 	{
 		return;
 	}
-	// 화면 절반보다 전장이 좁으면 가운데로
-	const FVector2f HalfView = ScreenSize * (Half / Zoom);
-	const float Margin = UI().CameraMargin;
+	// 전장이 전장 화면 영역을 빈틈없이 채우도록: 이보다 멀리 볼 수 없다 (빈 띠가 안 보이게)
+	const FVector2f ViewSize = WorldViewSize();
+	if (ViewSize.Y > 0.f && Current->FieldHeight > 0.f)
+	{
+		const float FillZoom = FMath::Max(ViewSize.Y / Current->FieldHeight, ViewSize.X / Current->FieldWidth);
+		Zoom = FMath::Max(Zoom, FillZoom);
+	}
+	const FVector2f HalfView = ViewSize * (Half / Zoom);
+	const float Margin = 0.f;
 	const float MinX = HalfView.X - Margin;
 	const float MaxX = Current->FieldWidth - HalfView.X + Margin;
 	const float MinY = HalfView.Y - Margin;
@@ -262,7 +285,8 @@ void AYJJWaveHUD::UpdateCamera(float Dt)
 	const float Edge = UI().EdgePanPixels;
 	if (!bTreeOpen && UI().EdgePan > 0.f && GEngine && GEngine->GameViewport && GEngine->GameViewport->GetGameViewport() && GEngine->GameViewport->GetGameViewport()->HasMouseCapture())
 	{
-		Pan.X += Mouse.X < Edge ? -1.f : (Mouse.X > ScreenSize.X - Edge ? 1.f : 0.f);
+		const float Left = UI().SidePanelW * ViewScale;
+		Pan.X += (Mouse.X >= Left && Mouse.X < Left + Edge) ? -1.f : (Mouse.X > ScreenSize.X - Edge ? 1.f : 0.f);
 		Pan.Y += Mouse.Y < Edge ? -1.f : (Mouse.Y > ScreenSize.Y - Edge ? 1.f : 0.f);
 	}
 	if (!Pan.IsNearlyZero())

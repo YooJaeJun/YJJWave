@@ -142,11 +142,10 @@ struct FYJJUILayout
 	UPROPERTY() float PanelCorner = 0.f;   // 화면에 그리는 패널 모서리 크기
 	// ---- 카메라 ----
 	UPROPERTY() float ZoomDefault = 0.f;   // 시작 확대
-	UPROPERTY() float ZoomMin = 0.f;   // 최소 확대 (전장 전체)
+	UPROPERTY() float ZoomMin = 0.f;   // 최소 확대 (실제로는 전장이 화면을 꽉 채우는 값 아래로는 안 간다)
 	UPROPERTY() float ZoomMax = 0.f;   // 최대 확대
 	UPROPERTY() float ZoomStep = 0.f;   // 휠 한 칸 확대 배율
 	UPROPERTY() float CameraStartX = 0.f;   // 시작 시점 x
-	UPROPERTY() float CameraMargin = 0.f;   // 전장 밖으로 보이는 여유
 	UPROPERTY() float PanSpeed = 0.f;   // 키보드·가장자리 이동 속도 (화면 픽셀/초)
 	UPROPERTY() float EdgePan = 0.f;   // 1이면 화면 가장자리에 마우스를 대면 이동
 	UPROPERTY() float EdgePanPixels = 0.f;   // 가장자리 폭
@@ -205,9 +204,15 @@ struct FYJJUILayout
 	UPROPERTY() float MidText = 0.f;   // 중간 글자
 	UPROPERTY() float SmallText = 0.f;   // 작은 글자
 	UPROPERTY() float TinyText = 0.f;   // 아주 작은 글자
-	UPROPERTY() float TopY = 0.f;   // 위 패널 y
-	UPROPERTY() float TopH = 0.f;   // 위 패널 높이
 	UPROPERTY() float PanelPad = 0.f;   // 패널 안쪽 여백
+	UPROPERTY() float SidePanelW = 0.f;   // 좌측 패널 너비 (모든 UI가 여기. 전장은 나머지 전부)
+	UPROPERTY() float SectionGap = 0.f;   // 패널 칸 사이 간격
+	UPROPERTY() float HeaderH = 0.f;   // 물결 칸 높이
+	UPROPERTY() float VsH = 0.f;   // 아군 VS 적 칸 높이
+	UPROPERTY() float BossH = 0.f;   // 보스 칸 높이
+	UPROPERTY() float ResH = 0.f;   // 금화·영혼 칸 높이
+	UPROPERTY() float SpellH = 0.f;   // 스펠·특성 칸 높이
+	UPROPERTY() float DebugLineGap = 0.f;   // 성능 줄 사이
 	UPROPERTY() float IconSize = 0.f;   // 아이콘 크기
 	UPROPERTY() float IconGap = 0.f;   // 아이콘과 글자 사이
 	UPROPERTY() float SmallIconScale = 0.f;   // 작은 아이콘 배율
@@ -216,23 +221,11 @@ struct FYJJUILayout
 	UPROPERTY() float BarShineHeight = 0.f;   // 막대 반짝 띠 높이 비율
 	UPROPERTY() float BarShineAlpha = 0.f;   // 막대 반짝 띠 진하기
 	UPROPERTY() float BarTextLift = 0.f;   // 막대 위 글자 y 보정
-	UPROPERTY() float LevelPanelX = 0.f;   // 레벨 패널 x
-	UPROPERTY() float LevelPanelW = 0.f;   // 레벨 패널 너비
-	UPROPERTY() float VsPanelX = 0.f;   // VS 패널 x
-	UPROPERTY() float VsPanelW = 0.f;   // VS 패널 너비
-	UPROPERTY() float ResPanelX = 0.f;   // 자원 패널 x
-	UPROPERTY() float ResPanelW = 0.f;   // 자원 패널 너비
 	UPROPERTY() float SpeedButtonW = 0.f;   // 배속 버튼 너비
-	UPROPERTY() float BossBarGap = 0.f;   // 보스 막대 위 간격
-	UPROPERTY() float BossBarH = 0.f;   // 보스 막대 패널 높이
 	UPROPERTY() float BossBarSplit = 0.f;   // 보스 이름 / 막대 나누는 비율
-	UPROPERTY() float CardY = 0.f;   // 아래 카드 y
-	UPROPERTY() float CardW = 0.f;   // 병영 카드 너비
 	UPROPERTY() float CardH = 0.f;   // 카드 높이
 	UPROPERTY() float CardGap = 0.f;   // 카드 간격
-	UPROPERTY() float CardGroupGap = 0.f;   // 병영 카드와 스펠 사이
 	UPROPERTY() float CardIcon = 0.f;   // 카드 아이콘 크기
-	UPROPERTY() float SpellW = 0.f;   // 스펠·특성 버튼 너비
 	UPROPERTY() float TipW = 0.f;   // 설명창 너비
 	UPROPERTY() float TipLineH = 0.f;   // 설명창 줄 높이
 	UPROPERTY() float TipOffset = 0.f;   // 설명창: 마우스 오른쪽으로
@@ -242,7 +235,7 @@ struct FYJJUILayout
 	UPROPERTY() float NumberMan = 0.f;   // 이 이상은 만 단위로
 	UPROPERTY() float NumberEok = 0.f;   // 이 이상은 억 단위로
 	// ---- 특성 성좌 화면 ----
-	UPROPERTY() float TreeCenterX = 0.f;   // 성좌 중심 x
+	UPROPERTY() float TreeTitleY = 0.f;   // 성좌 제목 y
 	UPROPERTY() float TreeCenterY = 0.f;   // 성좌 중심 y
 	UPROPERTY() float TreeScale = 0.f;   // 성좌 좌표 → 화면 배율
 	UPROPERTY() float PerkSmall = 0.f;   // 작은 별 반지름

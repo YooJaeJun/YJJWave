@@ -33,14 +33,18 @@ void AYJJWaveHUD::DrawPanel(float X, float Y, float W, float H, const FLinearCol
 	}
 	// 9칸으로 나눠 모서리는 그대로, 가운데만 늘린다
 	const FVector2f UV0 = UiAtlas.UV(Cell);
-	const float CornerUV = UiAtlas.CellUV.X * UI().PanelCornerFraction;
+	// 아틀라스가 정사각이 아니므로(1024x256) 가로·세로 UV를 따로 계산한다
+	const float CornerU = UiAtlas.CellUV.X * UI().PanelCornerFraction;
+	const float CornerV = UiAtlas.CellUV.Y * UI().PanelCornerFraction;
 	const float Corner = FMath::Min(UI().PanelCorner, FMath::Min(W, H) * Half);
 	const float Xs[NineSlice] = { X, X + Corner, X + W - Corner };
 	const float Ws[NineSlice] = { Corner, W - Corner * 2.f, Corner };
 	const float Ys[NineSlice] = { Y, Y + Corner, Y + H - Corner };
 	const float Hs[NineSlice] = { Corner, H - Corner * 2.f, Corner };
-	const float Us[NineSlice] = { 0.f, CornerUV, UiAtlas.CellUV.X - CornerUV };
-	const float UWs[NineSlice] = { CornerUV, UiAtlas.CellUV.X - CornerUV * 2.f, CornerUV };
+	const float Us[NineSlice] = { 0.f, CornerU, UiAtlas.CellUV.X - CornerU };
+	const float UWs[NineSlice] = { CornerU, UiAtlas.CellUV.X - CornerU * 2.f, CornerU };
+	const float Vs[NineSlice] = { 0.f, CornerV, UiAtlas.CellUV.Y - CornerV };
+	const float VHs[NineSlice] = { CornerV, UiAtlas.CellUV.Y - CornerV * 2.f, CornerV };
 
 	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, UiAtlas.Texture, NineSlice * NineSlice);
 	for (int32 Row = 0; Row < NineSlice; ++Row)
@@ -54,7 +58,7 @@ void AYJJWaveHUD::DrawPanel(float X, float Y, float W, float H, const FLinearCol
 			// 조각 사이에 틈이 보이지 않게 화면 픽셀에 맞춘다
 			const FVector2f P0(FMath::RoundToFloat(ViewOffset.X + Xs[Column] * ViewScale), FMath::RoundToFloat(ViewOffset.Y + Ys[Row] * ViewScale));
 			const FVector2f P1(FMath::RoundToFloat(ViewOffset.X + (Xs[Column] + Ws[Column]) * ViewScale), FMath::RoundToFloat(ViewOffset.Y + (Ys[Row] + Hs[Row]) * ViewScale));
-			AddQuad(Batch, P0, P1 - P0, UV0 + FVector2f(Us[Column], Us[Row]), FVector2f(UWs[Column], UWs[Row]), Color, false);
+			AddQuad(Batch, P0, P1 - P0, UV0 + FVector2f(Us[Column], Vs[Row]), FVector2f(UWs[Column], VHs[Row]), Color, false);
 		}
 	}
 }
@@ -137,7 +141,7 @@ const FYJJButton* AYJJWaveHUD::ButtonAt(const FVector2f& Virtual) const
 bool AYJJWaveHUD::IsMouseOverUI() const
 {
 	const FVector2f Virtual = ToVirtual(MouseScreen());
-	return ButtonAt(Virtual) != nullptr || Virtual.Y < UI().TopY + UI().TopH || Virtual.Y > UI().CardY - UI().PanelPad;
+	return ButtonAt(Virtual) != nullptr || Virtual.X < UI().SidePanelW;
 }
 
 FString AYJJWaveHUD::FormatCount(double Value)
@@ -152,156 +156,6 @@ FString AYJJWaveHUD::FormatCount(double Value)
 		return YJJLoc::Format(TEXT("Num.Man"), { FString::Printf(TEXT("%.1f"), Value / L.NumberMan) });
 	}
 	return FText::AsNumber(FMath::FloorToInt64(Value)).ToString();
-}
-
-// ---------------------------------------------------------------------------------------------
-// 위·아래 막대
-
-void AYJJWaveHUD::DrawTopBar()
-{
-	const FYJJBattle* Current = Battle();
-	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
-	const float Y = UI().TopY;
-	const float H = UI().TopH;
-	const float Pad = UI().PanelPad;
-	const float Icon = UI().IconSize;
-
-	// 왼쪽: 물결 레벨 + 남은 시간
-	{
-		const float X = UI().LevelPanelX;
-		const float W = UI().LevelPanelW;
-		DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanel));
-		DrawLabel(YJJLoc::Format(TEXT("UI.Level"), { Current->Level }), X + Pad, Y + Pad, UI().BigText, YJJUI::Paper);
-		const float Left = FMath::Max(Current->LevelDuration() - Current->LevelTime, 0.f);
-		const int32 Seconds = FMath::CeilToInt(Left);
-		DrawLabel(YJJLoc::Format(TEXT("UI.Timer"), { Seconds / 60, FString::Printf(TEXT("%02d"), Seconds % 60) }), X + W - Pad, Y + Pad, UI().BigText, YJJUI::Highlight, 1.f);
-		DrawBar(X + Pad, Y + H - Pad - UI().BarH, W - Pad * 2.f, UI().BarH, Current->LevelTime / FMath::Max(Current->LevelDuration(), KINDA_SMALL_NUMBER), YJJUI::LevelBar);
-	}
-
-	// 가운데: 아군 VS 적, 성벽 체력
-	{
-		const float X = UI().VsPanelX;
-		const float W = UI().VsPanelW;
-		const float Mid = X + W * Half;
-		DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanel));
-		DrawIcon(FMath::RoundToInt(UI().UiSword), X + Pad, Y + Pad, Icon);
-		DrawLabel(FormatCount(View().Num(EYJJTeam::Player)), X + Pad + Icon + UI().IconGap, Y + Pad, UI().BigText, YJJUI::Ally);
-		DrawLabel(YJJLoc::Get(TEXT("UI.VS")), Mid, Y + Pad, UI().BigText, YJJUI::Paper, Half);
-		DrawIcon(FMath::RoundToInt(UI().UiSkull), X + W - Pad - Icon, Y + Pad, Icon);
-		DrawLabel(FormatCount(View().Num(EYJJTeam::Enemy)), X + W - Pad - Icon - UI().IconGap, Y + Pad, UI().BigText, YJJUI::Enemy, 1.f);
-
-		const float BarX = X + Pad + Icon * UI().SmallIconScale + UI().IconGap;
-		const float BarY = Y + H - Pad - UI().BarH;
-		DrawIcon(FMath::RoundToInt(UI().UiWall), X + Pad, BarY + (UI().BarH - Icon * UI().SmallIconScale) * Half, Icon * UI().SmallIconScale);
-		DrawBar(BarX, BarY, X + W - Pad - BarX, UI().BarH, Current->WallHP / FMath::Max(Current->WallMaxHP, KINDA_SMALL_NUMBER), YJJUI::WallBar);
-		DrawLabel(YJJLoc::Format(TEXT("UI.WallHP"), { FormatCount(FMath::CeilToFloat(Current->WallHP)), FormatCount(Current->WallMaxHP) }), (BarX + X + W - Pad) * Half, BarY + UI().BarTextLift, UI().SmallText, YJJUI::Paper, Half);
-	}
-
-	// 오른쪽: 금화·영혼·배속
-	{
-		const float X = UI().ResPanelX;
-		const float W = UI().ResPanelW;
-		DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanel));
-		const float RowH = (H - Pad * 2.f) * Half;
-		DrawIcon(FMath::RoundToInt(UI().UiCoin), X + Pad, Y + Pad, RowH);
-		DrawLabel(FormatCount(Current->Gold), X + Pad + RowH + UI().IconGap, Y + Pad, UI().MidText, YJJUI::Gold);
-		DrawIcon(FMath::RoundToInt(UI().UiSoul), X + Pad, Y + Pad + RowH, RowH);
-		DrawLabel(FormatCount(Current->Souls), X + Pad + RowH + UI().IconGap, Y + Pad + RowH, UI().MidText, YJJUI::Soul);
-
-		const FString Speed = Mode && Mode->IsPaused() ? YJJLoc::Get(TEXT("UI.Paused")) : YJJLoc::Format(TEXT("UI.Speed"), { Mode ? FMath::RoundToInt(Mode->GetSpeed()) : 1 });
-		const float SpeedW = UI().SpeedButtonW;
-		const float SpeedX = X + W - Pad - SpeedW;
-		DrawPanel(SpeedX, Y + Pad, SpeedW, H - Pad * 2.f, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanelDark));
-		DrawLabel(Speed, SpeedX + SpeedW * Half, Y + H * Half - UI().MidText * Half, UI().MidText, YJJUI::Paper, Half, SpeedW - Pad);
-		AddButton(EButton::Speed, 0, SpeedX, Y + Pad, SpeedW, H - Pad * 2.f);
-	}
-}
-
-void AYJJWaveHUD::DrawBossBar()
-{
-	const FYJJHordeView& Units = View();
-	if (Units.Boss == INDEX_NONE)
-	{
-		return;
-	}
-	const FYJJUnitDef& Def = YJJData::Unit(Units.Type[Units.Boss]);
-	const float X = UI().VsPanelX;
-	const float W = UI().VsPanelW;
-	const float Y = UI().TopY + UI().TopH + UI().BossBarGap;
-	DrawPanel(X, Y, W, UI().BossBarH, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanelDark));
-	const float Pad = UI().PanelPad;
-	DrawLabel(YJJLoc::Get(Def.NameKey), X + Pad, Y + (UI().BossBarH - UI().MidText) * Half, UI().MidText, YJJUI::Bad);
-	const float BarX = X + W * UI().BossBarSplit;
-	DrawBar(BarX, Y + (UI().BossBarH - UI().BarH) * Half, X + W - Pad - BarX, UI().BarH, Units.BossHP / FMath::Max(Units.BossMaxHP, KINDA_SMALL_NUMBER), YJJUI::BossBar);
-}
-
-void AYJJWaveHUD::DrawBottomBar()
-{
-	const FYJJBattle* Current = Battle();
-	const TConstArrayView<FYJJBuildingDef> Defs = YJJData::Buildings();
-	const float CardW = UI().CardW;
-	const float CardH = UI().CardH;
-	const float Gap = UI().CardGap;
-	const float Pad = UI().PanelPad;
-	const float SpellW = UI().SpellW;
-	const int32 NumSpells = static_cast<int32>(EYJJSpell::Count);
-	const float Total = Defs.Num() * (CardW + Gap) + UI().CardGroupGap + (NumSpells + 1) * (SpellW + Gap) - Gap;
-	float X = (VirtualWidth - Total) * Half;
-	const float Y = UI().CardY;
-
-	// 병영 카드
-	for (int32 Index = 0; Index < Defs.Num(); ++Index)
-	{
-		const FYJJBuildingDef& Def = Defs[Index];
-		const bool bSelected = Index == SelectedBuilding;
-		const int32 Cost = Current->BuildCost(Index);
-		const bool bAfford = Current->Gold >= Cost;
-		DrawPanel(X, Y, CardW, CardH, bSelected ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(UI().UiCard));
-		DrawIcon(Def.IconCol, X + (CardW - UI().CardIcon) * Half, Y + Pad, UI().CardIcon);
-		DrawLabel(FString::FromInt(Index + 1), X + Pad, Y + Pad * Half, UI().SmallText, YJJUI::Paper);
-		const int32 Owned = Current->BuildingCount(Index);
-		if (Owned > 0)
-		{
-			DrawLabel(YJJLoc::Format(TEXT("UI.Owned"), { Owned }), X + CardW - Pad, Y + Pad * Half, UI().SmallText, YJJUI::Highlight, 1.f);
-		}
-		DrawLabel(YJJLoc::Get(Def.NameKey), X + CardW * Half, Y + Pad + UI().CardIcon, UI().SmallText, YJJUI::Paper, Half, CardW - Pad);
-		const float CostY = Y + CardH - Pad - UI().SmallText;
-		DrawIcon(FMath::RoundToInt(UI().UiCoin), X + Pad, CostY, UI().SmallText);
-		DrawLabel(FormatCount(Cost), X + CardW - Pad, CostY, UI().SmallText, bAfford ? YJJUI::Gold : YJJUI::Bad, 1.f);
-		AddButton(EButton::BuildCard, Index, X, Y, CardW, CardH);
-		X += CardW + Gap;
-	}
-	X += UI().CardGroupGap;
-
-	// 스펠
-	for (int32 Index = 0; Index < NumSpells; ++Index)
-	{
-		const EYJJSpell Spell = static_cast<EYJJSpell>(Index);
-		const bool bReady = Current->CanCast(Spell);
-		const bool bArmed = Spell == EYJJSpell::Meteor && bAimingMeteor;
-		DrawPanel(X, Y, SpellW, CardH, bArmed ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(UI().UiCard));
-		const int32 IconCell = FMath::RoundToInt(Spell == EYJJSpell::Meteor ? UI().UiMeteor : UI().UiRally);
-		DrawIcon(IconCell, X + (SpellW - UI().CardIcon) * Half, Y + Pad, UI().CardIcon, bReady ? FLinearColor::White : YJJUI::Muted);
-		DrawLabel(YJJLoc::Get(Spell == EYJJSpell::Meteor ? TEXT("Key.Meteor") : TEXT("Key.Rally")), X + Pad, Y + Pad * Half, UI().SmallText, YJJUI::Paper);
-		DrawLabel(YJJLoc::Get(Spell == EYJJSpell::Meteor ? TEXT("Spell.Meteor") : TEXT("Spell.Rally")), X + SpellW * Half, Y + Pad + UI().CardIcon, UI().SmallText, YJJUI::Paper, Half, SpellW - Pad);
-		if (!bReady)
-		{
-			const float Fraction = Current->CooldownLeft(Spell) / FMath::Max(Current->CooldownMax(Spell), KINDA_SMALL_NUMBER);
-			DrawBox(X + Pad, Y + Pad + UI().CardIcon * (1.f - Fraction), SpellW - Pad * 2.f, UI().CardIcon * Fraction, YJJUI::Shade);
-			DrawLabel(FString::FromInt(FMath::CeilToInt(Current->CooldownLeft(Spell))), X + SpellW * Half, Y + Pad + UI().CardIcon * Half - UI().MidText * Half, UI().MidText, YJJUI::Paper, Half);
-		}
-		AddButton(EButton::Spell, Index, X, Y, SpellW, CardH);
-		X += SpellW + Gap;
-	}
-
-	// 특성 성좌 버튼 (찍을 수 있으면 반짝)
-	const bool bCanPerk = Current->Souls >= Current->PerkCost();
-	const float Glow = bCanPerk ? Half + Half * FMath::Sin(GetWorld()->GetRealTimeSeconds() * UI().GlowSpeed) : 0.f;
-	DrawPanel(X, Y, SpellW, CardH, FMath::Lerp(YJJUI::PanelTint, YJJUI::Soul, Glow), FMath::RoundToInt(UI().UiCard));
-	DrawIcon(FMath::RoundToInt(UI().UiStar), X + (SpellW - UI().CardIcon) * Half, Y + Pad, UI().CardIcon);
-	DrawLabel(YJJLoc::Get(TEXT("Key.Tree")), X + Pad, Y + Pad * Half, UI().SmallText, YJJUI::Paper);
-	DrawLabel(YJJLoc::Get(TEXT("UI.Tree")), X + SpellW * Half, Y + Pad + UI().CardIcon, UI().SmallText, YJJUI::Paper, Half, SpellW - Pad);
-	AddButton(EButton::Tree, 0, X, Y, SpellW, CardH);
 }
 
 void AYJJWaveHUD::DrawPlotTooltip()
@@ -342,8 +196,8 @@ void AYJJWaveHUD::DrawPlotTooltip()
 	const float LineH = UI().TipLineH;
 	const float W = UI().TipW;
 	const float H = Pad * 2.f + LineH * Lines.Num();
-	const float X = FMath::Min(Mouse.X + UI().TipOffset, VirtualWidth - W);
-	const float Y = FMath::Clamp(Mouse.Y - H * Half, UI().TopY + UI().TopH, UI().CardY - H);
+	const float X = FMath::Min(Mouse.X + UI().TipOffset, VirtualW - W);
+	const float Y = FMath::Clamp(Mouse.Y - H * Half, 0.f, VirtualHeight - H);
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanelDark));
 	for (int32 Line = 0; Line < Lines.Num(); ++Line)
 	{
@@ -358,10 +212,10 @@ void AYJJWaveHUD::DrawGameOver()
 	{
 		return;
 	}
-	DrawBox(0.f, 0.f, VirtualWidth, VirtualHeight, YJJUI::Shade);
+	DrawBox(UI().SidePanelW, 0.f, VirtualW - UI().SidePanelW, VirtualHeight, YJJUI::Shade);
 	const float W = UI().GameOverW;
 	const float H = UI().GameOverH;
-	const float X = (VirtualWidth - W) * Half;
+	const float X = WorldCenterVirtualX() - W * Half;
 	const float Y = (VirtualHeight - H) * Half;
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanel));
 	const float Pad = UI().PanelPad;
@@ -376,17 +230,20 @@ void AYJJWaveHUD::DrawDebugLine()
 	{
 		return;
 	}
+	// 좌측 패널 맨 아래 두 줄
 	const FYJJHordeView& Horde = View();
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	const int32 Fps = FMath::RoundToInt(1000.f / FMath::Max(FrameMs, KINDA_SMALL_NUMBER));
-	const FString Text = YJJLoc::Format(TEXT("UI.Debug"), {
-		Horde.Num(EYJJTeam::Player) + Horde.Num(EYJJTeam::Enemy),
-		FString::Printf(TEXT("%.1f"), Horde.StepMs),
-		Fps,
-		Horde.Projectiles.Num(),
-		FString::Printf(TEXT("%.1f"), UnitDrawMs),
-		FString::Printf(TEXT("%.1f"), Mode ? Mode->LastSimWaitMs() : 0.f) });
-	DrawLabel(Text, UI().PanelPad, VirtualHeight - UI().PanelPad - UI().TinyText, UI().TinyText, YJJUI::Muted);
+	const float X = UI().PanelPad;
+	const float W = UI().SidePanelW - UI().PanelPad * 2.f;
+	const float Bottom = VirtualHeight - UI().PanelPad;
+	DrawLabel(YJJLoc::Format(TEXT("UI.Debug1"), { Horde.Num(EYJJTeam::Player) + Horde.Num(EYJJTeam::Enemy), Fps, Horde.Projectiles.Num() }),
+		X, Bottom - UI().TinyText * 2.f - UI().DebugLineGap, UI().TinyText, YJJUI::Muted, 0.f, W);
+	DrawLabel(YJJLoc::Format(TEXT("UI.Debug2"), {
+			FString::Printf(TEXT("%.1f"), Horde.StepMs),
+			FString::Printf(TEXT("%.1f"), UnitDrawMs),
+			FString::Printf(TEXT("%.1f"), Mode ? Mode->LastSimWaitMs() : 0.f) }),
+		X, Bottom - UI().TinyText, UI().TinyText, YJJUI::Muted, 0.f, W);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -394,7 +251,7 @@ void AYJJWaveHUD::DrawDebugLine()
 
 FVector2f AYJJWaveHUD::PerkToVirtual(const FVector2f& PerkPos) const
 {
-	return FVector2f(UI().TreeCenterX, UI().TreeCenterY) + PerkPos * UI().TreeScale;
+	return FVector2f(WorldCenterVirtualX(), UI().TreeCenterY) + PerkPos * UI().TreeScale;
 }
 
 int32 AYJJWaveHUD::PerkAt(const FVector2f& Virtual) const
@@ -430,7 +287,7 @@ void AYJJWaveHUD::DrawTree()
 {
 	const FYJJBattle* Current = Battle();
 	const TConstArrayView<FYJJPerkDef> Perks = YJJData::Perks();
-	DrawBox(0.f, 0.f, VirtualWidth, VirtualHeight, YJJUI::TreeBack);
+	DrawBox(UI().SidePanelW, 0.f, VirtualW - UI().SidePanelW, VirtualHeight, YJJUI::TreeBack);
 
 	// 선
 	for (int32 Perk = 0; Perk < Perks.Num(); ++Perk)
@@ -476,15 +333,9 @@ void AYJJWaveHUD::DrawTree()
 
 	// 머리글
 	const float Pad = UI().PanelPad;
-	DrawLabel(YJJLoc::Get(TEXT("UI.TreeTitle")), VirtualWidth * Half, UI().TopY, UI().TitleText, YJJUI::Highlight, Half);
-	DrawIcon(FMath::RoundToInt(UI().UiSoul), Pad, UI().TopY, UI().IconSize);
-	DrawLabel(FormatCount(Current->Souls), Pad + UI().IconSize + UI().IconGap, UI().TopY, UI().BigText, YJJUI::Soul);
-	DrawLabel(YJJLoc::Format(TEXT("UI.TreeNext"), { FormatCount(Current->PerkCost()), Current->NumAllocated() }), Pad, UI().TopY + UI().IconSize + Pad, UI().SmallText, YJJUI::Paper);
-	const float CloseW = UI().SpeedButtonW;
-	const float CloseX = VirtualWidth - Pad - CloseW;
-	DrawPanel(CloseX, UI().TopY, CloseW, UI().IconSize, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanelDark));
-	DrawLabel(YJJLoc::Get(TEXT("UI.TreeClose")), CloseX + CloseW * Half, UI().TopY + (UI().IconSize - UI().SmallText) * Half, UI().SmallText, YJJUI::Paper, Half, CloseW - Pad);
-	AddButton(EButton::TreeClose, 0, CloseX, UI().TopY, CloseW, UI().IconSize);
+	// 머리글은 성좌 위 가운데 (영혼·닫기 버튼은 좌측 패널)
+	DrawLabel(YJJLoc::Get(TEXT("UI.TreeTitle")), WorldCenterVirtualX(), UI().TreeTitleY, UI().TitleText, YJJUI::Highlight, Half);
+	DrawLabel(YJJLoc::Format(TEXT("UI.TreeNext"), { FormatCount(Current->PerkCost()), Current->NumAllocated() }), WorldCenterVirtualX(), UI().TreeTitleY + UI().TitleText + Pad, UI().SmallText, YJJUI::Paper, Half);
 
 	// 설명창
 	if (HoverPerk != INDEX_NONE)
@@ -514,7 +365,7 @@ void AYJJWaveHUD::DrawTree()
 		const float LineH = UI().TipLineH;
 		const float W = UI().TipW;
 		const float H = Pad * 2.f + LineH * (BodyLines.Num() + 2);
-		const float X = FMath::Min(Mouse.X + UI().TipOffset, VirtualWidth - W);
+		const float X = FMath::Min(Mouse.X + UI().TipOffset, VirtualW - W);
 		const float Y = FMath::Clamp(Mouse.Y - H * Half, 0.f, VirtualHeight - H);
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanelDark));
 		DrawLabel(Title, X + Pad, Y + Pad, UI().MidText, Def.Kind == EYJJPerkKind::Notable ? YJJUI::Highlight : YJJUI::Paper, 0.f, W - Pad * 2.f);

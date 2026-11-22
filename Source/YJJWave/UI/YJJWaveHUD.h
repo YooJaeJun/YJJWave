@@ -97,6 +97,10 @@ public:
 
 	// 카메라
 	FVector2f WorldToScreen(const FVector2f& World) const;
+	/** 전장이 그려지는 화면 영역 (좌측 패널 오른쪽) */
+	FVector2f WorldViewCenter() const;
+	FVector2f WorldViewSize() const;
+	float WorldCenterVirtualX() const;
 	FVector2f ScreenToWorld(const FVector2f& Screen) const;
 	void FocusWorld(const FVector2f& World, float NewZoom);
 	FVector2f CameraCenter() const { return CamCenter; }
@@ -156,9 +160,8 @@ private:
 	void AddQuadRotated(const FYJJQuadBatch& Batch, const FVector2f& Center, const FVector2f& Size, float Angle, const FVector2f& UV0, const FVector2f& UVSize, const FLinearColor& Color, bool bFlipX) const;
 
 	// UI (1920x1080 가상 좌표)
-	void DrawTopBar();
-	void DrawBossBar();
-	void DrawBottomBar();
+	/** 좌측 패널 하나에 모든 UI (물결·VS·보스·자원·병영·스펠·특성·성능) */
+	void DrawSidePanel();
 	void DrawPlotTooltip();
 	void DrawTree();
 	void DrawGameOver();
@@ -219,6 +222,8 @@ private:
 	// 화면
 	FVector2f ScreenSize = FVector2f(1.f, 1.f);
 	float ViewScale = 1.f;
+	/** 가상 화면 너비 (높이 1080 기준, 화면 비율대로) */
+	float VirtualW = 1920.f;
 	FVector2f ViewOffset = FVector2f::ZeroVector;
 	TArray<FYJJButton> Buttons;
 
@@ -240,7 +245,6 @@ private:
 	TArray<int32> BucketStart;
 
 
-	static constexpr float VirtualWidth = 1920.f;
 	static constexpr float VirtualHeight = 1080.f;
 	static constexpr float Half = 0.5f;
 	static constexpr float FullTurn = 2.f * UE_PI;
