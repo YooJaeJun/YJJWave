@@ -25,6 +25,7 @@ namespace YJJUI
 	inline const FLinearColor Field = FLinearColor(0.09f, 0.16f, 0.05f, 1.f);           // 전장 밖 바탕
 	inline const FLinearColor PerkLocked = FLinearColor(0.35f, 0.33f, 0.4f, 1.f);
 	inline const FLinearColor PerkReach = FLinearColor(0.75f, 0.9f, 1.f, 1.f);
+	inline const FLinearColor PerkKeystone = FLinearColor(0.85f, 0.45f, 1.f, 1.f);
 	inline const FLinearColor PerkTaken = FLinearColor(1.f, 0.78f, 0.25f, 1.f);
 	inline const FLinearColor LinkIdle = FLinearColor(0.25f, 0.23f, 0.3f, 1.f);
 	inline const FLinearColor LinkTaken = FLinearColor(1.f, 0.7f, 0.2f, 1.f);

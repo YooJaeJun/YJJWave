@@ -57,6 +57,8 @@ MinCooldownScale,0.3,재사용 대기 감소의 바닥
 BlastEffectTime,0.5,유성 폭발 연출 시간
 RallyEffectTime,0.8,함성 고리 연출 시간
 BuildEffectTime,0.5,건설 먼지 연출 시간
+RescueEffectTime,0.6,최후의 저항·부활 고리 연출 시간
+RescueEffectSize,70,최후의 저항·부활 고리 크기
 PerkCostBase,15,첫 별 영혼 비용
 PerkCostGrowth,1.12,별을 찍을 때마다 비용 배율
 BotThinkInterval,0.5,봇 판단 간격 (게임 시간)

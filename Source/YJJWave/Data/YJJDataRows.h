@@ -112,6 +112,10 @@ struct FYJJPerkRow : public FTableRowBase
 	UPROPERTY() FString Stat2;
 	UPROPERTY() FString Target2;
 	UPROPERTY() float Value2 = 0.f;
+	UPROPERTY() FString Special;
+	UPROPERTY() FString SpecialTarget;
+	UPROPERTY() float SpecialA = 0.f;
+	UPROPERTY() float SpecialB = 0.f;
 	UPROPERTY() FString Links;
 	UPROPERTY() FString NameKey;
 };

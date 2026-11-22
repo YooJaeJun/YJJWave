@@ -76,6 +76,8 @@ struct FYJJTuning
 	UPROPERTY() float BlastEffectTime = 0.f;   // 유성 폭발 연출 시간
 	UPROPERTY() float RallyEffectTime = 0.f;   // 함성 고리 연출 시간
 	UPROPERTY() float BuildEffectTime = 0.f;   // 건설 먼지 연출 시간
+	UPROPERTY() float RescueEffectTime = 0.f;   // 최후의 저항·부활 고리 연출 시간
+	UPROPERTY() float RescueEffectSize = 0.f;   // 최후의 저항·부활 고리 크기
 	// ---- 특성 성좌 ----
 	UPROPERTY() float PerkCostBase = 0.f;   // 첫 별 영혼 비용
 	UPROPERTY() float PerkCostGrowth = 0.f;   // 별을 찍을 때마다 비용 배율
@@ -237,7 +239,9 @@ struct FYJJUILayout
 	UPROPERTY() float TreeCenterY = 0.f;   // 성좌 중심 y
 	UPROPERTY() float TreeScale = 0.f;   // 성좌 좌표 → 화면 배율
 	UPROPERTY() float PerkSmall = 0.f;   // 작은 별 반지름
-	UPROPERTY() float PerkBig = 0.f;   // 큰 별 반지름
+	UPROPERTY() float PerkBig = 0.f;   // 중간 별 반지름
+	UPROPERTY() float PerkKeystone = 0.f;   // 쐐기 반지름
+	UPROPERTY() float TipKindW = 0.f;   // 설명창 오른쪽 위 별 종류 글자 너비
 	UPROPERTY() float PerkHoverScale = 0.f;   // 마우스 올린 별 확대
 	UPROPERTY() float LinkWidth = 0.f;   // 선 굵기
 	UPROPERTY() float LinkTakenWidth = 0.f;   // 찍은 선 굵기

@@ -132,7 +132,9 @@ TreeTitleY,24,성좌 제목 y
 TreeCenterY,570,성좌 중심 y
 TreeScale,0.42,성좌 좌표 → 화면 배율
 PerkSmall,12,작은 별 반지름
-PerkBig,22,큰 별 반지름
+PerkBig,22,중간 별 반지름
+PerkKeystone,30,쐐기 반지름
+TipKindW,110,설명창 오른쪽 위 별 종류 글자 너비
 PerkHoverScale,1.3,마우스 올린 별 확대
 LinkWidth,2,선 굵기
 LinkTakenWidth,4,찍은 선 굵기

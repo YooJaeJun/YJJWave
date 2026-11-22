@@ -32,10 +32,67 @@ enum class EYJJStat : uint8
 /** 특성 별 종류 */
 enum class EYJJPerkKind : uint8
 {
-	Start,    // 처음부터 찍혀 있는 중심 별
-	Small,    // 잔잔한 숫자
-	Notable,  // 성격이 뚜렷한 큰 별
+	Start,     // 처음부터 찍혀 있는 중심 별
+	Small,     // 작은 별: 능력치 숫자만
+	Notable,   // 중간 별: 특수 효과 하나 (EYJJSpecial)
+	Keystone,  // 쐐기: 대가가 있는 큰 규칙 변경 (능력치 + 와 -)
 };
+
+/**
+ * 중간 별 특수 효과. Perks.csv Special 열 이름과 같다. A·B 값의 뜻:
+ *   LastStand  체력이 A 비율 아래로 떨어지면 한 번 최대 체력의 B만큼 회복
+ *   Revive     처음 쓰러질 때 최대 체력 A로 한 번 일어난다
+ *   HeroRegen  영웅 초당 회복 +A
+ *   Fury       체력이 A 비율 아래면 공격력 +B
+ *   ArrowBurst 화살이 반경 A 범위 피해
+ *   ExtraShot  화살 +A발
+ *   GoldBurst  적 처치 시 A 확률로 금화 B배
+ *   SoulBurst  적 처치 시 A 확률로 영혼 B배
+ *   Shockwave  밀쳐내기 A배
+ *   MeteorTwice 유성이 A초 뒤 한 번 더 떨어진다
+ *   RallyHeal  돌격 함성 때 아군 전체 최대 체력의 A만큼 회복
+ *   Thorns     근접으로 맞은 피해의 A를 때린 적에게 돌려준다
+ *   Lifesteal  준 피해의 A만큼 회복
+ */
+enum class EYJJSpecial : uint8
+{
+	None,
+	LastStand,
+	Revive,
+	HeroRegen,
+	Fury,
+	ArrowBurst,
+	ExtraShot,
+	GoldBurst,
+	SoulBurst,
+	Shockwave,
+	MeteorTwice,
+	RallyHeal,
+	Thorns,
+	Lifesteal,
+	Count
+};
+
+/** 유닛 종류별 특수 효과 값 (특성이 정하고 시뮬이 읽는다) */
+struct FYJJUnitSpecial
+{
+	float LastStandAt = 0.f;
+	float LastStandHeal = 0.f;
+	float ReviveHP = 0.f;
+	float FuryAt = 0.f;
+	float FuryBonus = 0.f;
+	float ArrowSplash = 0.f;
+	float KnockbackScale = 1.f;
+	float Thorns = 0.f;
+	float Lifesteal = 0.f;
+};
+
+/** 유닛 한 마리가 한 번 쓰는 효과 표시 (FYJJHorde::Flags 비트) */
+namespace YJJUnitFlag
+{
+	inline constexpr uint8 LastStandUsed = 1 << 0;
+	inline constexpr uint8 Revived = 1 << 1;
+}
 
 /** 스펠 */
 enum class EYJJSpell : uint8
@@ -128,6 +185,16 @@ struct FYJJPerkDef
 		float Value = 0.f;
 	};
 	TArray<FMod, TInlineAllocator<2>> Mods;
+	/** 중간 별 특수 효과. Target: 병영 번호 / HeroTarget / INDEX_NONE(모든 아군) */
+	struct FSpecial
+	{
+		EYJJSpecial Kind = EYJJSpecial::None;
+		int32 Target = INDEX_NONE;
+		float A = 0.f;
+		float B = 0.f;
+	};
+	FSpecial Special;
+	static constexpr int32 HeroTarget = -2;
 	TArray<int32> Links;
 	FString NameKey;   // 큰 별 이름 (작은 별은 비움)
 };

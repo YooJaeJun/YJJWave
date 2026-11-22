@@ -65,6 +65,8 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	BigUnits.Reset();
 	Deaths.Reset();
 	Projectiles.Reset();
+	Rescued.Reset();
+	Specials.Reset();
 	HighWaterMark = 0;
 	TeamCount[0] = TeamCount[1] = 0;
 	Front[0] = Front[1] = -1.f;
@@ -513,12 +515,64 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	PosNext[Slot] = Next;
 }
 
-void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From)
+void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From, int32 Attacker, bool bMelee)
 {
 	HP[Victim] -= Amount;
 	Flash[Victim] = Config.HitFlashTime;
 	const FVector2f Dir = Pos[Victim] - From;
 	LastHitDir[Victim] = Dir.GetSafeNormal();
+
+	// 중간 별 특수 효과
+	const FYJJUnitSpecial& Mine = SpecialOf(Victim);
+	if (Mine.LastStandAt > 0.f && HP[Victim] > 0.f && HP[Victim] < MaxHP[Victim] * Mine.LastStandAt && !(Flags[Victim] & YJJUnitFlag::LastStandUsed))
+	{
+		Flags[Victim] |= YJJUnitFlag::LastStandUsed;
+		HP[Victim] = FMath::Min(HP[Victim] + MaxHP[Victim] * Mine.LastStandHeal, MaxHP[Victim]);
+		Rescued.Add(Pos[Victim]);
+	}
+	if (Attacker == INDEX_NONE || !Alive[Attacker])
+	{
+		return;
+	}
+	const FYJJUnitSpecial& Theirs = SpecialOf(Attacker);
+	if (Theirs.Lifesteal > 0.f)
+	{
+		HP[Attacker] = FMath::Min(HP[Attacker] + Amount * Theirs.Lifesteal, MaxHP[Attacker]);
+	}
+	if (bMelee && Mine.Thorns > 0.f)
+	{
+		HP[Attacker] -= Amount * Mine.Thorns;
+		Flash[Attacker] = Config.HitFlashTime;
+	}
+}
+
+const FYJJUnitSpecial& FYJJHorde::SpecialOf(int32 Slot) const
+{
+	return Specials.IsValidIndex(Type[Slot]) ? Specials[Type[Slot]] : NoSpecial;
+}
+
+float FYJJHorde::AttackDamage(int32 Slot) const
+{
+	// 분노: 체력이 낮으면 더 세게
+	const FYJJUnitSpecial& Mine = SpecialOf(Slot);
+	const bool bFury = Mine.FuryAt > 0.f && HP[Slot] < MaxHP[Slot] * Mine.FuryAt;
+	return Damage[Slot] * (bFury ? 1.f + Mine.FuryBonus : 1.f);
+}
+
+void FYJJHorde::SetSpecials(const TArray<FYJJUnitSpecial>& InSpecials)
+{
+	Specials = InSpecials;
+}
+
+void FYJJHorde::HealTeam(EYJJTeam InTeam, float Fraction)
+{
+	for (int32 Slot = 0; Slot < HighWaterMark; ++Slot)
+	{
+		if (Alive[Slot] && Team[Slot] == static_cast<uint8>(InTeam))
+		{
+			HP[Slot] = FMath::Min(HP[Slot] + MaxHP[Slot] * Fraction, MaxHP[Slot]);
+		}
+	}
 }
 
 int32 FYJJHorde::FindEnemyNear(const FVector2f& Center, float Radius, EYJJTeam Victims, int32 Skip) const
@@ -548,7 +602,7 @@ int32 FYJJHorde::FindEnemyNear(const FVector2f& Center, float Radius, EYJJTeam V
 	return Best;
 }
 
-void FYJJHorde::DamageArea(const FVector2f& Center, float Radius, float Amount, float Knockback, EYJJTeam Victims)
+void FYJJHorde::DamageArea(const FVector2f& Center, float Radius, float Amount, float Knockback, EYJJTeam Victims, int32 Attacker)
 {
 	const FYJJGrid& Grid = Grids[TeamIndex(Victims)];
 	const FIntPoint Min = Grid.CellOf(Center - FVector2f(Radius));
@@ -566,7 +620,7 @@ void FYJJHorde::DamageArea(const FVector2f& Center, float Radius, float Amount, 
 				{
 					continue;
 				}
-				Hit(Other, Amount, Center);
+				Hit(Other, Amount, Center, Attacker, Attacker != INDEX_NONE);
 				if (Knockback > 0.f)
 				{
 					// 가벼울수록, 가운데일수록 멀리 날아간다
@@ -603,9 +657,9 @@ void FYJJHorde::Shoot(int32 Slot, int32 Victim)
 		Arrow.Aim = Pos[Aimed];
 		Arrow.Target = Aimed;
 		Arrow.TargetGen = Gen[Aimed];
-		Arrow.Damage = Damage[Slot];
-		Arrow.Splash = Splash[Slot];
-		Arrow.Knockback = Def.Knockback;
+		Arrow.Damage = AttackDamage(Slot);
+		Arrow.Splash = FMath::Max(Splash[Slot], SpecialOf(Slot).ArrowSplash);
+		Arrow.Knockback = Def.Knockback * SpecialOf(Slot).KnockbackScale;
 		Arrow.Speed = Def.ProjectileSpeed;
 		Arrow.Team = MyTeam;
 		Arrow.Frame = static_cast<uint8>(Def.ProjectileFrame);
@@ -628,11 +682,11 @@ void FYJJHorde::ApplyAttacks()
 		}
 		else if (Splash[Slot] > 0.f)
 		{
-			DamageArea(Pos[Victim], Splash[Slot], Damage[Slot], Def.Knockback, Opponent(static_cast<EYJJTeam>(Team[Slot])));
+			DamageArea(Pos[Victim], Splash[Slot], AttackDamage(Slot), Def.Knockback * SpecialOf(Slot).KnockbackScale, Opponent(static_cast<EYJJTeam>(Team[Slot])), Slot);
 		}
 		else
 		{
-			Hit(Victim, Damage[Slot], Pos[Slot]);
+			Hit(Victim, AttackDamage(Slot), Pos[Slot], Slot, true);
 		}
 	}
 }
@@ -687,6 +741,15 @@ void FYJJHorde::CollectDead()
 		{
 			float& F = Front[TeamIndex(MyTeam)];
 			F = F < 0.f ? Pos[Slot].X : (MyTeam == EYJJTeam::Player ? FMath::Max(F, Pos[Slot].X) : FMath::Min(F, Pos[Slot].X));
+			continue;
+		}
+		// 부활: 처음 쓰러질 때 한 번 다시 일어난다
+		const FYJJUnitSpecial& Mine = SpecialOf(Slot);
+		if (Mine.ReviveHP > 0.f && !(Flags[Slot] & YJJUnitFlag::Revived))
+		{
+			Flags[Slot] |= YJJUnitFlag::Revived;
+			HP[Slot] = MaxHP[Slot] * Mine.ReviveHP;
+			Rescued.Add(Pos[Slot]);
 			continue;
 		}
 		FYJJDeath& Death = Deaths.AddDefaulted_GetRef();

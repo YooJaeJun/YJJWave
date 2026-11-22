@@ -290,6 +290,12 @@ void AYJJWaveHUD::DrawEffects()
 			AddQuad(Batch, Ground - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::Highlight, 1.f - T), false);
 			break;
 		}
+		case EYJJEffectKind::Rescue:
+		{
+			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);
+			AddQuad(Batch, Ground - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::Good, 1.f - T), false);
+			break;
+		}
 		case EYJJEffectKind::Build:
 		{
 			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);

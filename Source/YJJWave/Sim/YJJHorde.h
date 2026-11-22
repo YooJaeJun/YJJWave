@@ -153,7 +153,12 @@ public:
 	void CopyTo(FYJJHordeView& View) const;
 
 	/** 원 안의 Victims 편에게 피해 + 바깥으로 밀쳐내기 (스펠·범위 공격) */
-	void DamageArea(const FVector2f& Center, float Radius, float Damage, float Knockback, EYJJTeam Victims);
+	void DamageArea(const FVector2f& Center, float Radius, float Damage, float Knockback, EYJJTeam Victims, int32 Attacker = INDEX_NONE);
+
+	/** 유닛 종류별 특수 효과 (특성이 바뀔 때 FYJJBattle이 넣는다) */
+	void SetSpecials(const TArray<FYJJUnitSpecial>& InSpecials);
+	/** 한 편 전체를 최대 체력의 Fraction만큼 회복 */
+	void HealTeam(EYJJTeam InTeam, float Fraction);
 
 	// ---- 읽기 (HUD·규칙) ----
 	int32 Capacity() const { return Alive.Num(); }
@@ -183,6 +188,8 @@ public:
 	/** 이번 틱까지 죽은 유닛. 쓰는 쪽(FYJJBattle)이 비운다 */
 	TArray<FYJJDeath> Deaths;
 	TArray<FYJJProjectile> Projectiles;
+	/** 이번 틱 최후의 저항·부활이 일어난 자리 (FYJJBattle이 연출로 바꾸고 비운다) */
+	TArray<FVector2f> Rescued;
 	/** 편별 이동·공격 속도 버프 배율 (스펠) */
 	float MoveBuff[static_cast<int32>(EYJJTeam::Count)] = { 1.f, 1.f };
 	float AttackBuff[static_cast<int32>(EYJJTeam::Count)] = { 1.f, 1.f };
@@ -197,7 +204,11 @@ private:
 	FVector2f Separation(int32 Slot) const;
 	void ApplyAttacks();
 	void Shoot(int32 Slot, int32 Target);
-	void Hit(int32 Victim, float Damage, const FVector2f& From);
+	/** 피해. Attacker(때린 유닛)가 있으면 흡혈, 근접이면 가시 반사도 */
+	void Hit(int32 Victim, float Damage, const FVector2f& From, int32 Attacker = INDEX_NONE, bool bMelee = false);
+	const FYJJUnitSpecial& SpecialOf(int32 Slot) const;
+	/** 분노까지 더한 이번 공격 피해 */
+	float AttackDamage(int32 Slot) const;
 	void UpdateProjectiles(float Dt);
 	void CollectDead();
 	bool IsValidTarget(int32 Slot, uint32 Gen) const;
@@ -247,6 +258,8 @@ private:
 	FRandomStream Random;
 	FYJJHordeConfig Config;
 	FYJJGrid Grids[static_cast<int32>(EYJJTeam::Count)];
+	TArray<FYJJUnitSpecial> Specials;
+	FYJJUnitSpecial NoSpecial;
 
 	static constexpr int32 ParallelChunk = 256;
 	static constexpr float NearZero = 1.e-4f;

@@ -51,6 +51,7 @@ private:
 	int32 FindUnit(const FString& Id, const TCHAR* Where);
 	int32 FindBuilding(const FString& Id, const TCHAR* Where);
 	bool ParseStat(const FString& Name, EYJJStat& Out);
+	bool ParseSpecial(const FString& Name, EYJJSpecial& Out);
 
 	static FString DataPath(const TCHAR* File);
 
@@ -80,4 +81,6 @@ namespace YJJData
 	YJJWAVE_API const TCHAR* StatKey(EYJJStat Stat);
 	/** 비율이 아니라 +정수인 능력치 (한 번에 나오는 수, 화살 수) */
 	YJJWAVE_API bool IsFlatStat(EYJJStat Stat);
+	/** Perks.csv Special 열·Localization Special.<이름> 에 쓰는 이름 */
+	YJJWAVE_API const TCHAR* SpecialKey(EYJJSpecial Special);
 }

@@ -33,6 +33,15 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		{
 			bTreeShot = true;
 			HUD->SetTreeOpen(true);
+			// 찍은 중간 별 하나의 설명창을 함께 찍는다
+			for (int32 Perk = 0; Perk < YJJData::Perks().Num(); ++Perk)
+			{
+				if (Battle.IsAllocated(Perk) && YJJData::Perks()[Perk].Kind == EYJJPerkKind::Notable)
+				{
+					HUD->SetForcedHoverPerk(Perk);
+					break;
+				}
+			}
 			Mode->TakeShot(FString::Printf(TEXT("%sTree"), ShotPrefix));
 		}
 		if (ExitTimer <= 0.f)

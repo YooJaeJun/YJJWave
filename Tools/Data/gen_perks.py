@@ -1,10 +1,14 @@
 """특성 성좌(Perks.csv)를 만든다. PoE 패시브 트리처럼 중심에서 8갈래로 뻗는다.
 
-  중심 별 ─ 안쪽 고리 8개 ─ 갈래마다 작은 별 줄 + 큰 별 2개 ─ 이웃 갈래와 다리
+  중심 별 ─ 안쪽 고리 8개 ─ 갈래마다 작은 별 줄 + 중간 별 2개 (+ 몇 갈래 끝에 쐐기) ─ 이웃 갈래와 다리
   갈래: 졸병 · 영웅 · 궁수 · 금고 · 대장간 · 스펠 · 방패 · 전군
 
-큰 별 이름은 Localization.csv 의 Perk.<이름> 에 있다.
-별을 늘리려면 아래 SPOKES 의 small / notables 를 고치고 다시 돌린다.
+  작은 별(Small)   : 능력치 숫자만 조금씩 (체력 +10% …)
+  중간 별(Notable) : 특수 효과 (Special 열). 예) 졸병 체력이 30% 아래로 떨어지면 1회 50% 회복
+  쐐기(Keystone)   : 대가가 있는 큰 규칙 변경 (능력치 +와 - 를 함께)
+
+이름(큰 별·쐐기)은 Localization.csv 의 Perk.<이름>, 효과 설명은 Special.<종류>.
+특수 효과 종류와 A·B 값의 뜻은 Source/YJJWave/Sim/YJJWaveTypes.h 의 EYJJSpecial.
 """
 import csv
 import io
@@ -16,44 +20,55 @@ OUT = os.path.join(ROOT, "Content", "YJJWave", "Data", "Perks.csv")
 
 INNER_R = 180
 STEP_R = 120
-CHAIN = 6                 # 갈래마다 작은 별·큰 별 줄 길이
-NOTABLE_AT = (2, 5)       # 줄에서 큰 별 자리
+CHAIN = 6                 # 갈래마다 작은 별·중간 별 줄 길이
+NOTABLE_AT = (2, 5)       # 줄에서 중간 별 자리
 BRIDGE_AT = 2             # 이웃 갈래와 다리를 놓는 줄 위치
 
-# 갈래: (이름, 각도, 작은 별 효과 순환, 큰 별 2개)
-# 효과 = (Stat, Target, Value). Target이 비면 모든 병영. 비율 값은 0.1 = 10%
+# 갈래: (이름, 각도, 작은 별 능력치 순환, 중간 별 2개, 쐐기 또는 None)
+#   능력치 = (Stat, Target, Value). Target이 비면 모든 병영. 비율 값은 0.1 = 10%
+#   중간 별 = (이름, Special, SpecialTarget, A, B). SpecialTarget: 병영 이름 / Hero / 비우면 모든 아군
+#   쐐기   = (이름, [능력치…]) 최대 2개
 SPOKES = [
     ("Barracks", 180, [("HP", "Barracks", 0.10), ("Damage", "Barracks", 0.10), ("SpawnRate", "Barracks", 0.08)],
-     [("PotHelmet", [("HP", "Barracks", 0.40), ("Damage", "Barracks", 0.20)]),
-      ("EndlessGrunts", [("SpawnCount", "Barracks", 2)])]),
+     [("FirstAid", "LastStand", "Barracks", 0.3, 0.5),
+      ("StubbornGrunts", "Revive", "Barracks", 0.5, 0)],
+     ("GruntParadise", [("SpawnCount", "Barracks", 4), ("Damage", "Barracks", -0.35)])),
     ("Hero", 225, [("HeroHP", "", 0.15)],
-     [("StoneWall", [("HeroHP", "", 0.60)]),
-      ("Fortress", [("HeroHP", "", 1.00), ("HP", "", 0.05)])]),
+     [("HeroBreath", "HeroRegen", "Hero", 40, 0),
+      ("FuriousCaptain", "Fury", "Hero", 0.5, 1.0)],
+     ("LoneHero", [("HeroHP", "", 2.0), ("SpawnRate", "", -0.25)])),
     ("Archer", 270, [("Damage", "ArcherPost", 0.10), ("AttackSpeed", "ArcherPost", 0.08)],
-     [("DoubleShot", [("Multishot", "ArcherPost", 1)]),
-      ("ArrowRain", [("Multishot", "ArcherPost", 1), ("SpawnRate", "ArcherPost", 0.15)])]),
+     [("BurstArrows", "ArrowBurst", "ArcherPost", 30, 0),
+      ("DoubleShot", "ExtraShot", "ArcherPost", 1, 0)],
+     None),
     ("Treasury", 315, [("Gold", "", 0.08), ("Souls", "", 0.06)],
-     [("GoldRush", [("Gold", "", 0.50)]),
-      ("SoulHarvest", [("Souls", "", 0.40), ("Gold", "", 0.20)])]),
+     [("GoldenSkull", "GoldBurst", "", 0.05, 10),
+      ("SoulBurst", "SoulBurst", "", 0.05, 10)],
+     None),
     ("Forge", 0, [("Splash", "Forge", 0.15), ("Damage", "Forge", 0.10)],
-     [("BigHammer", [("Splash", "Forge", 0.40), ("Damage", "Forge", 0.20)]),
-      ("Smithy", [("SpawnCount", "Forge", 1), ("SpawnRate", "Forge", 0.20)])]),
+     [("Shockwave", "Shockwave", "Forge", 2.5, 0),
+      ("SmithGrit", "LastStand", "Forge", 0.3, 0.6)],
+     None),
     ("Spells", 45, [("SpellPower", "", 0.10), ("SpellCooldown", "", 0.05)],
-     [("Meteorology", [("SpellPower", "", 0.50)]),
-      ("QuickCast", [("SpellCooldown", "", 0.25)])]),
+     [("MeteorChain", "MeteorTwice", "", 0.35, 0),
+      ("HealingCry", "RallyHeal", "", 0.3, 0)],
+     None),
     ("Shield", 90, [("HP", "ShieldHall", 0.15)],
-     [("IronWall", [("HP", "ShieldHall", 0.60)]),
-      ("ShieldBash", [("Damage", "ShieldHall", 0.50), ("SpawnCount", "ShieldHall", 1)])]),
+     [("ThornShield", "Thorns", "ShieldHall", 0.5, 0),
+      ("IronWill", "LastStand", "ShieldHall", 0.4, 0.8)],
+     None),
     ("Army", 135, [("HP", "", 0.05), ("Damage", "", 0.05), ("MoveSpeed", "", 0.05), ("AttackSpeed", "", 0.05)],
-     [("Charge", [("MoveSpeed", "", 0.15), ("AttackSpeed", "", 0.15)]),
-      ("HordeTactics", [("SpawnRate", "", 0.25)])]),
+     [("BloodArmy", "Lifesteal", "", 0.1, 0),
+      ("Frenzy", "Fury", "", 0.3, 0.5)],
+     ("HumanWave", [("HP", "", -0.4), ("SpawnCount", "", 2)])),
 ]
 INNER = [("HP", "", 0.04), ("Damage", "", 0.04)]
 
 
 class Perk:
-    def __init__(self, name, kind, x, y, mods, name_key=""):
-        self.name, self.kind, self.x, self.y, self.mods, self.name_key = name, kind, x, y, mods, name_key
+    def __init__(self, name, kind, x, y, mods=(), name_key="", special=("", "", 0, 0)):
+        self.name, self.kind, self.x, self.y = name, kind, x, y
+        self.mods, self.name_key, self.special = list(mods), name_key, special
         self.links = set()
 
 
@@ -69,12 +84,12 @@ def polar(r, deg):
 
 def main():
     perks = []
-    start = Perk("Start", "Start", 0, 0, [])
+    start = Perk("Start", "Start", 0, 0)
     perks.append(start)
 
     inner = []
-    for i, (_, deg, _, _) in enumerate(SPOKES):
-        p = Perk("Inner%d" % i, "Small", *polar(INNER_R, deg), [INNER[i % len(INNER)]])
+    for i, spoke in enumerate(SPOKES):
+        p = Perk("Inner%d" % i, "Small", *polar(INNER_R, spoke[1]), [INNER[i % len(INNER)]])
         perks.append(p)
         inner.append(p)
         link(p, start)
@@ -82,7 +97,7 @@ def main():
         link(inner[i], inner[(i + 1) % len(inner)])
 
     chains = []
-    for i, (spoke, deg, small, notables) in enumerate(SPOKES):
+    for i, (spoke, deg, small, notables, keystone) in enumerate(SPOKES):
         prev = inner[i]
         chain = []
         notable_index = 0
@@ -92,9 +107,9 @@ def main():
             # 줄이 살짝 휘어 별자리처럼 보이게
             bend = 6 * math.sin(step * 1.3 + i)
             if step in NOTABLE_AT:
-                key, mods = notables[notable_index]
+                key, kind, target, a, b = notables[notable_index]
                 notable_index += 1
-                p = Perk("%s_%s" % (spoke, key), "Notable", *polar(r, deg + bend), mods, "Perk." + key)
+                p = Perk("%s_%s" % (spoke, key), "Notable", *polar(r, deg + bend), name_key="Perk." + key, special=(kind, target, a, b))
             else:
                 p = Perk("%s%d" % (spoke, step), "Small", *polar(r, deg + bend), [small[small_index % len(small)]])
                 small_index += 1
@@ -102,6 +117,11 @@ def main():
             link(p, prev)
             prev = p
             chain.append(p)
+        if keystone:
+            key, mods = keystone
+            p = Perk("%s_%s" % (spoke, key), "Keystone", *polar(INNER_R + STEP_R * (CHAIN + 1), deg), mods, "Perk." + key)
+            perks.append(p)
+            link(p, prev)
         chains.append(chain)
 
     # 이웃 갈래 사이 다리 (가운데 작은 별 하나)
@@ -117,14 +137,16 @@ def main():
 
     out = io.StringIO()
     w = csv.writer(out, lineterminator="\n")
-    w.writerow(["Name", "Kind", "X", "Y", "Stat", "Target", "Value", "Stat2", "Target2", "Value2", "Links", "NameKey"])
+    w.writerow(["Name", "Kind", "X", "Y", "Stat", "Target", "Value", "Stat2", "Target2", "Value2",
+                "Special", "SpecialTarget", "SpecialA", "SpecialB", "Links", "NameKey"])
     for p in perks:
         m1 = p.mods[0] if len(p.mods) > 0 else ("", "", 0)
         m2 = p.mods[1] if len(p.mods) > 1 else ("", "", 0)
-        w.writerow([p.name, p.kind, p.x, p.y, m1[0], m1[1], m1[2], m2[0], m2[1], m2[2], " ".join(sorted(p.links)), p.name_key])
+        w.writerow([p.name, p.kind, p.x, p.y, m1[0], m1[1], m1[2], m2[0], m2[1], m2[2],
+                    p.special[0], p.special[1], p.special[2], p.special[3], " ".join(sorted(p.links)), p.name_key])
     with open(OUT, "w", encoding="utf-8-sig", newline="") as f:
         f.write(out.getvalue())
-    print("perks", len(perks), "notables", sum(1 for p in perks if p.kind == "Notable"))
+    print("perks", len(perks), "notables", sum(1 for p in perks if p.kind == "Notable"), "keystones", sum(1 for p in perks if p.kind == "Keystone"))
 
 
 main()

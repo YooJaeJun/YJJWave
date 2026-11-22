@@ -274,7 +274,7 @@ int32 AYJJWaveHUD::PerkAt(const FVector2f& Virtual) const
 	const TConstArrayView<FYJJPerkDef> Perks = YJJData::Perks();
 	for (int32 Perk = 0; Perk < Perks.Num(); ++Perk)
 	{
-		const float Radius = Perks[Perk].Kind == EYJJPerkKind::Small ? UI().PerkSmall : UI().PerkBig;
+		const float Radius = PerkRadius(Perks[Perk].Kind);
 		if (FVector2f::DistSquared(PerkToVirtual(Perks[Perk].Pos), Virtual) <= Radius * Radius)
 		{
 			return Perk;
@@ -290,12 +290,36 @@ FString AYJJWaveHUD::PerkText(int32 Perk) const
 	for (const FYJJPerkDef::FMod& Mod : Def.Mods)
 	{
 		const FString Target = Mod.Building == INDEX_NONE ? YJJLoc::Get(TEXT("Target.All")) : YJJLoc::Get(YJJData::Building(Mod.Building).NameKey);
+		// 쐐기는 깎이는 값도 있어 부호를 그대로 붙인다
 		const FString Value = YJJData::IsFlatStat(Mod.Stat)
-			? FString::Printf(TEXT("+%d"), FMath::RoundToInt(Mod.Value))
-			: FString::Printf(TEXT("+%d%%"), FMath::RoundToInt(Mod.Value * Percent));
+			? FString::Printf(TEXT("%+d"), FMath::RoundToInt(Mod.Value))
+			: FString::Printf(TEXT("%+d%%"), FMath::RoundToInt(Mod.Value * Percent));
 		Lines.Add(YJJLoc::Format(*(FString(TEXT("Stat.")) + YJJData::StatKey(Mod.Stat)), { Value, Target }));
 	}
+	const FYJJPerkDef::FSpecial& Special = Def.Special;
+	if (Special.Kind != EYJJSpecial::None)
+	{
+		const FString Target = Special.Target == INDEX_NONE ? YJJLoc::Get(TEXT("Target.All"))
+			: Special.Target == FYJJPerkDef::HeroTarget ? YJJLoc::Get(YJJData::Unit(YJJData::HeroUnit()).NameKey)
+			: YJJLoc::Get(YJJData::Unit(YJJData::Building(Special.Target).Unit).NameKey);
+		const FString A = FString::Printf(TEXT("%d"), FMath::RoundToInt(Special.A * Percent));
+		const FString B = FString::Printf(TEXT("%d"), FMath::RoundToInt(Special.B * Percent));
+		const FString RawA = FString::Printf(TEXT("%g"), Special.A);
+		const FString RawB = FString::Printf(TEXT("%g"), Special.B);
+		// 서식 자리: {0} 대상, {1} A%, {2} B%, {3} A 그대로, {4} B 그대로
+		Lines.Add(YJJLoc::Format(*(FString(TEXT("Special.")) + YJJData::SpecialKey(Special.Kind)), { Target, A, B, RawA, RawB }));
+	}
 	return FString::Join(Lines, TEXT("\n"));
+}
+
+float AYJJWaveHUD::PerkRadius(EYJJPerkKind Kind) const
+{
+	switch (Kind)
+	{
+	case EYJJPerkKind::Small: return UI().PerkSmall;
+	case EYJJPerkKind::Keystone: return UI().PerkKeystone;
+	default: return UI().PerkBig;
+	}
 }
 
 void AYJJWaveHUD::DrawTree()
@@ -322,14 +346,14 @@ void AYJJWaveHUD::DrawTree()
 
 	// 별
 	const FVector2f Mouse = ToVirtual(MouseScreen());
-	HoverPerk = PerkAt(Mouse);
+	HoverPerk = ForcedHoverPerk != INDEX_NONE ? ForcedHoverPerk : PerkAt(Mouse);
 	const float Pulse = Half + Half * FMath::Sin(GetWorld()->GetRealTimeSeconds() * UI().GlowSpeed);
 	for (int32 Perk = 0; Perk < Perks.Num(); ++Perk)
 	{
 		const FYJJPerkDef& Def = Perks[Perk];
 		const bool bSmall = Def.Kind == EYJJPerkKind::Small;
-		float Radius = bSmall ? UI().PerkSmall : UI().PerkBig;
-		FLinearColor Color = YJJUI::PerkLocked;
+		float Radius = PerkRadius(Def.Kind);
+		FLinearColor Color = Def.Kind == EYJJPerkKind::Keystone ? YJJUI::PerkKeystone : YJJUI::PerkLocked;
 		if (Current->IsAllocated(Perk))
 		{
 			Color = YJJUI::PerkTaken;
@@ -357,6 +381,7 @@ void AYJJWaveHUD::DrawTree()
 	{
 		const FYJJPerkDef& Def = Perks[HoverPerk];
 		const FString Title = !Def.NameKey.IsEmpty() ? YJJLoc::Get(Def.NameKey) : YJJLoc::Get(Def.Kind == EYJJPerkKind::Start ? TEXT("Perk.Start") : TEXT("Perk.Small"));
+		const FString KindLine = YJJLoc::Get(Def.Kind == EYJJPerkKind::Notable ? TEXT("Perk.KindNotable") : Def.Kind == EYJJPerkKind::Keystone ? TEXT("Perk.KindKeystone") : TEXT("Perk.KindSmall"));
 		const FString Body = PerkText(HoverPerk);
 		FString Status;
 		FLinearColor StatusColor = YJJUI::Muted;
@@ -383,7 +408,9 @@ void AYJJWaveHUD::DrawTree()
 		const float X = FMath::Min(Mouse.X + UI().TipOffset, VirtualW - W);
 		const float Y = FMath::Clamp(Mouse.Y - H * Half, 0.f, VirtualHeight - H);
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanelDark));
-		DrawLabel(Title, X + Pad, Y + Pad, UI().MidText, Def.Kind == EYJJPerkKind::Notable ? YJJUI::Highlight : YJJUI::Paper, 0.f, W - Pad * 2.f);
+		const FLinearColor TitleColor = Def.Kind == EYJJPerkKind::Notable ? YJJUI::Highlight : Def.Kind == EYJJPerkKind::Keystone ? YJJUI::PerkKeystone : YJJUI::Paper;
+		DrawLabel(Title, X + Pad, Y + Pad, UI().MidText, TitleColor, 0.f, W - Pad * 2.f - UI().TipKindW);
+		DrawLabel(KindLine, X + W - Pad, Y + Pad + (UI().MidText - UI().SmallText), UI().SmallText, YJJUI::Muted, 1.f, UI().TipKindW);
 		for (int32 Line = 0; Line < BodyLines.Num(); ++Line)
 		{
 			DrawLabel(BodyLines[Line], X + Pad, Y + Pad + LineH * (Line + 1), UI().SmallText, YJJUI::Paper, 0.f, W - Pad * 2.f);

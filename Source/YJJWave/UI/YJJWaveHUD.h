@@ -110,6 +110,8 @@ public:
 	float LastUnitDrawMs() const { return UnitDrawMs; }
 	int32 LastVisibleUnits() const { return Sorted.Num(); }
 	void SetTreeOpen(bool bOpen) { bTreeOpen = bOpen; }
+	/** 오토파일럿 스크린샷용: 마우스 대신 이 별의 설명창을 띄운다 (INDEX_NONE이면 마우스) */
+	void SetForcedHoverPerk(int32 Perk) { ForcedHoverPerk = Perk; }
 
 private:
 	enum class EButton : int32
@@ -184,6 +186,7 @@ private:
 	FVector2f PerkToVirtual(const FVector2f& PerkPos) const;
 	int32 PerkAt(const FVector2f& Virtual) const;
 	FString PerkText(int32 Perk) const;
+	float PerkRadius(EYJJPerkKind Kind) const;
 	FVector2f WorldToVirtual(const FVector2f& World) const;
 
 	// 조작
@@ -236,6 +239,7 @@ private:
 	bool bShowDebug = true;
 	int32 HoverPlot = INDEX_NONE;
 	int32 HoverPerk = INDEX_NONE;
+	int32 ForcedHoverPerk = INDEX_NONE;
 	float FrameMs = 0.f;
 	float UnitDrawMs = 0.f;
 	/** 숨쉬기 그림 시계 (실제 시간) */

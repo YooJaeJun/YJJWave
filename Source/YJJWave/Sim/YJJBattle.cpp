@@ -101,7 +101,7 @@ void FYJJBattle::PreStep(float Dt)
 
 	if (Horde.Hero() != INDEX_NONE)
 	{
-		Horde.Heal(Horde.Hero(), T.HeroRegen * Dt);
+		Horde.Heal(Horde.Hero(), (T.HeroRegen + HeroRegenBonus) * Dt);
 	}
 	TickPlots(Dt);
 	TickEnemies(Dt);
@@ -122,6 +122,11 @@ void FYJJBattle::PostStep(float Dt)
 	}
 	TickEffects(Dt);
 	CollectRewards();
+	for (const FVector2f& Where : Horde.Rescued)
+	{
+		AddEffect(EYJJEffectKind::Rescue, Where, YJJData::Tune().RescueEffectTime, YJJData::Tune().RescueEffectSize);
+	}
+	Horde.Rescued.Reset();
 	CheckVictory();
 }
 
@@ -322,9 +327,12 @@ void FYJJBattle::CollectRewards()
 		const FYJJUnitDef& Def = YJJData::Unit(Death.Type);
 		if (Death.Team == EYJJTeam::Enemy)
 		{
-			Gold += Def.Bounty * GoldScale;
-			Souls += Def.Souls * SoulScale;
-			SoulsEarned += Def.Souls * SoulScale;
+			// 황금 해골·영혼 폭발: 가끔 몇 배
+			const float GoldMult = Random.FRand() < GoldBurstChance ? GoldBurstMult : 1.f;
+			const float SoulMult = Random.FRand() < SoulBurstChance ? SoulBurstMult : 1.f;
+			Gold += Def.Bounty * GoldScale * GoldMult;
+			Souls += Def.Souls * SoulScale * SoulMult;
+			SoulsEarned += Def.Souls * SoulScale * SoulMult;
 			++Kills;
 		}
 		else if (Def.bHero && !bGameOver)
@@ -474,10 +482,18 @@ bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
 	{
 		const FVector2f Target(FMath::Clamp(Where.X, CampEdgeX, FieldWidth), FMath::Clamp(Where.Y, 0.f, FieldHeight));
 		AddEffect(EYJJEffectKind::MeteorFall, Target, T.MeteorFallTime, T.MeteorRadius, T.MeteorDamage * Power);
+		if (MeteorTwiceDelay > 0.f)
+		{
+			AddEffect(EYJJEffectKind::MeteorFall, Target, T.MeteorFallTime + MeteorTwiceDelay, T.MeteorRadius, T.MeteorDamage * Power);
+		}
 	}
 	else
 	{
 		RallyTime = T.RallyDuration * Power;
+		if (RallyHealFraction > 0.f)
+		{
+			Horde.HealTeam(EYJJTeam::Player, RallyHealFraction);
+		}
 		AddEffect(EYJJEffectKind::Rally, FVector2f(CampEdgeX, FieldHeight * Half), T.RallyEffectTime, FieldHeight);
 	}
 	return true;
@@ -533,7 +549,83 @@ void FYJJBattle::ApplyPerk(int32 Perk)
 	{
 		Mods[ModIndex(Mod.Stat, Mod.Building + 1)] += Mod.Value;
 	}
+	RebuildSpecials();
 	RecomputeHero();
+}
+
+void FYJJBattle::RebuildSpecials()
+{
+	const TConstArrayView<FYJJUnitDef> Units = YJJData::Units();
+	TArray<FYJJUnitSpecial> Specials;
+	Specials.SetNum(Units.Num());
+	HeroRegenBonus = 0.f;
+	GoldBurstChance = SoulBurstChance = MeteorTwiceDelay = RallyHealFraction = 0.f;
+	GoldBurstMult = SoulBurstMult = 1.f;
+	// 화살 수 특수 효과는 병영 능력치(Multishot)로 더한다: 다시 계산하려고 먼저 뺀다
+	for (int32 Column = 0; Column <= YJJData::Buildings().Num(); ++Column)
+	{
+		Mods[ModIndex(EYJJStat::Multishot, Column)] = 0.f;
+	}
+
+	for (int32 Perk = 0; Perk < PerkAllocated.Num(); ++Perk)
+	{
+		const FYJJPerkDef& Def = YJJData::Perks()[Perk];
+		if (!PerkAllocated[Perk])
+		{
+			continue;
+		}
+		for (const FYJJPerkDef::FMod& Mod : Def.Mods)
+		{
+			if (Mod.Stat == EYJJStat::Multishot)
+			{
+				Mods[ModIndex(Mod.Stat, Mod.Building + 1)] += Mod.Value;
+			}
+		}
+		const FYJJPerkDef::FSpecial& Special = Def.Special;
+		if (Special.Kind == EYJJSpecial::None)
+		{
+			continue;
+		}
+		// 효과 받는 유닛 종류: 병영의 병사 / 영웅 / 모든 아군
+		TArray<int32, TInlineAllocator<16>> Targets;
+		for (int32 Unit = 0; Unit < Units.Num(); ++Unit)
+		{
+			const bool bPlayer = Units[Unit].Team == EYJJTeam::Player;
+			const bool bMatch = Special.Target == INDEX_NONE ? bPlayer
+				: Special.Target == FYJJPerkDef::HeroTarget ? Units[Unit].bHero
+				: YJJData::Building(Special.Target).Unit == Unit;
+			if (bMatch)
+			{
+				Targets.Add(Unit);
+			}
+		}
+		for (const int32 Unit : Targets)
+		{
+			FYJJUnitSpecial& Out = Specials[Unit];
+			switch (Special.Kind)
+			{
+			case EYJJSpecial::LastStand: Out.LastStandAt = FMath::Max(Out.LastStandAt, Special.A); Out.LastStandHeal += Special.B; break;
+			case EYJJSpecial::Revive: Out.ReviveHP = FMath::Max(Out.ReviveHP, Special.A); break;
+			case EYJJSpecial::Fury: Out.FuryAt = FMath::Max(Out.FuryAt, Special.A); Out.FuryBonus += Special.B; break;
+			case EYJJSpecial::ArrowBurst: Out.ArrowSplash = FMath::Max(Out.ArrowSplash, Special.A); break;
+			case EYJJSpecial::Shockwave: Out.KnockbackScale *= Special.A; break;
+			case EYJJSpecial::Thorns: Out.Thorns += Special.A; break;
+			case EYJJSpecial::Lifesteal: Out.Lifesteal += Special.A; break;
+			default: break;
+			}
+		}
+		switch (Special.Kind)
+		{
+		case EYJJSpecial::ExtraShot: Mods[ModIndex(EYJJStat::Multishot, Special.Target + 1)] += Special.A; break;
+		case EYJJSpecial::HeroRegen: HeroRegenBonus += Special.A; break;
+		case EYJJSpecial::GoldBurst: GoldBurstChance += Special.A; GoldBurstMult = FMath::Max(GoldBurstMult, Special.B); break;
+		case EYJJSpecial::SoulBurst: SoulBurstChance += Special.A; SoulBurstMult = FMath::Max(SoulBurstMult, Special.B); break;
+		case EYJJSpecial::MeteorTwice: MeteorTwiceDelay = Special.A; break;
+		case EYJJSpecial::RallyHeal: RallyHealFraction += Special.A; break;
+		default: break;
+		}
+	}
+	Horde.SetSpecials(Specials);
 }
 
 void FYJJBattle::WriteProgress(FYJJProgress& Progress) const

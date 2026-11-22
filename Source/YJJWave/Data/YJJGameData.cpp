@@ -285,6 +285,19 @@ bool FYJJGameDatabase::ParseStat(const FString& Name, EYJJStat& Out)
 	return false;
 }
 
+bool FYJJGameDatabase::ParseSpecial(const FString& Name, EYJJSpecial& Out)
+{
+	for (int32 Index = 1; Index < static_cast<int32>(EYJJSpecial::Count); ++Index)
+	{
+		if (Name == YJJData::SpecialKey(static_cast<EYJJSpecial>(Index)))
+		{
+			Out = static_cast<EYJJSpecial>(Index);
+			return true;
+		}
+	}
+	return false;
+}
+
 void FYJJGameDatabase::LoadPerks()
 {
 	Perks.Reset();
@@ -294,7 +307,10 @@ void FYJJGameDatabase::LoadPerks()
 	{
 		FYJJPerkDef& Def = Perks.AddDefaulted_GetRef();
 		Def.Id = Name;
-		Def.Kind = Row.Kind == TEXT("Start") ? EYJJPerkKind::Start : (Row.Kind == TEXT("Notable") ? EYJJPerkKind::Notable : EYJJPerkKind::Small);
+		Def.Kind = Row.Kind == TEXT("Start") ? EYJJPerkKind::Start
+			: Row.Kind == TEXT("Notable") ? EYJJPerkKind::Notable
+			: Row.Kind == TEXT("Keystone") ? EYJJPerkKind::Keystone
+			: EYJJPerkKind::Small;
 		Def.Pos = FVector2f(Row.X, Row.Y);
 		Def.NameKey = Row.NameKey;
 		auto AddMod = [this, &Def, &Name](const FString& Stat, const FString& Target, float Value)
@@ -315,6 +331,18 @@ void FYJJGameDatabase::LoadPerks()
 		};
 		AddMod(Row.Stat, Row.Target, Row.Value);
 		AddMod(Row.Stat2, Row.Target2, Row.Value2);
+		if (!Row.Special.IsEmpty())
+		{
+			if (!ParseSpecial(Row.Special, Def.Special.Kind))
+			{
+				Problem(FString::Printf(TEXT("Perks.csv %s: 모르는 특수 효과 %s"), *Name.ToString(), *Row.Special));
+			}
+			Def.Special.Target = Row.SpecialTarget.IsEmpty() ? INDEX_NONE
+				: Row.SpecialTarget == TEXT("Hero") ? FYJJPerkDef::HeroTarget
+				: FindBuilding(Row.SpecialTarget, TEXT("Perks.csv"));
+			Def.Special.A = Row.SpecialA;
+			Def.Special.B = Row.SpecialB;
+		}
 		LinkNames.Add(Row.Links);
 	});
 
@@ -377,4 +405,25 @@ const TCHAR* YJJData::StatKey(EYJJStat Stat)
 bool YJJData::IsFlatStat(EYJJStat Stat)
 {
 	return Stat == EYJJStat::SpawnCount || Stat == EYJJStat::Multishot;
+}
+
+const TCHAR* YJJData::SpecialKey(EYJJSpecial Special)
+{
+	switch (Special)
+	{
+	case EYJJSpecial::LastStand: return TEXT("LastStand");
+	case EYJJSpecial::Revive: return TEXT("Revive");
+	case EYJJSpecial::HeroRegen: return TEXT("HeroRegen");
+	case EYJJSpecial::Fury: return TEXT("Fury");
+	case EYJJSpecial::ArrowBurst: return TEXT("ArrowBurst");
+	case EYJJSpecial::ExtraShot: return TEXT("ExtraShot");
+	case EYJJSpecial::GoldBurst: return TEXT("GoldBurst");
+	case EYJJSpecial::SoulBurst: return TEXT("SoulBurst");
+	case EYJJSpecial::Shockwave: return TEXT("Shockwave");
+	case EYJJSpecial::MeteorTwice: return TEXT("MeteorTwice");
+	case EYJJSpecial::RallyHeal: return TEXT("RallyHeal");
+	case EYJJSpecial::Thorns: return TEXT("Thorns");
+	case EYJJSpecial::Lifesteal: return TEXT("Lifesteal");
+	default: return TEXT("");
+	}
 }

@@ -21,6 +21,7 @@ enum class EYJJEffectKind : uint8
 	MeteorBlast,  // 터진 불꽃
 	Rally,        // 함성 고리
 	Build,        // 건설·레벨업 먼지
+	Rescue,       // 최후의 저항·부활 (초록 고리)
 };
 
 /** 화면 연출 (규칙에 쓰이는 것은 MeteorFall 이 끝날 때의 피해뿐) */
@@ -133,6 +134,8 @@ private:
 	void AddEffect(EYJJEffectKind Kind, const FVector2f& Pos, float Life, float Radius, float Power = 0.f);
 	void ApplyPerk(int32 Perk);
 	void RecomputeHero();
+	/** 찍힌 중간 별로 유닛 종류별 특수 효과와 판 단위 효과를 다시 계산 */
+	void RebuildSpecials();
 	void Finish(bool bWon);
 
 	TArray<uint8> PerkAllocated;
@@ -143,6 +146,15 @@ private:
 	float Cooldowns[static_cast<int32>(EYJJSpell::Count)] = { 0.f, 0.f };
 	float RallyTime = 0.f;
 	FRandomStream Random;
+
+	// 판 단위 특수 효과 (중간 별)
+	float HeroRegenBonus = 0.f;
+	float GoldBurstChance = 0.f;
+	float GoldBurstMult = 1.f;
+	float SoulBurstChance = 0.f;
+	float SoulBurstMult = 1.f;
+	float MeteorTwiceDelay = 0.f;
+	float RallyHealFraction = 0.f;
 
 	int32 ModIndex(EYJJStat Stat, int32 Column) const;
 
