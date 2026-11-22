@@ -15,7 +15,7 @@ import os
 import random
 import sys
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import ImageChops, Image, ImageDraw, ImageFilter
 
 SS = 4                       # 크게 그린 뒤 줄인다
 INK = (46, 28, 22, 255)      # 먹선
@@ -1063,16 +1063,23 @@ def ui_atlas():
 # ------------------------------------------------------------------------------------------------
 # 바닥
 
-def ground():
+GROUND_FOREST = dict(grass="#5E8F3A", patches=["#58873A", "#67993F", "#527F34", "#6CA144"], dirt="#8C6B45",
+                     specks=["#7E6040", "#977552", "#856544"], blade="#3F6B26", camp="#7A5E3C", camp_specks=["#6E5436", "#856845", "#735838"], graves=False)
+# 공동묘지: 시든 풀, 잿빛 흙, 풀밭에 비석과 십자가
+GROUND_GRAVEYARD = dict(grass="#4A5640", patches=["#435038", "#525E46", "#3E4934", "#57634A"], dirt="#6B5E58",
+                        specks=["#5E524C", "#776A63", "#665A54"], blade="#2F3A28", camp="#5E5248", camp_specks=["#544840", "#6A5D52", "#5A4E46"], graves=True)
+
+
+def ground(P=GROUND_FOREST):
     W, H = 2048, 740
     rnd = random.Random(3)
-    img = Image.new("RGBA", (W, H), rgba("#5E8F3A"))
+    img = Image.new("RGBA", (W, H), rgba(P["grass"]))
     d = ImageDraw.Draw(img)
     # 풀 얼룩
     for _ in range(900):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
         r = rnd.uniform(10, 46)
-        c = rnd.choice(["#58873A", "#67993F", "#527F34", "#6CA144"])
+        c = rnd.choice(P["patches"])
         d.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=rgba(c))
     # 가운데 흙길
     band = Image.new("L", (W, H), 0)
@@ -1082,12 +1089,12 @@ def ground():
         bot = H * 0.72 + math.sin(x * 0.005 + 1.3) * 26 + rnd.uniform(-6, 6)
         bd.rectangle([x, top, x + 8, bot], fill=255)
     band = band.filter(ImageFilter.GaussianBlur(10))
-    dirt = Image.new("RGBA", (W, H), rgba("#8C6B45"))
+    dirt = Image.new("RGBA", (W, H), rgba(P["dirt"]))
     dd = ImageDraw.Draw(dirt)
     for _ in range(1400):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
         r = rnd.uniform(3, 14)
-        dd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(["#7E6040", "#977552", "#856544"])))
+        dd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["specks"])))
     img = Image.composite(dirt, img, band)
     d = ImageDraw.Draw(img)
     # 풀 포기
@@ -1096,20 +1103,218 @@ def ground():
         if band.getpixel((int(x), int(y))) > 80:
             continue
         for k in range(3):
-            d.line([x + k * 3, y, x + k * 3 + rnd.uniform(-3, 3), y - rnd.uniform(6, 12)], fill=rgba("#3F6B26"), width=2)
+            d.line([x + k * 3, y, x + k * 3 + rnd.uniform(-3, 3), y - rnd.uniform(6, 12)], fill=rgba(P["blade"]), width=2)
     # 진지 (성벽 왼쪽): 다져진 흙
     camp = int(W * 520 / 3600)
-    d.rectangle([0, 0, camp, H], fill=rgba("#7A5E3C"))
+    d.rectangle([0, 0, camp, H], fill=rgba(P["camp"]))
     for _ in range(500):
         x, y = rnd.uniform(0, camp), rnd.uniform(0, H)
         r = rnd.uniform(4, 16)
-        d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(["#6E5436", "#856845", "#735838"])))
+        d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["camp_specks"])))
+    if P["graves"]:
+        gp = Pen(W, H, lw=2.2)
+        for _ in range(70):
+            x, y = rnd.uniform(camp + 40, W - 20), rnd.uniform(20, H - 20)
+            if band.getpixel((int(x), int(y))) > 40:
+                continue
+            if rnd.random() < 0.6:   # 둥근 비석
+                gp.rect(x - 9, y - 22, x + 9, y, rgba("#8E8A86"), radius=8)
+                gp.stick(x - 4, y - 12, x + 4, y - 12, 1.4)
+            else:                    # 나무 십자가
+                gp.stick(x, y - 26, x, y, 3, rgba("#6E5A44"))
+                gp.stick(x - 8, y - 18, x + 8, y - 18, 3, rgba("#6E5A44"))
+        img.alpha_composite(gp.done(W, H))
     return img
 
 
+# ------------------------------------------------------------------------------------------------
+# 월드맵 (지역 자리·색은 Content/YJJWave/Data/Regions.csv)
+
+def read_regions():
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Content", "YJJWave", "Data", "Regions.csv")
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f))
+    return sorted(rows, key=lambda r: int(r["Order"]))
+
+
+class ScaledPen:
+    """장식을 (cx, cy) 기준으로 줄여 그린다"""
+
+    def __init__(self, pen, cx, cy, k):
+        self.pen, self.cx, self.cy, self.k = pen, cx, cy, k
+
+    def _p(self, x, y):
+        return self.cx + (x - self.cx) * self.k, self.cy + (y - self.cy) * self.k
+
+    def stick(self, x0, y0, x1, y1, w, fill=INK, line=True):
+        a, b = self._p(x0, y0), self._p(x1, y1)
+        self.pen.stick(a[0], a[1], b[0], b[1], max(w * self.k, 1.5), fill, line)
+
+    def ellipse(self, x, y, rx, ry, fill, line=True):
+        c = self._p(x, y)
+        self.pen.ellipse(c[0], c[1], rx * self.k, ry * self.k, fill, line)
+
+    def poly(self, pts, fill, line=True):
+        self.pen.poly([self._p(x, y) for x, y in pts], fill, line)
+
+    def rect(self, x0, y0, x1, y1, fill, radius=0, line=True):
+        a, b = self._p(x0, y0), self._p(x1, y1)
+        self.pen.rect(a[0], a[1], b[0], b[1], fill, radius * self.k, line)
+
+    def arc(self, cx, cy, r, a0, a1, w, fill):
+        c = self._p(cx, cy)
+        self.pen.arc(c[0], c[1], r * self.k, a0, a1, max(w * self.k, 1.5), fill)
+
+
+def blob(cx, cy, r, rnd, n=22, wobble=0.22):
+    pts = []
+    for i in range(n):
+        a = i / n * math.tau
+        k = 1 + rnd.uniform(-wobble, wobble)
+        pts.append((cx + math.cos(a) * r * 1.25 * k, cy + math.sin(a) * r * 0.85 * k))
+    return pts
+
+
+def region_decor(p, name, cx, cy, rnd, scale=1.0):
+    p = ScaledPen(p, cx, cy, scale)
+    if name == "Forest":
+        for _ in range(16):
+            x, y = cx + rnd.uniform(-130, 130), cy + rnd.uniform(-80, 70)
+            p.stick(x, y, x, y + 16, 5, rgba("#6E4A2A"))
+            p.ellipse(x, y - 8, 20, 22, rgba(rnd.choice(["#3E8A34", "#4FA040", "#357A2C"])))
+    elif name in ("Mountain", "SnowPeak"):
+        for i in range(5):
+            x, y = cx - 120 + i * 60 + rnd.uniform(-10, 10), cy + 40 + rnd.uniform(-20, 10)
+            h = rnd.uniform(90, 140)
+            p.poly([(x - 55, y), (x, y - h), (x + 55, y)], rgba("#8C7A64" if name == "Mountain" else "#AFC0CF"))
+            p.poly([(x - 18, y - h * 0.68), (x, y - h), (x + 18, y - h * 0.68), (x + 6, y - h * 0.6), (x - 6, y - h * 0.62)], rgba("#F4F8FB" if name == "SnowPeak" else "#A8987F"), line=False)
+    elif name == "Graveyard":
+        for _ in range(12):
+            x, y = cx + rnd.uniform(-120, 120), cy + rnd.uniform(-60, 70)
+            if rnd.random() < 0.55:
+                p.rect(x - 12, y - 30, x + 12, y, rgba("#A39E98"), radius=10)
+            else:
+                p.stick(x, y - 34, x, y, 4, rgba("#7A6650"))
+                p.stick(x - 11, y - 24, x + 11, y - 24, 4, rgba("#7A6650"))
+        if p.k > 0.6:
+            p.ellipse(cx + 90, cy - 90, 26, 26, rgba("#F4F0D8"))   # 달
+    elif name == "Canyon":
+        for i in range(4):
+            x = cx - 100 + i * 66
+            p.poly([(x - 10, cy - 90), (x + 14, cy - 20), (x - 6, cy + 30), (x + 10, cy + 90), (x - 4, cy + 90), (x - 22, cy + 30), (x - 2, cy - 20)], rgba("#1E1424"))
+        for _ in range(6):
+            p.ellipse(cx + rnd.uniform(-120, 120), cy + rnd.uniform(-70, 70), 4, 4, rgba("#B44DFF"), line=False)
+    elif name == "Desert":
+        for i in range(4):
+            p.arc(cx - 90 + i * 60, cy + 40 + (i % 2) * 20, 60, 200, 340, 4, rgba("#C9A050"))
+        for x in (cx - 40, cx + 70):
+            p.stick(x, cy - 40, x, cy + 20, 12, rgba("#5FA048"))
+            p.stick(x - 16, cy - 20, x - 16, cy - 4, 8, rgba("#5FA048"))
+    elif name == "Volcano":
+        p.poly([(cx - 130, cy + 70), (cx - 30, cy - 80), (cx + 30, cy - 80), (cx + 130, cy + 70)], rgba("#5A4038"))
+        p.poly([(cx - 30, cy - 80), (cx - 10, cy - 40), (cx + 4, cy - 70), (cx + 16, cy - 30), (cx + 30, cy - 80)], rgba("#FF7A2A"))
+        for i, (x, y, r) in enumerate(((cx - 10, cy - 120, 26), (cx + 20, cy - 160, 32), (cx - 20, cy - 200, 36))):
+            p.ellipse(x, y, r, r * 0.8, rgba("#6E6A6A", 200), line=False)
+
+
+def world_map():
+    """한 대륙에 지역들이 맞붙어 있는 지도: 바다 → 해안 모래 → 지역(가장 가까운 지역 중심으로 나눈 땅, 경계는 물결) → 강·길 → 지역 장식.
+    잠긴 지역의 구름은 HUD가 덮는다 (열리면 걷힌다)"""
+    W, H = 1920, 1080
+    rnd = random.Random(11)
+    regions = read_regions()
+    centers = [(float(r["MapX"]) * W, float(r["MapY"]) * H) for r in regions]
+
+    # 바다 + 물결 무늬
+    img = Image.new("RGBA", (W, H), rgba("#4FB6C2"))
+    d = ImageDraw.Draw(img)
+    for _ in range(260):
+        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
+        d.arc([x - 14, y - 5, x + 14, y + 5], 200, 340, fill=rgba("#8ADBE0"), width=2)
+
+    # 땅 모양: 화면 대부분을 덮는 울퉁불퉁한 대륙 (작은 칸에서 계산해 키운다)
+    S = 4
+    w, h = W // S, H // S
+    land = Image.new("L", (w, h), 0)
+    pts = []
+    for i in range(64):
+        a = i / 64 * math.tau
+        k = 1 + 0.06 * math.sin(a * 5 + 1) + 0.04 * math.sin(a * 11) + rnd.uniform(-0.03, 0.03)
+        pts.append((w * 0.5 + math.cos(a) * w * 0.47 * k, h * 0.5 + math.sin(a) * h * 0.44 * k))
+    ImageDraw.Draw(land).polygon(pts, fill=255)
+    land = land.filter(ImageFilter.GaussianBlur(3)).point(lambda v: 255 if v > 128 else 0)
+
+    # 지역 나누기: 물결진 거리로 가장 가까운 중심
+    labels = [[-1] * w for _ in range(h)]
+    lp = land.load()
+    for y in range(h):
+        for x in range(w):
+            if not lp[x, y]:
+                continue
+            wx = x * S + 38 * math.sin(y * S * 0.011) + 22 * math.sin(x * S * 0.023 + 2)
+            wy = y * S + 38 * math.cos(x * S * 0.009) + 22 * math.sin(y * S * 0.027 + 1)
+            labels[y][x] = min(range(len(centers)), key=lambda i: (wx - centers[i][0]) ** 2 + (wy - centers[i][1]) ** 2)
+
+    # 해안 모래: 땅보다 조금 크게
+    sand = land.filter(ImageFilter.MaxFilter(5)).resize((W, H), Image.BILINEAR).point(lambda v: 255 if v > 128 else 0)
+    img.paste(rgba("#E8D49A"), (0, 0), sand)
+    masks = []
+    for i, r in enumerate(regions):
+        m = Image.new("L", (w, h), 0)
+        mp = m.load()
+        for y in range(h):
+            row = labels[y]
+            for x in range(w):
+                if row[x] == i:
+                    mp[x, y] = 255
+        m = m.resize((W, H), Image.BILINEAR).filter(ImageFilter.GaussianBlur(2)).point(lambda v: 255 if v > 128 else 0)
+        masks.append(m)
+        base = Image.new("RGBA", (W, H), rgba("#" + r["Color"]))
+        bd = ImageDraw.Draw(base)
+        dark = shade(rgba("#" + r["Color"]), 0.86)
+        light = shade(rgba("#" + r["Color"]), 1.1)
+        for _ in range(500):   # 땅 얼룩
+            x, y, rr = rnd.uniform(0, W), rnd.uniform(0, H), rnd.uniform(8, 40)
+            bd.ellipse([x - rr, y - rr * 0.7, x + rr, y + rr * 0.7], fill=rnd.choice([dark, light]))
+        img.paste(base, (0, 0), m)
+    # 지역 경계선 (진하게)
+    edges = Image.new("L", (W, H), 0)
+    for m in masks:
+        edges = ImageChops.lighter(edges, m.filter(ImageFilter.FIND_EDGES))
+    edges = edges.filter(ImageFilter.MaxFilter(3))
+    img.paste(rgba("#3A2A1E", 150), (0, 0), edges)
+
+    p = Pen(W, H, lw=3)
+    # 강: 산지에서 바다로
+    river = [centers[1], ((centers[1][0] + centers[3][0]) / 2, (centers[1][1] + centers[2][1]) / 2 + 40), (centers[2][0] + 60, H * 0.88), (centers[2][0] + 90, H)]
+    for (x0, y0), (x1, y1) in zip(river, river[1:]):
+        p.stick(x0, y0, x1, y1, 12, rgba("#5CC0D0"))
+    # 길: 지역 중심을 차례로 잇는 흙길
+    for (x0, y0), (x1, y1) in zip(centers, centers[1:]):
+        mx, my = (x0 + x1) / 2 + rnd.uniform(-40, 40), (y0 + y1) / 2 + rnd.uniform(-40, 40)
+        for (ax, ay), (bx, by) in (((x0, y0), (mx, my)), ((mx, my), (x1, y1))):
+            p.stick(ax, ay, bx, by, 9, rgba("#C9A46A"))
+    # 지역마다 장식 (그 지역 땅 안에만, 넓게 흩어서)
+    for r, (cx, cy), m in zip(regions, centers, masks):
+        # 지역 땅 전체에 고르게 (서로 너무 붙지 않게), 가운데는 크게 하나
+        mp = m.load()
+        box = m.getbbox()
+        spots = []
+        for _ in range(400):
+            x, y = rnd.uniform(box[0], box[2]), rnd.uniform(box[1], box[3])
+            if mp[int(x), int(y)] and all((x - a) ** 2 + (y - b) ** 2 > 95 ** 2 for a, b in spots + [(cx, cy)]):
+                spots.append((x, y))
+        for x, y in sorted(spots, key=lambda q: q[1]):
+            region_decor(p, r["Name"], x, y, random.Random(rnd.random()), scale=0.38)
+        region_decor(p, r["Name"], cx, cy, rnd, scale=0.8)
+    img.alpha_composite(p.done(W, H))
+    return img
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    jobs = [("Units.png", units_atlas), ("BigUnits.png", big_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground)]
+    jobs = [("Units.png", units_atlas), ("BigUnits.png", big_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
+            ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", world_map)]
     for name, make in jobs:
         make().save(os.path.join(OUT, name))
         print("wrote", name)

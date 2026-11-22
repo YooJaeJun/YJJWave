@@ -29,6 +29,27 @@ void AYJJWaveHUD::DrawWorld()
 	DrawProjectiles();
 	DrawEffects();
 	DrawSpellAim();
+	DrawUnitBars();
+}
+
+void AYJJWaveHUD::DrawUnitBars()
+{
+	// 영웅은 초록, 보스는 빨강. 그림 위쪽에 작게, 보스는 이름도
+	const FYJJUILayout& L = UI();
+	for (const FYJJUnitBar& Bar : View().Bars)
+	{
+		const FYJJUnitDef& Def = YJJData::Unit(Bar.Type);
+		const FVector2f Top = WorldToVirtual(Bar.Pos - FVector2f(0.f, Def.DrawSize * L.UnitBarLift));
+		const float W = FMath::Max(Def.DrawSize * Zoom / ViewScale * L.UnitBarWidth, L.UnitBarMinW);
+		const float H = L.UnitBarH;
+		const float X = Top.X - W * Half;
+		const float Y = Top.Y - H;
+		DrawBar(X, Y, W, H, Bar.HP / FMath::Max(Bar.MaxHP, KINDA_SMALL_NUMBER), Def.bBoss ? YJJUI::BossBar : YJJUI::HeroBar);
+		if (Def.bBoss)
+		{
+			DrawLabel(YJJLoc::Get(Def.NameKey), Top.X, Y - L.UnitBarNameGap - L.SmallText, L.SmallText, YJJUI::BossText, Half);
+		}
+	}
 }
 
 void AYJJWaveHUD::DrawGround()

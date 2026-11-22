@@ -76,6 +76,15 @@ struct FYJJPromotion
 	int32 Type = 0;   // 진급한 뒤 유닛
 };
 
+/** 머리 위 체력 게이지 (영웅·보스) */
+struct FYJJUnitBar
+{
+	FVector2f Pos = FVector2f::ZeroVector;
+	int32 Type = 0;
+	float HP = 0.f;
+	float MaxHP = 0.f;
+};
+
 /** Step 구간 (성능 측정용) */
 enum class EYJJHordePhase : uint8
 {
@@ -107,6 +116,8 @@ struct FYJJHordeView
 	TArray<FYJJProjectile> Projectiles;
 	int32 Count[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	float Front[static_cast<int32>(EYJJTeam::Count)] = { -1.f, -1.f };
+	/** 영웅·보스 머리 위 게이지 */
+	TArray<FYJJUnitBar> Bars;
 	/** 살아 있는 첫 보스 (없으면 INDEX_NONE) */
 	int32 Boss = INDEX_NONE;
 	float BossHP = 0.f;
@@ -144,7 +155,12 @@ struct FYJJHordeConfig
 	float WalkStrideScale = 0.f;
 	float WalkStrideMin = 0.f;
 	float WalkStrideMax = 0.f;
+	/** 아군이 나아가는 끝 x (적 진영을 남겨 두고 그 앞에서 밀고 당긴다) */
+	float PlayerAdvanceX = 0.f;
+	/** 그 끝보다 이만큼 더 안쪽 적은 쫓지 않는다 */
+	float PlayerChaseMargin = 0.f;
 };
+
 
 class YJJWAVE_API FYJJHorde
 {

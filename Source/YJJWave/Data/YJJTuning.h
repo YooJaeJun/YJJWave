@@ -112,6 +112,17 @@ struct FYJJTuning
 	UPROPERTY() float PotServeRing = 0.f;   // 국을 나눠 줄 때 퍼지는 고리 크기
 	// ---- 말풍선 대화 (Dialogues.csv) ----
 	UPROPERTY() float HeroLowShare = 0.f;   // 영웅 체력이 이 비율 아래면 HeroLow 대화
+	// ---- 마무리·별 ----
+	UPROPERTY() float VictoryDelay = 0.f;   // 적을 다 쓰러뜨린 뒤 결과 창까지 (쓰러지는 연출을 보여 준다)
+	UPROPERTY() float StarThreeHealth = 0.f;   // 이겼을 때 영웅 체력이 이 비율 이상이면 별 3개
+	UPROPERTY() float StarTwoHealth = 0.f;   // 이 비율 이상이면 별 2개 (아래면 1개)
+	UPROPERTY() float BossSlowMo = 0.f;   // 보스가 쓰러질 때 느려지는 배율
+	UPROPERTY() float BossSlowMoTime = 0.f;   // 느려지는 시간 (게임 시간)
+	UPROPERTY() float BossBlastScale = 0.f;   // 보스 쓰러짐 폭발 크기 (보스 그림 크기 배율)
+	UPROPERTY() float BossBlastTimeScale = 0.f;   // 보스 쓰러짐 폭발 연출 길이 배율
+	// ---- 전선 ----
+	UPROPERTY() float PlayerAdvanceShare = 0.f;   // 아군이 나아가는 끝 (전장 너비 비율). 그 뒤는 적 진영: 앞에서 밀고 당긴다
+	UPROPERTY() float PlayerChaseMargin = 0.f;   // 전선 끝에서 이만큼 더 안쪽 적은 쫓지 않는다
 	UPROPERTY() int32 MaxPendingEvents = 0;   // HUD가 가져가지 않은 판 사건은 이만큼까지만 쌓는다
 	// ---- 소리 ----
 	UPROPERTY() int32 VoicesPerSecond = 0;   // 보이스는 전체 합쳐 초당 이만큼까지 (수천 마리가 한꺼번에 떠들지 않게)
@@ -177,11 +188,67 @@ struct FYJJUILayout
 	UPROPERTY() float BoneSpin = 0.f;   // 뼈 회전 빠르기
 	UPROPERTY() float PromoteRise = 0.f;   // 진급 빛이 떠오르는 높이 (월드)
 	UPROPERTY() float PromoteBannerTier = 0.f;   // 이 진급 단계 이상이면 화면 배너 (2 = 장군)
+	// ---- 결과 창 ----
+	UPROPERTY() float ResultPopTime = 0.f;   // 결과 창이 커지며 나타나는 시간
+	UPROPERTY() float ResultPopStart = 0.f;   // 결과 창 처음 크기 배율
+	UPROPERTY() float ResultPopOvershoot = 0.f;   // 결과 창이 살짝 넘쳤다 돌아오는 정도
+	UPROPERTY() float ResultWinH = 0.f;   // 이겼을 때 결과 창 높이 (별 줄 포함)
+	UPROPERTY() float ResultStarCount = 0.f;   // 별 수
+	UPROPERTY() float ResultStarSize = 0.f;   // 결과 별 크기
+	UPROPERTY() float ResultStarGap = 0.f;   // 결과 별 사이
+	UPROPERTY() float ResultStarDelay = 0.f;   // 별이 하나씩 나오는 간격
+	UPROPERTY() float ResultStarPopTime = 0.f;   // 별이 커졌다 자리 잡는 시간
+	UPROPERTY() float ResultStarPopScale = 0.f;   // 별이 처음 나올 때 크기 배율
+	UPROPERTY() float ResultStarEmptyAlpha = 0.f;   // 얻지 못한 별 자리 진하기
+	// ---- 타이틀 ----
+	UPROPERTY() float TitleShade = 0.f;   // 타이틀 바닥 어둡게
+	UPROPERTY() float TitleLogoY = 0.f;   // 제목 높이 (화면 비율)
+	UPROPERTY() float TitleLogoSize = 0.f;   // 제목 글자 크기
+	UPROPERTY() float TitleTaglineGap = 0.f;   // 제목과 한 줄 사이
+	UPROPERTY() float TitleButtonsY = 0.f;   // 버튼 시작 높이 (화면 비율)
+	UPROPERTY() float TitleButtonW = 0.f;   // 타이틀·월드맵 버튼 너비
+	UPROPERTY() float TitleButtonH = 0.f;   // 타이틀·월드맵 버튼 높이
+	UPROPERTY() float TitleButtonGap = 0.f;   // 버튼 사이
+	UPROPERTY() float TitlePotSize = 0.f;   // 타이틀 냄비 크기
+	UPROPERTY() float TitlePotY = 0.f;   // 타이틀 냄비 발 높이 (화면 비율)
+	UPROPERTY() float TitleSteamScale = 0.f;   // 타이틀 김 크기 (냄비 크기 배율)
+	UPROPERTY() float TitleSteamRise = 0.f;   // 타이틀 김 오르는 높이 (냄비 크기 배율)
+	UPROPERTY() float TitleArmyRows = 0.f;   // 양옆 무리 줄 수
+	UPROPERTY() float TitleArmyCols = 0.f;   // 양옆 무리 한 줄 수
+	UPROPERTY() float TitleArmyY = 0.f;   // 무리 첫 줄 발 높이 (화면 비율)
+	UPROPERTY() float TitleArmyRowGap = 0.f;   // 무리 줄 사이
+	UPROPERTY() float TitleArmyGap = 0.f;   // 무리 사이 간격
+	UPROPERTY() float TitleUnitSize = 0.f;   // 타이틀 병사 크기
+	// ---- 월드맵 ----
+	UPROPERTY() float RegionCloudPuffs = 0.f;   // 잠긴 지역을 덮는 구름 덩이 수 (가운데 하나 + 둘레)
+	UPROPERTY() float RegionCloudSize = 0.f;   // 구름 덩이 크기
+	UPROPERTY() float RegionCloudRadius = 0.f;   // 둘레 구름 반지름
+	UPROPERTY() float RegionCloudWide = 0.f;   // 둘레 구름 가로 늘림
+	UPROPERTY() float RegionCloudSpeed = 0.f;   // 구름 일렁이는 빠르기
+	UPROPERTY() float RegionCloudBreath = 0.f;   // 구름 일렁이는 크기
+	UPROPERTY() float RegionLabelLift = 0.f;   // 지역 이름을 자리보다 이만큼 위에
+	UPROPERTY() float StagePathAlpha = 0.f;   // 스테이지 길 진하기
+	UPROPERTY() float StagePathWidth = 0.f;   // 스테이지 길 굵기
+	UPROPERTY() float StageNodeSize = 0.f;   // 스테이지 자리 크기
+	UPROPERTY() float StageNodeHover = 0.f;   // 마우스를 올리면 커지는 배율
+	UPROPERTY() float StageNameGap = 0.f;   // 자리와 이름 사이
+	UPROPERTY() float StageStarSize = 0.f;   // 월드맵 별 크기
+	// ---- 냄비 칸 (좌측 패널) ----
+	UPROPERTY() float PotPanelH = 0.f;   // 냄비 칸 높이
+	UPROPERTY() float PotButtonW = 0.f;   // 열기 버튼 너비
+	UPROPERTY() float PotTickW = 0.f;   // 단계 눈금 두께
+	UPROPERTY() float PotTickOver = 0.f;   // 눈금이 게이지 위아래로 삐져나오는 길이
+	UPROPERTY() float PotPromptSpeed = 0.f;   // 냄비 위 '뚜껑 열기!' 튀는 빠르기
+	UPROPERTY() float PotPromptBounce = 0.f;   // 냄비 위 '뚜껑 열기!' 튀는 높이
 	// ---- 말풍선 (Dialogues.csv) ----
 	UPROPERTY() float BubbleMaxW = 0.f;   // 말풍선 최대 너비 (화면)
-	UPROPERTY() float BubblePad = 0.f;   // 말풍선 안쪽 여백
+	UPROPERTY() float BubblePad = 0.f;   // 말풍선 안쪽 가로 여백
+	UPROPERTY() float BubblePadY = 0.f;   // 말풍선 안쪽 세로 여백
+	UPROPERTY() float BubbleText = 0.f;   // 말풍선 글자 크기
+	UPROPERTY() float BubbleNameText = 0.f;   // 말풍선 이름 글자 크기
+	UPROPERTY() float BubbleNameGap = 0.f;   // 이름과 대사 사이
+	UPROPERTY() float BubbleLineH = 0.f;   // 말풍선 줄 높이
 	UPROPERTY() float BubbleGap = 0.f;   // 머리 위 말풍선까지 간격 (화면)
-	UPROPERTY() float BubbleTail = 0.f;   // 말풍선 꼬리 크기
 	UPROPERTY() float BubbleFade = 0.f;   // 말풍선이 나타나고 사라지는 시간
 	UPROPERTY() float BubbleTypeSpeed = 0.f;   // 말풍선 글자가 나오는 빠르기 (초당 글자)
 	UPROPERTY() float BubbleScreenMargin = 0.f;   // 말풍선이 화면 밖으로 나가지 않게 띄우는 여백
@@ -316,9 +383,7 @@ struct FYJJUILayout
 	UPROPERTY() float SidePanelW = 0.f;   // 좌측 패널 너비 (모든 UI가 여기. 전장은 나머지 전부)
 	UPROPERTY() float SectionGap = 0.f;   // 패널 칸 사이 간격
 	UPROPERTY() float HeaderH = 0.f;   // 스테이지·웨이브 칸 높이
-	UPROPERTY() float VsH = 0.f;   // 아군 VS 적 칸 높이
-	UPROPERTY() float BossH = 0.f;   // 보스 칸 높이
-	UPROPERTY() float ResH = 0.f;   // 금화·영혼 칸 높이
+	UPROPERTY() float ResRowH = 0.f;   // 금화·영혼 줄 아이콘 높이
 	UPROPERTY() float SpellH = 0.f;   // 스펠·특성 칸 높이
 	UPROPERTY() float BuyH = 0.f;   // 병사 즉시 구매 버튼 높이
 	UPROPERTY() float BuyPopupGap = 0.f;   // 구매 팝업: 카드 아래 간격
@@ -337,8 +402,14 @@ struct FYJJUILayout
 	UPROPERTY() float BarShineAlpha = 0.f;   // 막대 반짝 띠 진하기
 	UPROPERTY() float TextBarH = 0.f;   // 숫자가 들어가는 게이지 높이 (영웅·보스)
 	UPROPERTY() float BarTextScale = 0.f;   // 게이지 안 글자 크기 = 게이지 높이 x 이 비율
-	UPROPERTY() float SpeedButtonW = 0.f;   // 배속 버튼 너비
-	UPROPERTY() float BossBarSplit = 0.f;   // 보스 이름 / 막대 나누는 비율
+	UPROPERTY() float SpeedButtonW = 0.f;   // 배속 버튼 너비 (화면 오른쪽 위)
+	UPROPERTY() float SpeedButtonH = 0.f;   // 배속 버튼 높이
+	UPROPERTY() float DragStartPixels = 0.f;   // 왼쪽 버튼을 이만큼 끌면 클릭이 아니라 화면 이동
+	UPROPERTY() float UnitBarLift = 0.f;   // 머리 위 체력 게이지: 발에서 그림 크기의 이 비율 위
+	UPROPERTY() float UnitBarWidth = 0.f;   // 머리 위 체력 게이지 너비 (그림 크기 비율)
+	UPROPERTY() float UnitBarMinW = 0.f;   // 머리 위 체력 게이지 최소 너비 (화면)
+	UPROPERTY() float UnitBarH = 0.f;   // 머리 위 체력 게이지 두께
+	UPROPERTY() float UnitBarNameGap = 0.f;   // 보스 이름과 게이지 사이
 	UPROPERTY() float CardH = 0.f;   // 카드 높이
 	UPROPERTY() float CardGap = 0.f;   // 카드 간격
 	UPROPERTY() float CardIcon = 0.f;   // 카드 아이콘 크기

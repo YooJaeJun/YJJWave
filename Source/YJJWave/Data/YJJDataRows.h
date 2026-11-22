@@ -86,6 +86,25 @@ struct FYJJStageRow : public FTableRowBase
 	UPROPERTY() int32 Order = 0;
 	UPROPERTY() FString NameKey;
 	UPROPERTY() float HPScale = 1.f;
+	UPROPERTY() FString Region;
+	UPROPERTY() float MapX = 0.f;
+	UPROPERTY() float MapY = 0.f;
+	UPROPERTY() FString Ground;
+	UPROPERTY() FString Note;
+};
+
+/** Regions.csv: 월드맵 지역 */
+USTRUCT()
+struct FYJJRegionRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() int32 Order = 0;
+	UPROPERTY() FString NameKey;
+	UPROPERTY() float MapX = 0.f;
+	UPROPERTY() float MapY = 0.f;
+	UPROPERTY() int32 Open = 0;
+	UPROPERTY() FString Color;
 	UPROPERTY() FString Note;
 };
 

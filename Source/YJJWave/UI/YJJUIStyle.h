@@ -23,6 +23,7 @@ namespace YJJUI
 	inline const FLinearColor BossBar = FLinearColor(FColor(190, 30, 52));
 	inline const FLinearColor BossText = FLinearColor(FColor(255, 96, 110));          // 보스 이름: 게이지와 같은 붉은 계열
 	inline const FLinearColor Highlight = FLinearColor(1.f, 0.9f, 0.35f, 1.f);
+	inline const FLinearColor Value = FLinearColor(FColor(120, 230, 255));               // 설명 속 숫자 (모든 설명 같은 색)
 	inline const FLinearColor HitTint = FLinearColor(1.f, 0.35f, 0.3f, 1.f);
 	inline const FLinearColor Field = FLinearColor(0.09f, 0.16f, 0.05f, 1.f);           // 전장 밖 바탕
 	inline const FLinearColor PerkLocked = FLinearColor(0.35f, 0.33f, 0.4f, 1.f);

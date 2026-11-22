@@ -34,9 +34,9 @@ void AYJJWaveHUD::DrawSidePanel()
 		Y += H + L.SectionGap;
 	}
 
-	// ---- 아군 VS 적, 영웅 체력 ----
+	// ---- 아군 VS 적 (영웅·보스 체력은 머리 위) ----
 	{
-		const float H = L.VsH;
+		const float H = L.IconSize + Pad * 2.f;
 		const float Icon = L.IconSize;
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
 		DrawIcon(FMath::RoundToInt(L.UiSword), X + Pad, Y + Pad, Icon);
@@ -44,46 +44,19 @@ void AYJJWaveHUD::DrawSidePanel()
 		DrawLabelCentered(YJJLoc::Get(TEXT("UI.VS")), X + W * Half, Y + Pad + Icon * Half, L.MidText, YJJUI::Paper);
 		DrawIcon(FMath::RoundToInt(L.UiSkull), X + W - Pad - Icon, Y + Pad, Icon);
 		DrawLabelLeftMiddle(FormatCount(Units.Num(EYJJTeam::Enemy)), X + W - Pad - Icon - L.IconGap, Y + Pad + Icon * Half, L.BigText, YJJUI::Enemy, 1.f);
-
-		// 영웅 체력: 숫자가 들어가는 게이지는 숫자 크기에 맞춰 두껍게
-		const float BarH = L.TextBarH;
-		const float BarY = Y + H - Pad - BarH;
-		const float BarX = X + Pad + BarH + L.IconGap;
-		DrawIcon(FMath::RoundToInt(L.UiHero), X + Pad, BarY, BarH);
-		DrawBar(BarX, BarY, X + W - Pad - BarX, BarH, Units.HeroHP / FMath::Max(Units.HeroMaxHP, KINDA_SMALL_NUMBER), YJJUI::HeroBar);
-		DrawBarLabel(YJJLoc::Format(TEXT("UI.HeroHP"), { FormatCount(FMath::CeilToFloat(Units.HeroHP)), FormatCount(Units.HeroMaxHP) }), BarX, BarY, X + W - Pad - BarX, BarH);
 		Y += H + L.SectionGap;
 	}
 
-	// ---- 보스 (있을 때만) ----
-	if (Units.Boss != INDEX_NONE)
+	// ---- 금화 · 영혼 (한 줄에 나란히) ----
 	{
-		const float H = L.BossH;
+		const float H = L.ResRowH + Pad * 2.f;
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
-		DrawLabelCentered(YJJLoc::Get(YJJData::Unit(Units.Type[Units.Boss]).NameKey), X + Pad + (W * L.BossBarSplit) * Half, Y + H * Half, L.MidText, YJJUI::BossText, W * L.BossBarSplit);
-		const float BarX = X + W * L.BossBarSplit + Pad;
-		const float BarY = Y + (H - L.TextBarH) * Half;
-		DrawBar(BarX, BarY, X + W - Pad - BarX, L.TextBarH, Units.BossHP / FMath::Max(Units.BossMaxHP, KINDA_SMALL_NUMBER), YJJUI::BossBar);
-		DrawBarLabel(FormatCount(FMath::CeilToFloat(Units.BossHP)), BarX, BarY, X + W - Pad - BarX, L.TextBarH);
-		Y += H + L.SectionGap;
-	}
-
-	// ---- 금화·영혼·배속 ----
-	{
-		const float H = L.ResH;
-		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
-		const float RowH = (H - Pad * 2.f) * Half;
-		DrawIcon(FMath::RoundToInt(L.UiCoin), X + Pad, Y + Pad, RowH);
-		DrawLabelLeftMiddle(FormatCount(Current->Gold), X + Pad + RowH + L.IconGap, Y + Pad + RowH * Half, L.SmallText, YJJUI::Gold, 0.f);
-		DrawIcon(FMath::RoundToInt(L.UiSoul), X + Pad, Y + Pad + RowH, RowH);
-		DrawLabelLeftMiddle(FormatCount(Current->Souls), X + Pad + RowH + L.IconGap, Y + Pad + RowH * 1.5f, L.SmallText, YJJUI::Soul, 0.f);
-
-		const FString Speed = Mode && Mode->IsPaused() ? YJJLoc::Get(TEXT("UI.Paused")) : YJJLoc::Format(TEXT("UI.Speed"), { Mode ? FMath::RoundToInt(Mode->GetSpeed()) : 1 });
-		const float SpeedW = L.SpeedButtonW;
-		const float SpeedX = X + W - Pad - SpeedW;
-		DrawPanel(SpeedX, Y + Pad, SpeedW, H - Pad * 2.f, YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
-		DrawLabelCentered(Speed, SpeedX + SpeedW * Half, Y + H * Half, L.MidText, YJJUI::Paper, SpeedW - Pad);
-		AddButton(EButton::Speed, 0, SpeedX, Y + Pad, SpeedW, H - Pad * 2.f);
+		const float Icon = L.ResRowH;
+		const float CY = Y + Pad + Icon * Half;
+		DrawIcon(FMath::RoundToInt(L.UiCoin), X + Pad, Y + Pad, Icon);
+		DrawLabelLeftMiddle(FormatCount(Current->Gold), X + Pad + Icon + L.IconGap, CY, L.MidText, YJJUI::Gold, 0.f);
+		DrawIcon(FMath::RoundToInt(L.UiSoul), X + W * Half + Pad, Y + Pad, Icon);
+		DrawLabelLeftMiddle(FormatCount(Current->Souls), X + W * Half + Pad + Icon + L.IconGap, CY, L.MidText, YJJUI::Soul, 0.f);
 		Y += H + L.SectionGap;
 	}
 
@@ -160,6 +133,9 @@ void AYJJWaveHUD::DrawSidePanel()
 		Y += TH + L.SectionGap;
 	}
 
+	// ---- 냄비 (게이지 + 열기) ----
+	Y += DrawPotPanel(X, Y, W) + L.SectionGap;
+
 	// ---- 옵션 (맨 아래, 성능 줄 위) ----
 	{
 		const float H = L.OptionsOpenH;
@@ -170,6 +146,22 @@ void AYJJWaveHUD::DrawSidePanel()
 	}
 
 	DrawBuyPopup(X, W);
+	DrawSpeedButton();
+}
+
+void AYJJWaveHUD::DrawSpeedButton()
+{
+	// 화면 오른쪽 위: 배속 (누르면 바뀜) · 일시정지 표시
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	const FYJJUILayout& L = UI();
+	const float W = L.SpeedButtonW;
+	const float H = L.SpeedButtonH;
+	const float X = VirtualW - L.PanelPad - W;
+	const float Y = L.PanelPad;
+	const FString Speed = Mode && Mode->IsPaused() ? YJJLoc::Get(TEXT("UI.Paused")) : YJJLoc::Format(TEXT("UI.Speed"), { Mode ? FMath::RoundToInt(Mode->GetSpeed()) : 1 });
+	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
+	DrawLabelCentered(Speed, X + W * Half, Y + H * Half, L.MidText, YJJUI::Paper, W - L.PanelPad);
+	AddButton(EButton::Speed, 0, X, Y, W, H);
 }
 
 void AYJJWaveHUD::DrawBuyPopup(float X, float W)

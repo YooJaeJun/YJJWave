@@ -45,6 +45,8 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Config.WalkStrideScale = T.WalkStrideScale;
 	Config.WalkStrideMin = T.WalkStrideMin;
 	Config.WalkStrideMax = T.WalkStrideMax;
+	Config.PlayerAdvanceX = FieldSize.X * T.PlayerAdvanceShare;
+	Config.PlayerChaseMargin = T.PlayerChaseMargin;
 
 	Field = FieldSize;
 	Random.Initialize(RandomSeed);
@@ -312,6 +314,15 @@ void FYJJHorde::CopyTo(FYJJHordeView& View) const
 		View.Count[TeamId] = TeamCount[TeamId];
 		View.Front[TeamId] = Front[TeamId];
 	}
+	View.Bars.Reset();
+	for (const int32 Big : BigUnits)
+	{
+		const FYJJUnitDef& Def = YJJData::Unit(Type[Big]);
+		if (Alive[Big] && (Def.bBoss || Def.bHero))
+		{
+			View.Bars.Add({ Pos[Big], Type[Big], HP[Big], MaxHP[Big] });
+		}
+	}
 	View.Boss = INDEX_NONE;
 	for (const int32 Big : BigUnits)
 	{
@@ -473,6 +484,8 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	const float MarchDir = MyTeam == EYJJTeam::Player ? 1.f : -1.f;
 	FVector2f Desired = FVector2f::ZeroVector;
 	const int32 Victim = Target[Slot];
+	// 아군 병사는 전선 끝에서 멈춘다: 적 진영 깊이 있는 적은 쫓지 않고 다가오기를 기다린다 (원거리는 닿으면 쏜다)
+	const bool bHoldLine = MyTeam == EYJJTeam::Player && Slot != HeroSlot && P.X >= Config.PlayerAdvanceX;
 
 	if (Victim != INDEX_NONE)
 	{
@@ -481,7 +494,8 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 		const float Reach = Def.Range + Def.Radius + YJJData::Unit(Type[Victim]).Radius;
 		if (Dist > Reach)
 		{
-			Desired = Delta * (MoveSpeed / FMath::Max(Dist, NearZero));
+			const bool bTooDeep = bHoldLine && Pos[Victim].X > Config.PlayerAdvanceX + Config.PlayerChaseMargin;
+			Desired = bTooDeep ? FVector2f::ZeroVector : Delta * (MoveSpeed / FMath::Max(Dist, NearZero));
 		}
 		else if (Cooldown[Slot] <= 0.f)
 		{
@@ -509,9 +523,9 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	}
 	else
 	{
-		// 대상이 없으면 앞으로 행군. 슬롯마다 다른 박자로 위아래로 조금씩 흔들려 줄이 퍼진다
+		// 대상이 없으면 앞으로 행군 (전선 끝에서는 제자리). 슬롯마다 다른 박자로 위아래로 조금씩 흔들려 줄이 퍼진다
 		const float Drift = FMath::Sin(static_cast<float>(Steps) * Dt * DriftPhaseSpeed + Seed[Slot]) * Config.LateralDrift;
-		Desired = FVector2f(MarchDir * MoveSpeed, Drift * MoveSpeed);
+		Desired = FVector2f(bHoldLine ? 0.f : MarchDir * MoveSpeed, Drift * MoveSpeed);
 		FaceLeft[Slot] = MarchDir < 0.f ? 1 : 0;
 	}
 

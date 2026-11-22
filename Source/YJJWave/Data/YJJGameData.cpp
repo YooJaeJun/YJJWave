@@ -114,6 +114,7 @@ void FYJJGameDatabase::Load()
 	FillNameValues(TEXT("UILayout.csv"), FYJJUILayout::StaticStruct(), &Layout);
 	LoadUnits();
 	LoadBuildings();
+	LoadRegions();
 	LoadStages();
 	LoadSpells();
 	LoadPerks();
@@ -225,6 +226,27 @@ void FYJJGameDatabase::LoadUnits()
 FName FYJJGameDatabase::VoiceFor(const FString& Voice, const FString& Speaker)
 {
 	return FName(*(Voice.IsEmpty() ? FString(TEXT("Voice_")) + Speaker : Voice));
+}
+
+void FYJJGameDatabase::LoadRegions()
+{
+	Regions.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Regions.csv"), FYJJRegionRow::StaticStruct());
+	TArray<TPair<int32, FYJJRegionDef>> Sorted;
+	Table->ForeachRow<FYJJRegionRow>(ContextName, [&Sorted](const FName& Name, const FYJJRegionRow& Row)
+	{
+		FYJJRegionDef Def;
+		Def.Id = Name;
+		Def.NameKey = Row.NameKey;
+		Def.MapPos = FVector2f(Row.MapX, Row.MapY);
+		Def.bOpen = Row.Open != 0;
+		Sorted.Emplace(Row.Order, Def);
+	});
+	Sorted.StableSort([](const auto& A, const auto& B) { return A.Key < B.Key; });
+	for (const auto& Entry : Sorted)
+	{
+		Regions.Add(Entry.Value);
+	}
 }
 
 void FYJJGameDatabase::LoadBroth()
@@ -349,12 +371,19 @@ void FYJJGameDatabase::LoadStages()
 	Stages.Reset();
 	const UDataTable* StageTable = LoadTable(TEXT("Stages.csv"), FYJJStageRow::StaticStruct());
 	TArray<TPair<int32, FYJJStageDef>> Sorted;
-	StageTable->ForeachRow<FYJJStageRow>(ContextName, [&Sorted](const FName& Name, const FYJJStageRow& Row)
+	StageTable->ForeachRow<FYJJStageRow>(ContextName, [this, &Sorted](const FName& Name, const FYJJStageRow& Row)
 	{
 		FYJJStageDef Def;
 		Def.Id = Name;
 		Def.NameKey = Row.NameKey;
 		Def.HPScale = Row.HPScale;
+		Def.MapPos = FVector2f(Row.MapX, Row.MapY);
+		Def.Ground = Row.Ground;
+		Def.Region = Regions.IndexOfByPredicate([&Row](const FYJJRegionDef& Region) { return Region.Id == FName(*Row.Region); });
+		if (Def.Region == INDEX_NONE)
+		{
+			Problem(FString::Printf(TEXT("Stages.csv %s: 모르는 지역 %s"), *Name.ToString(), *Row.Region));
+		}
 		Sorted.Emplace(Row.Order, Def);
 	});
 	Sorted.StableSort([](const TPair<int32, FYJJStageDef>& A, const TPair<int32, FYJJStageDef>& B) { return A.Key < B.Key; });
@@ -622,6 +651,7 @@ const FYJJUnitDef& YJJData::Unit(int32 Index) { return FYJJGameDatabase::Get().U
 TConstArrayView<FYJJBuildingDef> YJJData::Buildings() { return FYJJGameDatabase::Get().Buildings; }
 const FYJJBuildingDef& YJJData::Building(int32 Index) { return FYJJGameDatabase::Get().Buildings[Index]; }
 TConstArrayView<FYJJStageDef> YJJData::Stages() { return FYJJGameDatabase::Get().Stages; }
+TConstArrayView<FYJJRegionDef> YJJData::Regions() { return FYJJGameDatabase::Get().Regions; }
 
 int32 YJJData::HeroUnit()
 {
@@ -643,6 +673,8 @@ const TCHAR* YJJData::TriggerKey(EYJJTalkTrigger Trigger)
 	case EYJJTalkTrigger::PotOpen: return TEXT("PotOpen");
 	case EYJJTalkTrigger::PotOverflow: return TEXT("PotOverflow");
 	case EYJJTalkTrigger::HeroLow: return TEXT("HeroLow");
+	case EYJJTalkTrigger::PotReady: return TEXT("PotReady");
+	case EYJJTalkTrigger::BossDown: return TEXT("BossDown");
 	default: return TEXT("");
 	}
 }

@@ -151,6 +151,12 @@ private:
 		Buy,
 		Option,
 		OpenOptions,
+		Pot,
+		TitleStart,
+		TitleQuit,
+		WorldStage,
+		WorldBack,
+		ResultMap,
 	};
 
 	/** 기다리지 않는 판 (Horde 밖 필드만). 유닛은 View() */
@@ -212,10 +218,32 @@ private:
 	void DrawSidePanel();
 	/** 병영 카드 아래 즉시 구매 팝업 */
 	void DrawBuyPopup(float X, float W);
+	/** 화면 오른쪽 위 배속 버튼 */
+	void DrawSpeedButton();
+	/** 영웅·보스 머리 위 작은 체력 게이지 */
+	void DrawUnitBars();
 	float BuyCountOf(int32 Index) const;
 	void DrawPlotTooltip();
 	void DrawTree();
 	void DrawGameOver();
+	/** 결과 별: 하나씩 튀어나온다 (얻지 못한 별은 어둡게) */
+	void DrawResultStars(float CenterX, float Y, float Age, int32 Stars);
+	// 타이틀 · 월드맵 (YJJWaveHUD_Menu.cpp)
+	void DrawTitle();
+	void DrawWorldMap();
+	/** 메뉴 버튼 하나 (가운데 글자) */
+	void DrawMenuButton(EButton Kind, int32 Index, float X, float Y, float W, float H, const FString& Text, bool bHighlight);
+	/** 텍스처 한 장을 화면 영역에 (UV 전체) */
+	void DrawTexture(UTexture2D* Texture, float X, float Y, float W, float H, const FLinearColor& Color);
+	/** 유닛 숨쉬기 그림 한 장 (타이틀 장식) */
+	void DrawUnitSprite(int32 Unit, float CenterX, float FootY, float Size, bool bFaceLeft);
+	bool HoverButton(EButton Kind) const;
+	/** 좌측 패널 냄비 칸 (높이를 돌려준다) */
+	float DrawPotPanel(float X, float Y, float W);
+	FString PotStatusText() const;
+	FLinearColor PotStatusColor() const;
+	/** 지금 스테이지 바닥 그림 (Stages.csv Ground, 없으면 Ground.png) */
+	UTexture2D* GroundFor(int32 Stage);
 	void DrawDebugLine();
 	void DrawPanel(float X, float Y, float W, float H, const FLinearColor& Color, int32 Cell);
 	void DrawBox(float X, float Y, float W, float H, const FLinearColor& Color);
@@ -229,6 +257,11 @@ private:
 	/** 세로만 가운데: 아이콘 옆 숫자 */
 	void DrawLabelLeftMiddle(const FString& Text, float X, float CenterY, float Size, const FLinearColor& Color, float AlignX);
 	FSlateFontInfo MakeFont(const FString& Text, float Size, float Alpha, float MaxWidth, float& OutWidth);
+	/** 설명 글: 숫자(25, +8%, x1.6 …)만 YJJUI::Value 색으로 (색은 모든 설명에서 같다) */
+	void DrawValueLabel(const FString& Text, float X, float Y, float Size, const FLinearColor& Color, float MaxWidth = 0.f);
+	/** 숫자 조각인가: 숫자로 시작하거나 +·-·x 바로 뒤에 숫자 */
+	static bool StartsNumber(const FString& Text, int32 Index);
+	float MeasureWith(const FString& Text, const FSlateFontInfo& Font) const;
 	void DrawText(const FString& Text, const FSlateFontInfo& Font, float Left, float Top, const FLinearColor& Color);
 	/** 칸 너비에 맞춰 띄어쓰기 단위로 줄을 나눈다 (글자를 줄이지 않고) */
 	TArray<FString> WrapText(const FString& Text, float Size, float MaxWidth);
@@ -283,6 +316,16 @@ private:
 	UPROPERTY() TObjectPtr<UTexture2D> BuildingTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> UiTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> GroundTexture;
+	/** 스테이지별 바닥 (파일 이름 → 텍스처) */
+	UPROPERTY() TMap<FString, TObjectPtr<UTexture2D>> GroundTextures;
+	UPROPERTY() TObjectPtr<UTexture2D> WorldMapTexture;
+	/** 바닥을 구운 스테이지 (바뀌면 다시 굽는다) */
+	int32 GroundStage = INDEX_NONE;
+	/** 결과 창이 뜬 지 (실제 시간, 별 연출) */
+	float ResultAge = 0.f;
+	int32 StarsSounded = 0;
+	/** 글꼴을 만든 언어 (바뀌면 다시 만든다) */
+	FString GameFontLanguage;
 	UPROPERTY() TObjectPtr<UTextureRenderTarget2D> GroundTarget;
 	UPROPERTY() TObjectPtr<UFont> BaseFont;
 
@@ -308,6 +351,9 @@ private:
 	float Zoom = 1.f;
 	FVector2f PanInput = FVector2f::ZeroVector;
 	bool bDragging = false;
+	/** 왼쪽 버튼이 전장에서 눌려 있다 / 그사이 끌어서 화면을 옮겼다 */
+	bool bLeftDown = false;
+	bool bLeftDragged = false;
 	FVector2f DragLast = FVector2f::ZeroVector;
 	FVector2f DragStart = FVector2f::ZeroVector;
 
@@ -368,6 +414,7 @@ private:
 	static constexpr int32 SpriteChunk = 1024;
 	static constexpr int32 BakePasses = 3;   // 피 → 시체 → 큰 시체
 	inline static const FName SoundClick = TEXT("Click");
+	inline static const FName SoundStar = TEXT("Star");
 
 	// 옵션 버튼 번호
 	static constexpr int32 NumVolumeRows = 3;
@@ -378,6 +425,7 @@ private:
 	static constexpr int32 OptionResolutionPrev = 30;
 	static constexpr int32 OptionResolutionNext = 31;
 	static constexpr int32 OptionClose = 40;
+	static constexpr int32 OptionGiveUp = 41;
 	static constexpr int32 NumLanguages = 2;
 	/** 연출 하나가 그리는 사각형 수 어림 (대지 가르기 줄·불꽃이 여러 개) */
 	static constexpr int32 EffectQuadsGuess = 12;
@@ -391,11 +439,19 @@ private:
 	static constexpr float PotLidAjarTilt = -0.6f;
 	static constexpr float PotLidAjarX = 0.4f;
 	static constexpr float PotLidAjarY = 0.14f;
+	/** 잠긴 지역 구름을 몇 겹 (겹칠수록 짙다) */
+	static constexpr int32 RegionCloudLayers = 3;
 	static constexpr int32 BuyCountKeys[] = { 0, 1, 2 };   // 팝업 버튼 3개 (마리 수는 UILayout BuyCountA·B·C)
 	inline static const TCHAR* const LanguageCodes[NumLanguages] = { TEXT("ko"), TEXT("en") };
 	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice") };
 	inline static const FName SoundBanner = TEXT("Banner");
 	static constexpr const TCHAR* BaseFontPath = TEXT("/Engine/EngineFonts/Roboto.Roboto");
-	static constexpr const TCHAR* GameFontFile = TEXT("YJJWave/Fonts/DoHyeon-Regular.ttf");
+	static constexpr const TCHAR* FontFolder = TEXT("YJJWave/Fonts");
+	static constexpr const TCHAR* KoreanFontFile = TEXT("DoHyeon-Regular.ttf");
+	static constexpr const TCHAR* FontFileKey = TEXT("Font.File");
+	static constexpr int32 HangulFirst = 0x1100;
+	static constexpr int32 HangulLast = 0xD7A3;
+	static constexpr const TCHAR* DefaultGroundFile = TEXT("Ground.png");
+	static constexpr const TCHAR* WorldMapFile = TEXT("WorldMap.png");
 	static constexpr const TCHAR* GameFontFace = TEXT("Regular");
 };

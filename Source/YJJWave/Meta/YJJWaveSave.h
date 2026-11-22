@@ -18,6 +18,7 @@ public:
 	UPROPERTY() double Souls = 0.0;
 	UPROPERTY() TArray<FName> Perks;
 	UPROPERTY() int32 Cleared = 0;
+	UPROPERTY() TArray<int32> Stars;
 
 	static FYJJProgress Load();
 	static void Store(const FYJJProgress& Progress);

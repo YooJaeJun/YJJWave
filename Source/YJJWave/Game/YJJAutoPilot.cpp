@@ -18,6 +18,23 @@ FYJJAutoPilot::FYJJAutoPilot(AYJJWaveGameMode* InMode, float InDuration, float I
 	ShotTimer = InShotInterval;
 }
 
+bool FYJJAutoPilot::TickMenus(float RealDeltaSeconds)
+{
+	MenuTimer += RealDeltaSeconds;
+	if (MenuTimer < MenuShotWait)
+	{
+		return false;
+	}
+	MenuTimer = 0.f;
+	switch (MenuStep++)
+	{
+	case 0: Mode->TakeShot(FString::Printf(TEXT("%sTitle"), ShotPrefix)); return false;
+	case 1: Mode->GoToWorldMap(); return false;
+	case 2: Mode->TakeShot(FString::Printf(TEXT("%sWorldMap"), ShotPrefix)); return false;
+	default: return true;
+	}
+}
+
 void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 {
 	FYJJBattle& Battle = Mode->GetBattle();
@@ -192,10 +209,33 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		}
 	}
 
+	// 이긴 마무리(보스 쓰러짐) 한 장, 결과 창은 별이 다 나온 뒤 한 장
+	if (Battle.bEnding && !Battle.bGameOver && !bEndingShot)
+	{
+		bEndingShot = true;
+		Mode->TakeShot(FString::Printf(TEXT("%sEnding%d"), ShotPrefix, Battle.Stage + 1));
+	}
+	ResultWait = Battle.bGameOver ? ResultWait + RealDeltaSeconds : 0.f;
+	if (Battle.bGameOver && ResultWait < ResultShotDelay)
+	{
+		return;
+	}
+	// 결과 창을 찍고, 그 화면이 저장될 때까지 조금 더 기다린 뒤 다음 스테이지
+	if (Battle.bGameOver && !bResultShot)
+	{
+		bResultShot = true;
+		Mode->TakeShot(FString::Printf(TEXT("%sStage%d"), ShotPrefix, Battle.Stage + 1));
+		return;
+	}
+	if (Battle.bGameOver && Mode->HasNextStage() && ResultWait >= ResultShotDelay + MenuShotWait)
+	{
+		bEndingShot = bResultShot = false;
+		ResultWait = 0.f;
+		Mode->NextStage();
+		return;
+	}
 	if (Battle.bGameOver && Mode->HasNextStage())
 	{
-		Mode->TakeShot(FString::Printf(TEXT("%sStage%d"), ShotPrefix, Battle.Stage + 1));
-		Mode->NextStage();
 		return;
 	}
 	TotalTime += RealDeltaSeconds * Mode->GetSpeed();

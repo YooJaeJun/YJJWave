@@ -17,6 +17,7 @@ class UScriptStruct;
  *   Stages.csv     스테이지                       Waves.csv      스테이지·웨이브별 몬스터
  *   Perks.csv      특성 성좌 (Tools/Data/gen_perks.py)  Spells.csv     주문 Lv별 수치·특수 효과
  *   Broth.csv      냄비 국물 단계                 Dialogues.csv  게임 중 말풍선 대화
+ *   Regions.csv    월드맵 지역
  * 글자는 Localization.csv (YJJLoc).
  */
 class YJJWAVE_API FYJJGameDatabase
@@ -31,6 +32,7 @@ public:
 	TArray<FYJJUnitDef> Units;
 	TArray<FYJJBuildingDef> Buildings;   // Order 순서
 	TArray<FYJJStageDef> Stages;         // Order 순서, 웨이브 포함
+	TArray<FYJJRegionDef> Regions;       // Order 순서 (월드맵)
 	TArray<FYJJPerkDef> Perks;
 	/** Cards.csv: 이번 판 한정 카드 (효과 구조는 특성과 같다) */
 	TArray<FYJJPerkDef> Cards;
@@ -55,6 +57,7 @@ private:
 
 	void LoadUnits();
 	void LoadBuildings();
+	void LoadRegions();
 	void LoadStages();
 	void LoadPerks();
 	void LoadCards();
@@ -94,6 +97,7 @@ namespace YJJData
 	YJJWAVE_API TConstArrayView<FYJJBuildingDef> Buildings();
 	YJJWAVE_API const FYJJBuildingDef& Building(int32 Index);
 	YJJWAVE_API TConstArrayView<FYJJStageDef> Stages();
+	YJJWAVE_API TConstArrayView<FYJJRegionDef> Regions();
 	/** 영웅 유닛 번호 (Units.csv Hero=1, 없으면 INDEX_NONE) */
 	YJJWAVE_API int32 HeroUnit();
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Perks();

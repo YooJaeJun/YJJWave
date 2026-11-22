@@ -92,7 +92,8 @@ void AYJJWaveHUD::LoadArt()
 	FxTexture = FYJJTextureLoader::Load(TEXT("Fx.png"), true);
 	BuildingTexture = FYJJTextureLoader::Load(TEXT("Buildings.png"), true);
 	UiTexture = FYJJTextureLoader::Load(TEXT("UI.png"), true);
-	GroundTexture = FYJJTextureLoader::Load(TEXT("Ground.png"), false);
+	GroundTexture = GroundFor(0);
+	WorldMapTexture = FYJJTextureLoader::Load(WorldMapFile, false);
 	UnitAtlas.Init(UnitTexture, UI().UnitCell);
 	BigAtlas.Init(BigUnitTexture, UI().BigUnitCell);
 	FxAtlas.Init(FxTexture, UI().FxCell);
@@ -128,10 +129,12 @@ void AYJJWaveHUD::ResetBattleView()
 void AYJJWaveHUD::InitGround()
 {
 	const FYJJBattle* Current = Battle();
-	if (!Current || bGroundReady)
+	if (!Current || (bGroundReady && GroundStage == Current->Stage))
 	{
 		return;
 	}
+	GroundStage = Current->Stage;
+	GroundTexture = GroundFor(Current->Stage);
 	const int32 Width = FMath::RoundToInt(UI().GroundTargetWidth);
 	const int32 Height = FMath::RoundToInt(UI().GroundTargetWidth * Current->FieldHeight / Current->FieldWidth);
 	if (!GroundTarget || GroundTarget->SizeX != Width || GroundTarget->SizeY != Height)
@@ -157,19 +160,41 @@ void AYJJWaveHUD::InitGround()
 	bGroundReady = true;
 }
 
+UTexture2D* AYJJWaveHUD::GroundFor(int32 Stage)
+{
+	const FString File = YJJData::Stages().IsValidIndex(Stage) && !YJJData::Stages()[Stage].Ground.IsEmpty() ? YJJData::Stages()[Stage].Ground : FString(DefaultGroundFile);
+	if (const TObjectPtr<UTexture2D>* Found = GroundTextures.Find(File))
+	{
+		return *Found;
+	}
+	UTexture2D* Texture = FYJJTextureLoader::Load(*File, false);
+	GroundTextures.Add(File, Texture);
+	return Texture;
+}
+
 TSharedPtr<const FCompositeFont> AYJJWaveHUD::GetGameFont()
 {
-	if (GameFont.IsValid())
+	// 언어마다 글꼴이 다르다 (Localization.csv Font.File). 그 언어 글꼴에 없는 글자(다른 언어 이름 등)는 한국어 글꼴 → 엔진 글꼴로
+	if (GameFont.IsValid() && GameFontLanguage == YJJLoc::Language())
 	{
 		return GameFont;
 	}
-	const FString FontPath = FPaths::ProjectContentDir() / GameFontFile;
-	if (!FPaths::FileExists(FontPath))
+	GameFontLanguage = YJJLoc::Language();
+	const FString FontPath = FPaths::ProjectContentDir() / FontFolder / YJJLoc::Get(FontFileKey);
+	const FString KoreanPath = FPaths::ProjectContentDir() / FontFolder / KoreanFontFile;
+	if (!FPaths::FileExists(FontPath) && !FPaths::FileExists(KoreanPath))
 	{
+		GameFont.Reset();
 		return nullptr;
 	}
 	TSharedRef<FCompositeFont> Composite = MakeShared<FCompositeFont>();
-	Composite->DefaultTypeface.Fonts.Add(FTypefaceEntry(GameFontFace, FontPath, EFontHinting::Default, EFontLoadingPolicy::LazyLoad));
+	Composite->DefaultTypeface.Fonts.Add(FTypefaceEntry(GameFontFace, FPaths::FileExists(FontPath) ? FontPath : KoreanPath, EFontHinting::Default, EFontLoadingPolicy::LazyLoad));
+	if (FPaths::FileExists(KoreanPath) && KoreanPath != FontPath)
+	{
+		FCompositeSubFont& Korean = Composite->SubTypefaces.AddDefaulted_GetRef();
+		Korean.CharacterRanges.Add(FInt32Range(FInt32Range::BoundsType::Inclusive(HangulFirst), FInt32Range::BoundsType::Inclusive(HangulLast)));
+		Korean.Typeface.Fonts.Add(FTypefaceEntry(GameFontFace, KoreanPath, EFontHinting::Default, EFontLoadingPolicy::LazyLoad));
+	}
 	if (const FCompositeFont* Fallback = BaseFont ? BaseFont->GetCompositeFont() : nullptr)
 	{
 		Composite->FallbackTypeface.Typeface = Fallback->DefaultTypeface;
@@ -193,6 +218,13 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 	InitGround();
 	UpdateCamera(DeltaSeconds);
 	UpdateCutsceneCamera(DeltaSeconds);
+	const AYJJWaveGameMode* ScreenMode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	if (ScreenMode && ScreenMode->GetScreen() != EYJJScreen::Battle)
+	{
+		return;
+	}
+	ResultAge = Battle()->bGameOver ? ResultAge + DeltaSeconds : 0.f;
+	StarsSounded = Battle()->bGameOver ? StarsSounded : 0;
 	TakeDeaths();
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	UpdateDying(Mode && Mode->IsRunning() ? DeltaSeconds * Mode->GetSpeed() : 0.f);
@@ -221,6 +253,24 @@ void AYJJWaveHUD::DrawHUD()
 	ShakeOffset = ShakeLeft > 0.f
 		? FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * UI().ShakePixels * ViewScale * (ShakeLeft / FMath::Max(UI().ShakeTime, KINDA_SMALL_NUMBER))
 		: FVector2f::ZeroVector;
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	const EYJJScreen Screen = Mode ? Mode->GetScreen() : EYJJScreen::Battle;
+	if (Screen != EYJJScreen::Battle)
+	{
+		if (Screen == EYJJScreen::Title)
+		{
+			DrawTitle();
+		}
+		else
+		{
+			DrawWorldMap();
+		}
+		if (bOptionsOpen)
+		{
+			DrawOptions();
+		}
+		return;
+	}
 	DrawWorld();
 	DrawTalks();
 	DrawBanners();
@@ -236,9 +286,12 @@ void AYJJWaveHUD::DrawHUD()
 	else
 	{
 		DrawPlotTooltip();
-		DrawPotTooltip();
 	}
 	DrawSidePanel();
+	if (!bTreeOpen)
+	{
+		DrawPotTooltip();
+	}
 	DrawCutscene();
 	DrawGameOver();
 	DrawDebugLine();
@@ -325,7 +378,12 @@ void AYJJWaveHUD::UpdateCamera(float Dt)
 	{
 		CamCenter += Pan.GetSafeNormal() * (UI().PanSpeed * Dt / Zoom);
 	}
-	if (bDragging)
+	// 왼쪽 버튼도 조금 이상 끌면 화면 이동 (그때는 떼어도 클릭이 아니다)
+	if (bLeftDown && !bLeftDragged && FVector2f::Distance(Mouse, DragStart) > UI().DragStartPixels * ViewScale)
+	{
+		bLeftDragged = true;
+	}
+	if (bDragging || bLeftDragged)
 	{
 		CamCenter -= (Mouse - DragLast) / Zoom;
 		DragLast = Mouse;

@@ -242,12 +242,24 @@ struct FYJJCutLine
 	float Zoom = 0.f;   // 0이면 그대로
 };
 
+/** Regions.csv 한 줄: 월드맵 지역 (숲지·산지·공동묘지 …). 열리지 않은 지역은 "준비 중" */
+struct FYJJRegionDef
+{
+	FName Id;
+	FString NameKey;
+	FVector2f MapPos = FVector2f::ZeroVector;   // 월드맵 위 자리 (화면 비율 0~1)
+	bool bOpen = false;
+};
+
 /** Stages.csv 한 줄 + 그 스테이지의 웨이브들 (Waves.csv) */
 struct FYJJStageDef
 {
 	FName Id;
 	FString NameKey;
 	float HPScale = 1.f;
+	int32 Region = INDEX_NONE;
+	FVector2f MapPos = FVector2f::ZeroVector;   // 월드맵 위 스테이지 자리 (화면 비율 0~1)
+	FString Ground;                              // 바닥 그림 파일 (Content/YJJWave/Art)
 	TArray<FYJJWaveLevel> Waves;   // 0번 = 1웨이브
 	TArray<FYJJCutLine> Cutscene;  // 시작 컷씬 (Cutscenes.csv, Order 순서)
 };
@@ -306,6 +318,8 @@ enum class EYJJTalkTrigger : uint8
 	PotOpen,      // 냄비 뚜껑을 열었다
 	PotOverflow,  // 국이 끓어 넘쳤다
 	HeroLow,      // 영웅 체력이 낮다
+	PotReady,     // 냄비 국이 한 단계 진해졌다 (처음 끓을 때 알려 주기)
+	BossDown,     // 보스를 쓰러뜨렸다
 	Count
 };
 

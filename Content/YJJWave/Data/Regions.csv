@@ -1,0 +1,8 @@
+﻿Name,Order,NameKey,MapX,MapY,Open,Color,Note
+Forest,0,Region.Forest,0.15,0.62,1,4E9A3E,숲지
+Mountain,1,Region.Mountain,0.29,0.3,0,8C7A64,산지
+Graveyard,2,Region.Graveyard,0.43,0.66,1,5B5470,공동묘지
+Canyon,3,Region.Canyon,0.56,0.36,0,3A2A3E,어둠 협곡
+Desert,4,Region.Desert,0.68,0.7,0,E3C27A,사막
+SnowPeak,5,Region.SnowPeak,0.79,0.27,0,DDE8F2,설산
+Volcano,6,Region.Volcano,0.89,0.6,0,B8402E,화산

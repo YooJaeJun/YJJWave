@@ -87,9 +87,9 @@ Perk.Taken,찍은 별,Taken,
 Perk.Locked,이어진 별을 먼저 찍어야 한다,Take a connected star first,
 Perk.Cost,클릭: {0} 영혼으로 찍기,Click: take for {0} souls,
 Perk.NeedSouls,영혼 부족 ({0} 필요),Need {0} souls,
-Stage.Meadow,풀밭 어귀,Meadow Gate,스테이지 1
+Stage.Meadow,숲 어귀,Forest Edge,스테이지 1
 Stage.SkullHill,해골 언덕,Skull Hill,스테이지 2
-Unit.Hero,대장 졸병,Captain Grunt,내 영웅 (중심)
+Unit.Hero,대장,Captain,내 영웅 (중심)
 Perk.KindSmall,작은 별,Minor,
 Perk.KindNotable,중간 별,Notable,
 Perk.KindKeystone,쐐기,Keystone,
@@ -181,9 +181,6 @@ Pot.Title,왕국의 마지막 냄비,The Kingdom's Last Pot,
 Pot.Empty,뼈 {0}/{1},Bones {0}/{1},냄비 위: 아직 국이 안 됨
 Pot.Stage,{0}  뼈 {1}/{2},{0}  Bones {1}/{2},냄비 위: 지금 단계
 Pot.Full,{0}  넘치기까지 {1}초!,{0}  Boils over in {1}s!,
-Pot.Hint,클릭 또는 Q: 뚜껑 열기,Click or Q: lift the lid,
-Pot.Desc,적을 쓰러뜨리면 뼈가 냄비로 간다. 오래 끓일수록 진해지지만 곰탕은 넘치기 전에 열어야 한다.,"Fallen enemies' bones go into the pot. The longer it boils the stronger it gets, but open the Bone-Deep Broth before it boils over.",
-Pot.Effect,"열면: 이번 판 아군 체력 +{0}%, 공격력 +{1}%, 지금 아군 {2}% 회복","Open: allies HP +{0}%, damage +{1}% this run, heal {2}% now",
 Pot.Served,"먹인 국 {0}그릇: 체력 +{1}%, 공격력 +{2}%","Bowls served {0}: HP +{1}%, damage +{2}%",
 Pot.OpenBanner,{0}(을)를 나눠 먹였다!,Served the {0}!,배너
 Pot.OverflowBanner,국이 끓어 넘쳤다!,The broth boiled over!,배너
@@ -204,3 +201,31 @@ Talk.Boss2,끓여 보면 안다.,We'll find out.,
 Talk.Deep1,끝이 안 보입니다.,There's no end to them.,말풍선 (Dialogues.csv Deep)
 Talk.Deep2,냄비 바닥도 안 보인다. 계속 넣어라.,Nor to the pot. Keep them coming.,
 Talk.HeroLow1,아직 간도 안 봤다.,I haven't even tasted it yet.,말풍선 (Dialogues.csv HeroLow)
+Font.File,DoHyeon-Regular.ttf,DoHyeon-Regular.ttf,언어별 글꼴 (Content/YJJWave/Fonts). 그 글꼴에 없는 한글은 DoHyeon으로
+Title.Name,국거리 디펜스,Soup Fodder Defense,"게임 제목 (국거리 = 냄비에 들어갈 운명, cannon fodder 말장난)"
+Title.Tagline,이긴 쪽이 끓인다,The winners do the cooking.,
+Title.Start,시작하기,Start,
+Title.Quit,종료,Quit,
+Title.Hint,엔터: 시작   ESC: 옵션,Enter: start   ESC: options,
+Map.Title,월드맵,World Map,
+Map.Hint,스테이지를 눌러 출정,Click a stage to march out,
+Map.Back,타이틀로,Title,
+Map.Soon,준비 중,Coming soon,
+Region.Forest,숲지,Forest,월드맵 지역
+Region.Mountain,산지,Highlands,
+Region.Graveyard,공동묘지,Graveyard,
+Region.Canyon,어둠 협곡,Dark Canyon,
+Region.Desert,사막,Desert,
+Region.SnowPeak,설산,Snow Peaks,
+Region.Volcano,화산,Volcano,
+UI.WorldMap,월드맵,World Map,결과 창 버튼
+Option.GiveUp,포기,Give Up,옵션: 판을 접고 월드맵으로
+Pot.Desc1,쓰러진 적의 뼈가 모여 국이 끓는다.,Fallen enemies' bones simmer into broth.,냄비 설명
+Pot.Desc2,뚜껑 열기 (클릭·Q): 이번 판 내내 체력·공격력이 오르고 바로 회복,"Lift the lid (Click/Q): HP and damage up for the rest of the run, plus an instant heal",
+Pot.Row,{0}  뼈 {1}  체력·공격력 +{2}%  회복 {3}%,{0}  Bones {1}  HP/DMG +{2}%  Heal {3}%,단계 표 한 줄
+Pot.Warn,곰탕은 {0}초 안에 열지 않으면 끓어 넘친다!,Open the Bone-Deep Broth within {0}s or it boils over!,
+Pot.Open,뚜껑 열기!,Lift the lid!,냄비 위 안내
+Pot.Button,열기 Q,Open Q,좌측 패널 냄비 칸 버튼
+Talk.PotReady1,국이 끓는다! 냄비를 눌러 먹여라.,The broth is ready! Click the pot to serve it.,말풍선 (Dialogues.csv PotReady)
+Talk.PotReady2,기다리면 더 진해집니다. 넘치지만 않으면요.,Wait and it gets richer. Just don't let it boil over.,
+Talk.BossDown1,…뼈는 냄비로.,...Bones to the pot.,말풍선 (Dialogues.csv BossDown)

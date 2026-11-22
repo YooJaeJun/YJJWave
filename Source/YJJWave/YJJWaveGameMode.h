@@ -8,6 +8,14 @@
 #include "Tasks/Task.h"
 #include "YJJWaveGameMode.generated.h"
 
+/** 지금 화면: 타이틀 → 월드맵 → 전투 */
+enum class EYJJScreen : uint8
+{
+	Title,
+	WorldMap,
+	Battle,
+};
+
 /**
  * 한 판을 들고 고정 틱으로 돌린다. 배속·일시정지·다시 시작, 오토파일럿·벤치마크 콘솔 변수.
  *
@@ -57,6 +65,17 @@ public:
 	/** 영혼·특성·깬 스테이지 저장 (특성을 찍은 뒤에도 부른다) */
 	void SaveProgress();
 
+	// ---- 화면 흐름 ----
+	EYJJScreen GetScreen() const { return Screen; }
+	void GoToTitle();
+	void GoToWorldMap();
+	/** 옵션의 포기: 지금 판을 접고 월드맵으로 (얻은 영혼은 남는다) */
+	void GiveUp();
+	const FYJJProgress& GetProgress() const { return Progress; }
+	/** 깬 스테이지 다음까지 열린다 */
+	bool IsStageOpen(int32 Stage) const { return Stage <= Progress.Cleared; }
+	int32 StageStars(int32 Stage) const { return Progress.Stars.IsValidIndex(Stage) ? Progress.Stars[Stage] : 0; }
+
 	// ---- 컷씬 ----
 	/** 지금 보여 주는 줄 (없으면 nullptr) */
 	const FYJJCutLine* CutsceneLine() const;
@@ -71,6 +90,7 @@ private:
 	FYJJBattle Battle;
 	FYJJHordeView View;
 	FYJJProgress Progress;
+	EYJJScreen Screen = EYJJScreen::Title;
 	bool bResultSaved = false;
 	int32 CutIndex = INDEX_NONE;
 	float CutTime = 0.f;
@@ -95,4 +115,5 @@ private:
 	static constexpr int32 BenchSeedSalt = 7919;
 	inline static const FName MusicBattle = TEXT("Music_Battle");
 	inline static const FName MusicBoss = TEXT("Music_Boss");
+	inline static const FName MusicMenu = TEXT("Music_Battle");
 };

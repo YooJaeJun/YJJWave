@@ -161,6 +161,69 @@ void AYJJWaveHUD::DrawLabel(const FString& Text, float X, float Y, float Size, c
 	DrawText(Text, Font, X - Width * AlignX, Y, Color);
 }
 
+bool AYJJWaveHUD::HoverButton(EButton Kind) const
+{
+	const FYJJButton* Button = ButtonAt(ToVirtual(MouseScreen()));
+	return Button && Button->Kind == static_cast<int32>(Kind);
+}
+
+bool AYJJWaveHUD::StartsNumber(const FString& Text, int32 Index)
+{
+	if (FChar::IsDigit(Text[Index]))
+	{
+		return true;
+	}
+	const bool bSign = Text[Index] == TCHAR('+') || Text[Index] == TCHAR('-') || Text[Index] == TCHAR('x');
+	return bSign && Text.IsValidIndex(Index + 1) && FChar::IsDigit(Text[Index + 1]) && (Index == 0 || !FChar::IsAlpha(Text[Index - 1]));
+}
+
+float AYJJWaveHUD::MeasureWith(const FString& Text, const FSlateFontInfo& Font) const
+{
+	return FSlateApplication::Get().GetRenderer()->GetFontMeasureService()->Measure(Text, Font).X / ViewScale;
+}
+
+void AYJJWaveHUD::DrawValueLabel(const FString& Text, float X, float Y, float Size, const FLinearColor& Color, float MaxWidth)
+{
+	if (!BaseFont || Text.IsEmpty() || Color.A <= 0.f)
+	{
+		return;
+	}
+	// 글 전체로 크기를 정한 뒤 (칸을 넘으면 줄인다), 숫자 조각과 나머지를 번갈아 이어 그린다
+	float Width = 0.f;
+	const FSlateFontInfo Font = MakeFont(Text, Size, Color.A, MaxWidth, Width);
+	const FLinearColor ValueColor = YJJUI::WithAlpha(YJJUI::Value, Color.A);
+	float Left = X;
+	int32 Start = 0;
+	while (Start < Text.Len())
+	{
+		const bool bNumber = StartsNumber(Text, Start);
+		int32 End = Start + 1;
+		if (bNumber)
+		{
+			// 숫자, 소수점·쉼표, 끝의 % 까지
+			while (End < Text.Len() && (FChar::IsDigit(Text[End]) || ((Text[End] == TCHAR('.') || Text[End] == TCHAR(',')) && Text.IsValidIndex(End + 1) && FChar::IsDigit(Text[End + 1]))))
+			{
+				++End;
+			}
+			if (End < Text.Len() && Text[End] == TCHAR('%'))
+			{
+				++End;
+			}
+		}
+		else
+		{
+			while (End < Text.Len() && !StartsNumber(Text, End))
+			{
+				++End;
+			}
+		}
+		const FString Piece = Text.Mid(Start, End - Start);
+		DrawText(Piece, Font, Left, Y, bNumber ? ValueColor : Color);
+		Left += MeasureWith(Piece, Font);
+		Start = End;
+	}
+}
+
 void AYJJWaveHUD::DrawLabelLeftMiddle(const FString& Text, float X, float CenterY, float Size, const FLinearColor& Color, float AlignX)
 {
 	// 가로는 AlignX(0 왼쪽, 1 오른쪽), 세로는 CenterY에 글자 몸통 가운데
@@ -242,7 +305,7 @@ FString AYJJWaveHUD::FormatCount(double Value)
 void AYJJWaveHUD::DrawPlotTooltip()
 {
 	const FYJJBattle* Current = Battle();
-	if (HoverPlot == INDEX_NONE || Current->bGameOver)
+	if (HoverPlot == INDEX_NONE || Current->bGameOver || Current->bCardPending)
 	{
 		return;
 	}
@@ -282,7 +345,7 @@ void AYJJWaveHUD::DrawPlotTooltip()
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanelDark));
 	for (int32 Line = 0; Line < Lines.Num(); ++Line)
 	{
-		DrawLabel(Lines[Line].Key, X + Pad, Y + Pad + LineH * Line, UI().SmallText, Lines[Line].Value, 0.f, W - Pad * 2.f);
+		DrawValueLabel(Lines[Line].Key, X + Pad, Y + Pad + LineH * Line, UI().SmallText, Lines[Line].Value, W - Pad * 2.f);
 	}
 }
 
@@ -293,30 +356,76 @@ void AYJJWaveHUD::DrawGameOver()
 	{
 		return;
 	}
-	DrawBox(UI().SidePanelW, 0.f, VirtualW - UI().SidePanelW, VirtualHeight, YJJUI::Shade);
-	const float W = UI().GameOverW;
-	const float H = UI().GameOverH;
+	// 결과 창: 툭 커지며 나타나고, 이기면 별이 하나씩 튀어나온다
+	const FYJJUILayout& L = UI();
+	const float Pop = FMath::Clamp(ResultAge / FMath::Max(L.ResultPopTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
+	const float Scale = FMath::Lerp(L.ResultPopStart, 1.f, 1.f - FMath::Square(1.f - Pop)) + FMath::Sin(Pop * UE_PI) * L.ResultPopOvershoot;
+	DrawBox(L.SidePanelW, 0.f, VirtualW - L.SidePanelW, VirtualHeight, YJJUI::WithAlpha(YJJUI::Shade, Pop));
+	const bool bWon = Current->bVictory;
+	const float W = L.GameOverW * Scale;
+	const float H = (bWon ? L.ResultWinH : L.GameOverH) * Scale;
 	const float X = WorldCenterVirtualX() - W * Half;
 	const float Y = (VirtualHeight - H) * Half;
-	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanel));
-	const float Pad = UI().PanelPad;
+	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanel));
+	if (Pop < 1.f)
+	{
+		return;
+	}
+	const float Pad = L.PanelPad;
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
-	DrawLabel(YJJLoc::Get(Current->bVictory ? TEXT("UI.Victory") : TEXT("UI.GameOver")), X + W * Half, Y + Pad * 2.f, UI().TitleText, Current->bVictory ? YJJUI::Highlight : YJJUI::Bad, Half);
-	DrawLabel(YJJLoc::Format(TEXT("UI.GameOverStats"), { YJJLoc::Get(Current->StageDef().NameKey), FormatCount(Current->Kills), FMath::RoundToInt(Current->Time), FormatCount(Current->SoulsEarned) }),
-		X + W * Half, Y + H * Half - UI().MidText * Half, UI().MidText, YJJUI::Paper, Half, W - Pad * 2.f);
+	float RowY = Y + Pad * 2.f;
+	DrawLabel(YJJLoc::Get(bWon ? TEXT("UI.Victory") : TEXT("UI.GameOver")), X + W * Half, RowY, L.TitleText, bWon ? YJJUI::Highlight : YJJUI::Bad, Half);
+	RowY += L.TitleText + Pad;
+	if (bWon)
+	{
+		DrawResultStars(X + W * Half, RowY, ResultAge - L.ResultPopTime, Current->Stars);
+		RowY += L.ResultStarSize + Pad;
+	}
+	DrawValueLabel(YJJLoc::Format(TEXT("UI.GameOverStats"), { YJJLoc::Get(Current->StageDef().NameKey), FormatCount(Current->Kills), FMath::RoundToInt(Current->Time), FormatCount(Current->SoulsEarned) }),
+		X + Pad * 2.f, RowY, L.MidText, YJJUI::Paper, W - Pad * 4.f);
 
-	// 버튼: 다시(R) / 다음 스테이지(N)
+	// 버튼: 월드맵 / 다시 / (이겼고 다음이 있으면) 다음 스테이지
 	const bool bNext = Mode && Mode->HasNextStage();
-	const int32 NumButtons = bNext ? 2 : 1;
-	const float ButtonW = (W - Pad * 2.f - UI().CardGap * (NumButtons - 1)) / NumButtons;
-	const float ButtonY = Y + H - Pad - UI().ResultButtonH;
+	const int32 NumButtons = bNext ? 3 : 2;
+	const float ButtonW = (W - Pad * 2.f - L.CardGap * (NumButtons - 1)) / NumButtons;
+	const float ButtonY = Y + H - Pad - L.ResultButtonH;
+	const EButton Kinds[] = { EButton::ResultMap, EButton::Restart, EButton::NextStage };
+	const TCHAR* Keys[] = { TEXT("UI.WorldMap"), TEXT("UI.Restart"), TEXT("UI.NextStage") };
 	for (int32 Index = 0; Index < NumButtons; ++Index)
 	{
-		const bool bIsNext = bNext && Index == 1;
-		const float BX = X + Pad + Index * (ButtonW + UI().CardGap);
-		DrawPanel(BX, ButtonY, ButtonW, UI().ResultButtonH, bIsNext ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(UI().UiCard));
-		DrawLabelCentered(YJJLoc::Get(bIsNext ? TEXT("UI.NextStage") : TEXT("UI.Restart")), BX + ButtonW * Half, ButtonY + UI().ResultButtonH * Half, UI().MidText, YJJUI::Paper, ButtonW - Pad);
-		AddButton(bIsNext ? EButton::NextStage : EButton::Restart, 0, BX, ButtonY, ButtonW, UI().ResultButtonH);
+		const float BX = X + Pad + Index * (ButtonW + L.CardGap);
+		DrawMenuButton(Kinds[Index], 0, BX, ButtonY, ButtonW, L.ResultButtonH, YJJLoc::Get(Keys[Index]), Index == NumButtons - 1 && bNext);
+	}
+}
+
+void AYJJWaveHUD::DrawResultStars(float CenterX, float Y, float Age, int32 Stars)
+{
+	const FYJJUILayout& L = UI();
+	const int32 MaxStars = FMath::RoundToInt(L.ResultStarCount);
+	const float Size = L.ResultStarSize;
+	const float Gap = L.ResultStarGap;
+	const float Left = CenterX - (MaxStars * Size + (MaxStars - 1) * Gap) * Half;
+	for (int32 Index = 0; Index < MaxStars; ++Index)
+	{
+		const float Local = Age - Index * L.ResultStarDelay;
+		const float X = Left + Index * (Size + Gap);
+		// 빈 별 자리
+		DrawIcon(FMath::RoundToInt(L.UiBigStar), X, Y, Size, YJJUI::WithAlpha(YJJUI::Ink, L.ResultStarEmptyAlpha));
+		if (Index >= Stars || Local <= 0.f)
+		{
+			continue;
+		}
+		// 커졌다 제자리로 + 하나 나올 때마다 소리
+		if (StarsSounded <= Index)
+		{
+			StarsSounded = Index + 1;
+			FYJJAudio::Play(this, SoundStar);
+			Shake();
+		}
+		const float T = FMath::Clamp(Local / FMath::Max(L.ResultStarPopTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
+		const float Grow = FMath::Lerp(L.ResultStarPopScale, 1.f, T);
+		const float Drawn = Size * Grow;
+		DrawIcon(FMath::RoundToInt(L.UiBigStar), X + (Size - Drawn) * Half, Y + (Size - Drawn) * Half, Drawn, YJJUI::PerkTaken);
 	}
 }
 
@@ -525,7 +634,7 @@ void AYJJWaveHUD::DrawTree()
 		DrawLabel(KindLine, X + W - Pad, Y + Pad + (UI().MidText - UI().SmallText), UI().SmallText, YJJUI::Muted, 1.f, UI().TipKindW);
 		for (int32 Line = 0; Line < BodyLines.Num(); ++Line)
 		{
-			DrawLabel(BodyLines[Line], X + Pad, Y + Pad + LineH * (Line + 1), UI().SmallText, YJJUI::Paper, 0.f, W - Pad * 2.f);
+			DrawValueLabel(BodyLines[Line], X + Pad, Y + Pad + LineH * (Line + 1), UI().SmallText, YJJUI::Paper, W - Pad * 2.f);
 		}
 		DrawLabel(Status, X + Pad, Y + Pad + LineH * (BodyLines.Num() + 1), UI().SmallText, StatusColor, 0.f, W - Pad * 2.f);
 	}
@@ -595,7 +704,35 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::OpenOptions:
 			bOptionsOpen = !bOptionsOpen;
 			break;
+		case EButton::Pot:
+			OpenPot();
+			break;
+		case EButton::TitleStart:
+			Mode->GoToWorldMap();
+			break;
+		case EButton::TitleQuit:
+			if (APlayerController* Player = GetOwningPlayerController())
+			{
+				Player->ConsoleCommand(TEXT("quit"));
+			}
+			break;
+		case EButton::WorldStage:
+			if (Mode->IsStageOpen(Button->Index))
+			{
+				Mode->StartStage(Button->Index);
+			}
+			break;
+		case EButton::WorldBack:
+			Mode->GoToTitle();
+			break;
+		case EButton::ResultMap:
+			Mode->GoToWorldMap();
+			break;
 		}
+		return;
+	}
+	if (Mode->GetScreen() != EYJJScreen::Battle)
+	{
 		return;
 	}
 
@@ -617,7 +754,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		}
 		return;
 	}
-	ClickWorld();
+	bLeftDown = true;
+	bLeftDragged = false;
+	DragLast = DragStart = Mouse;
 }
 
 void AYJJWaveHUD::HandleMouseUp(bool bRight)
@@ -625,6 +764,14 @@ void AYJJWaveHUD::HandleMouseUp(bool bRight)
 	if (bRight)
 	{
 		bDragging = false;
+		return;
+	}
+	// 끌지 않고 뗐으면 전장 클릭 (짓기·강화·냄비·주문 조준)
+	const bool bClick = bLeftDown && !bLeftDragged;
+	bLeftDown = bLeftDragged = false;
+	if (bClick)
+	{
+		ClickWorld();
 	}
 }
 
@@ -682,6 +829,34 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	if (!Current || !Mode)
 	{
+		return;
+	}
+	// 타이틀: 엔터·스페이스 시작 / 월드맵: ESC 타이틀
+	if (Mode->GetScreen() == EYJJScreen::Title)
+	{
+		if (Key == EKeys::Enter || Key == EKeys::SpaceBar)
+		{
+			Mode->GoToWorldMap();
+		}
+		else if (Key == EKeys::Escape)
+		{
+			bOptionsOpen = !bOptionsOpen;
+		}
+		return;
+	}
+	if (Mode->GetScreen() == EYJJScreen::WorldMap)
+	{
+		if (Key == EKeys::Escape)
+		{
+			if (bOptionsOpen)
+			{
+				bOptionsOpen = false;
+			}
+			else
+			{
+				Mode->GoToTitle();
+			}
+		}
 		return;
 	}
 	// 컷씬: 스페이스·엔터 다음 줄, ESC 건너뛰기
@@ -780,15 +955,9 @@ void AYJJWaveHUD::PressSpell(EYJJSpell Spell)
 		Current->Cast(Spell, FVector2f::ZeroVector);
 		AimingSpell = INDEX_NONE;
 	}
-	else if (!IsMouseOverUI())
-	{
-		// 커서가 전장 위면 바로 그 자리에
-		Current->Cast(Spell, ScreenToWorld(MouseScreen()));
-		AimingSpell = INDEX_NONE;
-	}
 	else
 	{
-		// 패널 위면 조준 상태로 (같은 주문을 다시 누르면 취소)
+		// 조준 상태로: 전장을 클릭한 자리에 떨어진다 (같은 주문을 다시 누르면 취소, 오른쪽 클릭·ESC도 취소)
 		AimingSpell = AimingSpell == Index || !Current->CanCast(Spell) ? INDEX_NONE : Index;
 	}
 }
@@ -880,7 +1049,7 @@ void AYJJWaveHUD::DrawCardPick()
 		const TArray<FString> Lines = WrapText(EffectText(Def), L.SmallText, L.CardW - Pad * 2.f);
 		for (int32 Line = 0; Line < Lines.Num(); ++Line)
 		{
-			DrawLabel(Lines[Line], X + Pad, Y + Pad * 2.5f + L.MidText + Line * L.TipLineH, L.SmallText, YJJUI::Paper, 0.f, L.CardW - Pad * 2.f);
+			DrawValueLabel(Lines[Line], X + Pad, Y + Pad * 2.5f + L.MidText + Line * L.TipLineH, L.SmallText, YJJUI::Paper, L.CardW - Pad * 2.f);
 		}
 		AddButton(EButton::Card, Index, X, Y, L.CardW, L.CardPickH);
 	}

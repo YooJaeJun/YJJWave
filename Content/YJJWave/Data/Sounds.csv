@@ -63,3 +63,7 @@ Line_Boss2,VO_Line_Boss2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
 Line_Deep1,VO_Line_Deep1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
 Line_Deep2,VO_Line_Deep2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
 Line_HeroLow1,VO_Line_HeroLow1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Star,SFX_Upgrade,0.7,Sfx,0,1.15,1.35,결과 별이 하나 나올 때
+Line_PotReady1,VO_Line_PotReady1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_PotReady2,VO_Line_PotReady2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_BossDown1,VO_Line_BossDown1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)

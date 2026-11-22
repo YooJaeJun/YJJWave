@@ -6,6 +6,7 @@
 #include "Meta/YJJOptions.h"
 #include "UI/YJJUIStyle.h"
 #include "UI/YJJWaveHUD.h"
+#include "YJJWaveGameMode.h"
 
 float* AYJJWaveHUD::OptionVolume(int32 Row)
 {
@@ -86,9 +87,18 @@ void AYJJWaveHUD::DrawOptions()
 		RowY += RowH;
 	}
 
-	// 닫기
+	// 닫기 (판 중이면 왼쪽에 포기 → 월드맵)
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	const bool bInBattle = Mode && Mode->GetScreen() == EYJJScreen::Battle;
 	const float CloseW = L.OptionsCloseW;
-	const float CloseX = X + (W - CloseW) * Half;
+	const float CloseX = bInBattle ? X + W * Half + Pad * Half : X + (W - CloseW) * Half;
+	if (bInBattle)
+	{
+		const float GiveUpX = X + W * Half - Pad * Half - CloseW;
+		DrawPanel(GiveUpX, RowY + Pad * Half, CloseW, RowH - Pad, YJJUI::Bad, FMath::RoundToInt(L.UiCard));
+		DrawLabelCentered(YJJLoc::Get(TEXT("Option.GiveUp")), GiveUpX + CloseW * Half, RowCenter(), L.MidText, YJJUI::Paper, CloseW - Pad);
+		AddButton(EButton::Option, OptionGiveUp, GiveUpX, RowY + Pad * Half, CloseW, RowH - Pad);
+	}
 	DrawPanel(CloseX, RowY + Pad * Half, CloseW, RowH - Pad, YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
 	DrawLabelCentered(YJJLoc::Get(TEXT("Option.Close")), CloseX + CloseW * Half, RowCenter(), L.MidText, YJJUI::Paper, CloseW - Pad);
 	AddButton(EButton::Option, OptionClose, CloseX, RowY + Pad * Half, CloseW, RowH - Pad);
@@ -130,6 +140,15 @@ void AYJJWaveHUD::HandleOption(int32 Index)
 	else if (Index == OptionClose)
 	{
 		bOptionsOpen = false;
+		return;
+	}
+	else if (Index == OptionGiveUp)
+	{
+		bOptionsOpen = false;
+		if (AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>())
+		{
+			Mode->GiveUp();
+		}
 		return;
 	}
 	Options.Save();

@@ -48,12 +48,13 @@ struct FYJJEffect
 	float BurnTime = 0.f;
 };
 
-/** 판이 끝나도 남는 것: 영혼과 찍은 특성, 깬 스테이지 (저장 파일과 주고받는다) */
+/** 판이 끝나도 남는 것: 영혼과 찍은 특성, 깬 스테이지, 스테이지별 최고 별 (저장 파일과 주고받는다) */
 struct FYJJProgress
 {
 	double Souls = 0.0;
 	TArray<FName> Perks;
 	int32 Cleared = 0;   // 깬 스테이지 수 (다음에 열리는 스테이지 = Cleared)
+	TArray<int32> Stars; // 스테이지 번호 → 최고 별 (0 = 아직)
 };
 
 /**
@@ -167,6 +168,12 @@ public:
 	int32 Spawned[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	bool bGameOver = false;
 	bool bVictory = false;
+	/** 이겼지만 마무리 연출 중 (적이 다 쓰러졌고 VictoryDelay 뒤에 결과) */
+	bool bEnding = false;
+	/** 이번 판 별 (이겼을 때 영웅 체력 비율로 1~3) */
+	int32 Stars = 0;
+	/** 보스가 쓰러질 때 잠깐 느리게 (게임 모드가 배속에 곱한다) */
+	float TimeScale() const;
 	float FieldWidth = 0.f;
 	float FieldHeight = 0.f;
 	float CampEdgeX = 0.f;
@@ -236,6 +243,9 @@ private:
 	float ServedHP = 0.f;
 	float ServedDamage = 0.f;
 	bool bHeroLowSaid = false;
+	int32 LastPotStage = INDEX_NONE;
+	float EndTimer = 0.f;
+	float SlowMoLeft = 0.f;
 
 	// 강령술: 쓰러진 자리 (오래된 것부터 덮어쓴다)
 	TArray<FVector2f> Corpses;

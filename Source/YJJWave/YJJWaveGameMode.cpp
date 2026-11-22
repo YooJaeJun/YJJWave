@@ -40,8 +40,9 @@ void AYJJWaveGameMode::BeginPlay()
 	Progress = UYJJWaveSave::Load();
 	// 아직 안 깬 가장 앞 스테이지부터
 	const int32 First = FMath::Clamp(Progress.Cleared, 0, FMath::Max(YJJData::Stages().Num() - 1, 0));
+	// 처음엔 타이틀. 판은 미리 준비만 해 둔다 (HUD가 늘 읽을 수 있게)
 	Battle.Reset(First, Progress);
-	StartCutscene();
+	Screen = EYJJScreen::Title;
 	UE_LOG(LogYJJWave, Display, TEXT("[Run] 시작: 유닛 %d종, 병영 %d종, 특성 %d개, 스테이지 %d개 (%d번부터)"),
 		YJJData::Units().Num(), YJJData::Buildings().Num(), YJJData::Perks().Num(), YJJData::Stages().Num(), First + 1);
 }
@@ -50,7 +51,7 @@ bool AYJJWaveGameMode::IsRunning() const
 {
 	const APlayerController* Player = GetWorld()->GetFirstPlayerController();
 	const AYJJWaveHUD* HUD = Player ? Cast<AYJJWaveHUD>(Player->GetHUD()) : nullptr;
-	return !bUserPaused && !Battle.bGameOver && !Battle.bCardPending && CutIndex == INDEX_NONE && !(HUD && (HUD->IsTreeOpen() || HUD->IsOptionsOpen()));
+	return Screen == EYJJScreen::Battle && !bUserPaused && !Battle.bGameOver && !Battle.bCardPending && CutIndex == INDEX_NONE && !(HUD && (HUD->IsTreeOpen() || HUD->IsOptionsOpen()));
 }
 
 float AYJJWaveGameMode::GetSpeed() const
@@ -105,10 +106,34 @@ void AYJJWaveGameMode::SaveProgress()
 	UYJJWaveSave::Store(Progress);
 }
 
+void AYJJWaveGameMode::GoToTitle()
+{
+	WaitForSim();
+	Screen = EYJJScreen::Title;
+	bUserPaused = false;
+}
+
+void AYJJWaveGameMode::GoToWorldMap()
+{
+	WaitForSim();
+	SaveProgress();
+	Screen = EYJJScreen::WorldMap;
+	bUserPaused = false;
+	CutIndex = INDEX_NONE;
+}
+
+void AYJJWaveGameMode::GiveUp()
+{
+	UE_LOG(LogYJJWave, Display, TEXT("[Run] 포기: 스테이지 %d"), Battle.Stage + 1);
+	GoToWorldMap();
+}
+
 void AYJJWaveGameMode::StartStage(int32 Stage)
 {
 	WaitForSim();
 	SaveProgress();
+	Screen = EYJJScreen::Battle;
+	bUserPaused = false;
 	bResultSaved = false;
 	PendingPostDt = 0.f;
 	Battle.Reset(Stage, Progress);
@@ -207,7 +232,7 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 	WaitForSim();
 
 	// 컷씬은 실제 시간으로 흐른다
-	if (const FYJJCutLine* Line = CutsceneLine())
+	if (const FYJJCutLine* Line = Screen == EYJJScreen::Battle ? CutsceneLine() : nullptr)
 	{
 		CutTime += DeltaSeconds;
 		if (CutTime >= Line->Duration)
@@ -221,6 +246,16 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 	{
 		AutoPilot = MakeUnique<FYJJAutoPilot>(this, CVarAutoPlayTime.GetValueOnGameThread(), CVarShotInterval.GetValueOnGameThread(), CVarBench.GetValueOnGameThread() > 0);
 		UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] 시작"));
+	}
+	if (Screen != EYJJScreen::Battle)
+	{
+		// 봇은 타이틀·월드맵을 한 장씩 찍고 판으로
+		if (AutoPilot && AutoPilot->TickMenus(DeltaSeconds))
+		{
+			StartStage(Battle.Stage);
+		}
+		FYJJAudio::PlayMusic(this, MusicMenu);
+		return;
 	}
 	if (!bBenchSpawned && CVarBench.GetValueOnGameThread() > 0)
 	{
@@ -242,6 +277,11 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 		if (Battle.bVictory)
 		{
 			Progress.Cleared = FMath::Max(Progress.Cleared, Battle.Stage + 1);
+			if (Progress.Stars.Num() <= Battle.Stage)
+			{
+				Progress.Stars.SetNumZeroed(Battle.Stage + 1);
+			}
+			Progress.Stars[Battle.Stage] = FMath::Max(Progress.Stars[Battle.Stage], Battle.Stars);
 		}
 		SaveProgress();
 	}
@@ -266,7 +306,7 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 	if (IsRunning())
 	{
 		const FYJJTuning& T = YJJData::Tune();
-		Accumulator += DeltaSeconds * GetSpeed();
+		Accumulator += DeltaSeconds * GetSpeed() * Battle.TimeScale();
 		int32 Steps = 0;
 		while (Accumulator >= T.SimStep && Steps < T.MaxStepsPerFrame)
 		{

@@ -105,59 +105,114 @@ void AYJJWaveHUD::DrawPot()
 		AddQuadRotated(Batch, TopLeft + FVector2f(Size * Half) + Ajar - FVector2f(0.f, Lift), FVector2f(Size), Tilt, BuildingAtlas.UV(FMath::RoundToInt(L.PotLidCell), 0), BuildingAtlas.CellUV, FLinearColor::White, false);
 	}
 
-	// 위 글자: 지금 단계와 뼈 (마지막 단계면 넘치기까지 남은 시간)
+	// 위 글자: 지금 단계와 뼈 (마지막 단계면 넘치기까지 남은 시간). 열 수 있으면 "뚜껑 열기!"가 통통 튄다
 	const FVector2f Label = WorldToVirtual(Current->PotPos() - FVector2f(0.f, L.PotDrawSize * L.PotAnchorY)) - FVector2f(0.f, L.PotLabelGap + L.SmallText);
-	FString Text;
-	FLinearColor Color = YJJUI::Paper;
+	DrawLabel(PotStatusText(), Label.X, Label.Y, L.SmallText, PotStatusColor(), Half);
+	if (Current->CanOpenPot())
+	{
+		const float Bounce = FMath::Abs(FMath::Sin(AnimClock * L.PotPromptSpeed)) * L.PotPromptBounce;
+		DrawLabel(YJJLoc::Get(TEXT("Pot.Open")), Label.X, Label.Y - L.MidText - L.PotLabelGap - Bounce, L.MidText, YJJUI::Highlight, Half);
+	}
+}
+
+FString AYJJWaveHUD::PotStatusText() const
+{
+	const FYJJBattle* Current = Battle();
+	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
+	const int32 Stage = Current->PotStage();
+	const float OverflowLeft = Current->PotOverflowLeft();
 	if (Stage == INDEX_NONE)
 	{
-		Text = YJJLoc::Format(TEXT("Pot.Empty"), { FMath::FloorToInt(Current->PotBones()), FMath::RoundToInt(Broth[0].Bones) });
+		return YJJLoc::Format(TEXT("Pot.Empty"), { FMath::FloorToInt(Current->PotBones()), FMath::RoundToInt(Broth[0].Bones) });
 	}
-	else if (OverflowLeft >= 0.f)
+	if (OverflowLeft >= 0.f)
 	{
-		Text = YJJLoc::Format(TEXT("Pot.Full"), { YJJLoc::Get(Broth[Stage].NameKey), FMath::CeilToInt(OverflowLeft) });
-		Color = YJJUI::Bad;
+		return YJJLoc::Format(TEXT("Pot.Full"), { YJJLoc::Get(Broth[Stage].NameKey), FMath::CeilToInt(OverflowLeft) });
 	}
-	else
+	return YJJLoc::Format(TEXT("Pot.Stage"), { YJJLoc::Get(Broth[Stage].NameKey), FMath::FloorToInt(Current->PotBones()), FMath::RoundToInt(Current->PotNextBones()) });
+}
+
+FLinearColor AYJJWaveHUD::PotStatusColor() const
+{
+	const FYJJBattle* Current = Battle();
+	return Current->PotStage() == INDEX_NONE ? YJJUI::Paper : Current->PotOverflowLeft() >= 0.f ? YJJUI::Bad : YJJUI::Highlight;
+}
+
+float AYJJWaveHUD::DrawPotPanel(float X, float Y, float W)
+{
+	// 좌측 패널 냄비 칸: 냄비 그림 · 지금 단계 · 단계 눈금이 있는 게이지 · 열기 버튼 (냄비가 화면 밖이어도 보인다)
+	const FYJJBattle* Current = Battle();
+	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
+	if (Broth.Num() == 0)
 	{
-		Text = YJJLoc::Format(TEXT("Pot.Stage"), { YJJLoc::Get(Broth[Stage].NameKey), FMath::FloorToInt(Current->PotBones()), FMath::RoundToInt(Current->PotNextBones()) });
-		Color = YJJUI::Highlight;
+		return 0.f;
 	}
-	DrawLabel(Text, Label.X, Label.Y, L.SmallText, Color, Half);
+	const FYJJUILayout& L = UI();
+	const float Pad = L.PanelPad;
+	const float H = L.PotPanelH;
+	const bool bCan = Current->CanOpenPot();
+	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
+	const float Icon = H - Pad * 2.f;
+	DrawIcon(FMath::RoundToInt(L.UiPot), X + Pad, Y + Pad, Icon);
+
+	const float ButtonW = L.PotButtonW;
+	const float ButtonX = X + W - Pad - ButtonW;
+	const float Glow = bCan ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
+	DrawPanel(ButtonX, Y + Pad, ButtonW, Icon, bCan ? FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow) : YJJUI::Muted, FMath::RoundToInt(L.UiCard));
+	DrawLabelCentered(YJJLoc::Get(TEXT("Pot.Button")), ButtonX + ButtonW * Half, Y + Pad + Icon * Half, L.SmallText, YJJUI::Paper, ButtonW - Pad);
+	AddButton(EButton::Pot, 0, ButtonX, Y + Pad, ButtonW, Icon);
+
+	// 글자 + 게이지 (단계 문턱마다 눈금)
+	const float TextX = X + Pad + Icon + L.IconGap;
+	const float BarW = ButtonX - L.IconGap - TextX;
+	DrawLabel(PotStatusText(), TextX, Y + Pad, L.SmallText, PotStatusColor(), 0.f, BarW);
+	const float MaxBones = FMath::Max(Broth.Last().Bones, KINDA_SMALL_NUMBER);
+	const int32 Stage = Current->PotStage();
+	const float BarY = Y + H - Pad - L.BarH;
+	DrawBar(TextX, BarY, BarW, L.BarH, Current->PotBones() / MaxBones, Stage == INDEX_NONE ? YJJUI::Muted : Broth[Stage].Color);
+	for (const FYJJBrothStage& Mark : Broth)
+	{
+		DrawBox(TextX + BarW * Mark.Bones / MaxBones - L.PotTickW * Half, BarY - L.PotTickOver, L.PotTickW, L.BarH + L.PotTickOver * 2.f, YJJUI::Ink);
+	}
+	return H;
 }
 
 void AYJJWaveHUD::DrawPotTooltip()
 {
 	const FYJJBattle* Current = Battle();
 	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
-	if (!bPotHover || Current->bGameOver || Broth.Num() == 0)
+	const bool bPanel = HoverButton(EButton::Pot);
+	if ((!bPotHover && !bPanel) || Current->bGameOver || Broth.Num() == 0)
 	{
 		return;
 	}
-	const int32 Stage = Current->PotStage();
-	const FYJJBrothStage& Shown = Broth[FMath::Max(Stage, 0)];
-	TArray<TPair<FString, FLinearColor>> Lines;
-	Lines.Emplace(YJJLoc::Get(TEXT("Pot.Title")), YJJUI::Highlight);
+	// 무엇을 하면 무엇이 되는지 한눈에: 뼈가 모인다 → 단계표 (지금 단계 밝게) → 열면 → 넘침 주의
 	const FYJJUILayout& L = UI();
 	const float W = L.TipW;
 	const float Pad = L.TextPad;
-	for (const FString& Wrapped : WrapText(YJJLoc::Get(TEXT("Pot.Desc")), L.SmallText, W - Pad * 2.f))
+	const int32 Stage = Current->PotStage();
+	TArray<TPair<FString, FLinearColor>> Lines;
+	Lines.Emplace(YJJLoc::Get(TEXT("Pot.Title")), YJJUI::Highlight);
+	for (const TCHAR* Key : { TEXT("Pot.Desc1"), TEXT("Pot.Desc2") })
 	{
-		Lines.Emplace(Wrapped, YJJUI::Muted);
+		for (const FString& Wrapped : WrapText(YJJLoc::Get(Key), L.SmallText, W - Pad * 2.f))
+		{
+			Lines.Emplace(Wrapped, YJJUI::Paper);
+		}
 	}
-	const FString Effect = FString::Printf(TEXT("%s: %s"), *YJJLoc::Get(Shown.NameKey),
-		*YJJLoc::Format(TEXT("Pot.Effect"), { FMath::RoundToInt(Shown.HP * Percent), FMath::RoundToInt(Shown.Damage * Percent), FMath::RoundToInt(Shown.Heal * Percent) }));
-	for (const FString& Wrapped : WrapText(Effect, L.SmallText, W - Pad * 2.f))
+	for (int32 Index = 0; Index < Broth.Num(); ++Index)
 	{
-		Lines.Emplace(Wrapped, Stage == INDEX_NONE ? YJJUI::Muted : YJJUI::Paper);
+		const FYJJBrothStage& Row = Broth[Index];
+		const FString Text = YJJLoc::Format(TEXT("Pot.Row"), { YJJLoc::Get(Row.NameKey), FMath::RoundToInt(Row.Bones), FMath::RoundToInt(Row.HP * Percent), FMath::RoundToInt(Row.Heal * Percent) });
+		Lines.Emplace(Text, Index == Stage ? YJJUI::Highlight : YJJUI::Muted);
+	}
+	for (const FString& Wrapped : WrapText(YJJLoc::Format(TEXT("Pot.Warn"), { FMath::RoundToInt(YJJData::Tune().PotOverflowTime) }), L.SmallText, W - Pad * 2.f))
+	{
+		Lines.Emplace(Wrapped, YJJUI::Bad);
 	}
 	if (Current->BrothServed() > 0)
 	{
 		Lines.Emplace(YJJLoc::Format(TEXT("Pot.Served"), { Current->BrothServed(), FMath::RoundToInt(Current->BrothHP() * Percent), FMath::RoundToInt(Current->BrothDamage() * Percent) }), YJJUI::Good);
-	}
-	if (Stage != INDEX_NONE)
-	{
-		Lines.Emplace(YJJLoc::Get(TEXT("Pot.Hint")), YJJUI::Highlight);
 	}
 
 	const FVector2f Mouse = ToVirtual(MouseScreen());
@@ -168,6 +223,6 @@ void AYJJWaveHUD::DrawPotTooltip()
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
 	for (int32 Line = 0; Line < Lines.Num(); ++Line)
 	{
-		DrawLabel(Lines[Line].Key, X + Pad, Y + Pad + LineH * Line, L.SmallText, Lines[Line].Value, 0.f, W - Pad * 2.f);
+		DrawValueLabel(Lines[Line].Key, X + Pad, Y + Pad + LineH * Line, L.SmallText, Lines[Line].Value, W - Pad * 2.f);
 	}
 }

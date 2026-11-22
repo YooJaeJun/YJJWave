@@ -32,10 +32,62 @@ BoneArc,260,뼈가 날아가는 포물선 높이 (월드)
 BoneSpin,9,뼈 회전 빠르기
 PromoteRise,40,진급 빛이 떠오르는 높이 (월드)
 PromoteBannerTier,2,이 진급 단계 이상이면 화면 배너 (2 = 장군)
-BubbleMaxW,340,말풍선 최대 너비 (화면)
-BubblePad,14,말풍선 안쪽 여백
+ResultPopTime,0.35,결과 창이 커지며 나타나는 시간
+ResultPopStart,0.6,결과 창 처음 크기 배율
+ResultPopOvershoot,0.06,결과 창이 살짝 넘쳤다 돌아오는 정도
+ResultWinH,400,이겼을 때 결과 창 높이 (별 줄 포함)
+ResultStarCount,3,별 수
+ResultStarSize,92,결과 별 크기
+ResultStarGap,24,결과 별 사이
+ResultStarDelay,0.45,별이 하나씩 나오는 간격
+ResultStarPopTime,0.25,별이 커졌다 자리 잡는 시간
+ResultStarPopScale,1.8,별이 처음 나올 때 크기 배율
+ResultStarEmptyAlpha,0.45,얻지 못한 별 자리 진하기
+TitleShade,0.35,타이틀 바닥 어둡게
+TitleLogoY,0.2,제목 높이 (화면 비율)
+TitleLogoSize,120,제목 글자 크기
+TitleTaglineGap,24,제목과 한 줄 사이
+TitleButtonsY,0.36,버튼 시작 높이 (화면 비율)
+TitleButtonW,320,타이틀·월드맵 버튼 너비
+TitleButtonH,64,타이틀·월드맵 버튼 높이
+TitleButtonGap,16,버튼 사이
+TitlePotSize,380,타이틀 냄비 크기
+TitlePotY,0.98,타이틀 냄비 발 높이 (화면 비율)
+TitleSteamScale,0.3,타이틀 김 크기 (냄비 크기 배율)
+TitleSteamRise,0.6,타이틀 김 오르는 높이 (냄비 크기 배율)
+TitleArmyRows,2,양옆 무리 줄 수
+TitleArmyCols,4,양옆 무리 한 줄 수
+TitleArmyY,0.84,무리 첫 줄 발 높이 (화면 비율)
+TitleArmyRowGap,90,무리 줄 사이
+TitleArmyGap,120,무리 사이 간격
+TitleUnitSize,150,타이틀 병사 크기
+RegionCloudPuffs,13,잠긴 지역을 덮는 구름 덩이 수 (가운데 하나 + 둘레)
+RegionCloudSize,250,구름 덩이 크기
+RegionCloudRadius,150,둘레 구름 반지름
+RegionCloudWide,1.5,둘레 구름 가로 늘림
+RegionCloudSpeed,0.8,구름 일렁이는 빠르기
+RegionCloudBreath,0.06,구름 일렁이는 크기
+RegionLabelLift,80,지역 이름을 자리보다 이만큼 위에
+StagePathAlpha,0.6,스테이지 길 진하기
+StagePathWidth,6,스테이지 길 굵기
+StageNodeSize,84,스테이지 자리 크기
+StageNodeHover,1.15,마우스를 올리면 커지는 배율
+StageNameGap,8,자리와 이름 사이
+StageStarSize,30,월드맵 별 크기
+PotPanelH,74,냄비 칸 높이
+PotButtonW,84,열기 버튼 너비
+PotTickW,3,단계 눈금 두께
+PotTickOver,3,눈금이 게이지 위아래로 삐져나오는 길이
+PotPromptSpeed,6,냄비 위 '뚜껑 열기!' 튀는 빠르기
+PotPromptBounce,10,냄비 위 '뚜껑 열기!' 튀는 높이
+BubbleMaxW,380,말풍선 최대 너비 (화면)
+BubblePad,26,말풍선 안쪽 가로 여백
+BubblePadY,18,말풍선 안쪽 세로 여백
+BubbleText,20,말풍선 글자 크기
+BubbleNameText,16,말풍선 이름 글자 크기
+BubbleNameGap,6,이름과 대사 사이
+BubbleLineH,28,말풍선 줄 높이
 BubbleGap,10,머리 위 말풍선까지 간격 (화면)
-BubbleTail,12,말풍선 꼬리 크기
 BubbleFade,0.25,말풍선이 나타나고 사라지는 시간
 BubbleTypeSpeed,26,말풍선 글자가 나오는 빠르기 (초당 글자)
 BubbleScreenMargin,20,말풍선이 화면 밖으로 나가지 않게 띄우는 여백
@@ -166,9 +218,7 @@ TextPad,24,"글 상자 안쪽 여백: 카드 고르기·설명창 (테두리 두
 SidePanelW,420,좌측 패널 너비 (모든 UI가 여기. 전장은 나머지 전부)
 SectionGap,12,패널 칸 사이 간격
 HeaderH,120,스테이지·웨이브 칸 높이
-VsH,112,아군 VS 적 칸 높이
-BossH,54,보스 칸 높이
-ResH,76,금화·영혼 칸 높이
+ResRowH,34,금화·영혼 줄 아이콘 높이
 SpellH,120,스펠·특성 칸 높이
 BuyH,72,병사 즉시 구매 버튼 높이
 BuyPopupGap,10,구매 팝업: 카드 아래 간격
@@ -187,8 +237,14 @@ BarShineHeight,0.35,막대 반짝 띠 높이 비율
 BarShineAlpha,0.25,막대 반짝 띠 진하기
 TextBarH,28,숫자가 들어가는 게이지 높이 (영웅·보스)
 BarTextScale,0.8,게이지 안 글자 크기 = 게이지 높이 x 이 비율
-SpeedButtonW,110,배속 버튼 너비
-BossBarSplit,0.35,보스 이름 / 막대 나누는 비율
+SpeedButtonW,110,배속 버튼 너비 (화면 오른쪽 위)
+SpeedButtonH,54,배속 버튼 높이
+DragStartPixels,8,왼쪽 버튼을 이만큼 끌면 클릭이 아니라 화면 이동
+UnitBarLift,0.95,머리 위 체력 게이지: 발에서 그림 크기의 이 비율 위
+UnitBarWidth,0.55,머리 위 체력 게이지 너비 (그림 크기 비율)
+UnitBarMinW,70,머리 위 체력 게이지 최소 너비 (화면)
+UnitBarH,9,머리 위 체력 게이지 두께
+UnitBarNameGap,2,보스 이름과 게이지 사이
 CardH,136,카드 높이
 CardGap,10,카드 간격
 CardIcon,72,카드 아이콘 크기

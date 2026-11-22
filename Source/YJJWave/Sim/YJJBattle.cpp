@@ -59,6 +59,11 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	Served = 0;
 	ServedHP = ServedDamage = 0.f;
 	bHeroLowSaid = false;
+	LastPotStage = INDEX_NONE;
+	bEnding = false;
+	Stars = 0;
+	EndTimer = 0.f;
+	SlowMoLeft = 0.f;
 	Events.Reset();
 	AddEvent(EYJJTalkTrigger::StageStart);
 	for (float& Cooldown : Cooldowns)
@@ -190,6 +195,13 @@ void FYJJBattle::TickPot(float Dt)
 	{
 		LidAge += Dt;
 	}
+	// 국이 한 단계 진해지면 알린다 (처음 끓을 때 대장이 알려 준다)
+	const int32 NowStage = PotStage();
+	if (NowStage != INDEX_NONE && NowStage > LastPotStage)
+	{
+		AddEvent(EYJJTalkTrigger::PotReady, NowStage);
+	}
+	LastPotStage = NowStage;
 	// 마지막 단계(곰탕)에서 오래 두면 끓어 넘쳐 다 잃는다: 언제 열지가 판단
 	if (PotOverflowLeft() < 0.f)
 	{
@@ -251,7 +263,7 @@ void FYJJBattle::PostStep(float Dt)
 	// 전선 보너스: 영웅 자리 ~ 오른쪽 끝 사이 어디까지 밀었나
 	const FYJJTuning& T = YJJData::Tune();
 	const float PlayerFront = Horde.FrontX(EYJJTeam::Player);
-	const float Pushed = (PlayerFront - T.HeroHomeX) / FMath::Max(FieldWidth - T.HeroHomeX, 1.f);
+	const float Pushed = (PlayerFront - T.HeroHomeX) / FMath::Max(FieldWidth * T.PlayerAdvanceShare - T.HeroHomeX, 1.f);
 	FrontBonus = 1.f + T.FrontBonusMax * FMath::Clamp(Pushed, 0.f, 1.f);
 
 	TickEffects(Dt);
@@ -288,16 +300,35 @@ void FYJJBattle::PostStep(float Dt)
 		AddEvent(EYJJTalkTrigger::Promote, Promotion.Type);
 	}
 	Horde.Promoted.Reset();
+	SlowMoLeft = FMath::Max(SlowMoLeft - Dt, 0.f);
 	CheckVictory();
+	if (bEnding && !bGameOver)
+	{
+		EndTimer -= Dt;
+		if (EndTimer <= 0.f)
+		{
+			Finish(true);
+		}
+	}
 }
 
 void FYJJBattle::CheckVictory()
 {
-	// 마지막 웨이브가 끝났고 남은 적이 없으면 돌파
-	if (!bGameOver && Level >= NumWaves() && LevelTime >= LevelDuration() && Horde.Num(EYJJTeam::Enemy) == 0)
+	// 마지막 웨이브가 끝났고 남은 적이 없으면 돌파: 별을 매기고 쓰러지는 연출을 조금 보여 준 뒤 결과
+	const FYJJTuning& T = YJJData::Tune();
+	if (!bGameOver && !bEnding && Level >= NumWaves() && LevelTime >= LevelDuration() && Horde.Num(EYJJTeam::Enemy) == 0)
 	{
-		Finish(true);
+		bEnding = true;
+		EndTimer = T.VictoryDelay;
+		const int32 Hero = Horde.Hero();
+		const float Health = Hero != INDEX_NONE ? Horde.HP[Hero] / FMath::Max(Horde.MaxHP[Hero], KINDA_SMALL_NUMBER) : 0.f;
+		Stars = Health >= T.StarThreeHealth ? 3 : Health >= T.StarTwoHealth ? 2 : 1;
 	}
+}
+
+float FYJJBattle::TimeScale() const
+{
+	return SlowMoLeft > 0.f ? YJJData::Tune().BossSlowMo : 1.f;
 }
 
 void FYJJBattle::Finish(bool bWon)
@@ -604,6 +635,16 @@ void FYJJBattle::CollectRewards()
 		else if (Def.bHero && !bGameOver)
 		{
 			Finish(false);
+		}
+		// 보스가 쓰러지면: 큰 폭발 + 잠깐 느리게 (말풍선·배너는 사건으로)
+		if (Def.bBoss)
+		{
+			const FYJJTuning& T = YJJData::Tune();
+			SlowMoLeft = T.BossSlowMoTime;
+			AddEffect(EYJJEffectKind::MeteorBlast, Death.Pos, T.BlastEffectTime * T.BossBlastTimeScale, Def.DrawSize * T.BossBlastScale);
+			AddEffect(EYJJEffectKind::Promote, Death.Pos, T.PromoteEffectTime * T.BossBlastTimeScale, Def.DrawSize * T.BossBlastScale);
+			Sounds.Add(SoundMeteorBoom);
+			AddEvent(EYJJTalkTrigger::BossDown, Death.Type);
 		}
 		// 강령술사가 쓸 시체 (보스·영웅은 빼고)
 		if (!Def.bBoss && !Def.bHero && MaxCorpses > 0)

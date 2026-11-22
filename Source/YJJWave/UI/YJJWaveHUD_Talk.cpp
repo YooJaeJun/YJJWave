@@ -151,38 +151,38 @@ void AYJJWaveHUD::DrawTalks()
 		Head = WorldToVirtual(View().Pos[Slot] - FVector2f(0.f, Anchor.DrawSize * L.BubbleHeadShare));
 	}
 
-	// 크기는 다 나온 글 기준 (치는 동안 상자가 커지지 않게)
+	// 크기는 다 나온 글 기준 (치는 동안 상자가 커지지 않게). 글자는 작게, 안쪽 여백은 넉넉히, 꼬리 없이
 	const FString& Full = YJJLoc::Get(Line.TextKey);
 	const FString Name = YJJLoc::Get(Speaker.NameKey);
-	const float Pad = L.BubblePad;
-	const TArray<FString> Rows = WrapText(Full, L.MidText, L.BubbleMaxW - Pad * 2.f);
+	const float PadX = L.BubblePad;
+	const float PadY = L.BubblePadY;
+	const TArray<FString> Rows = WrapText(Full, L.BubbleText, L.BubbleMaxW - PadX * 2.f);
 	float TextW = 0.f;
 	for (const FString& Row : Rows)
 	{
 		float RowW = 0.f;
-		MakeFont(Row, L.MidText, 1.f, 0.f, RowW);
-		TextW = FMath::Max(TextW, RowW / ViewScale);
+		MakeFont(Row, L.BubbleText, 1.f, 0.f, RowW);
+		TextW = FMath::Max(TextW, RowW);
 	}
 	float NameW = 0.f;
-	MakeFont(Name, L.SmallText, 1.f, 0.f, NameW);
-	const float W = FMath::Min(FMath::Max(TextW, NameW / ViewScale) + Pad * 2.f, L.BubbleMaxW);
-	const float H = Pad * 2.f + L.SmallText + L.TipLineH * Rows.Num();
+	MakeFont(Name, L.BubbleNameText, 1.f, 0.f, NameW);
+	const float W = FMath::Min(FMath::Max(TextW, NameW) + PadX * 2.f, L.BubbleMaxW);
+	const float H = PadY * 2.f + L.BubbleNameText + L.BubbleNameGap + L.BubbleLineH * Rows.Num();
 	const float X = FMath::Clamp(Head.X - W * Half, Left, VirtualW - W - L.BubbleScreenMargin);
-	const float Y = FMath::Max(Head.Y - L.BubbleGap - L.BubbleTail - H, L.BubbleScreenMargin);
+	const float Y = FMath::Max(Head.Y - L.BubbleGap - H, L.BubbleScreenMargin);
 
 	// 나타났다 사라진다
 	const float Fade = FMath::Max(L.BubbleFade, KINDA_SMALL_NUMBER);
 	const float Alpha = FMath::Clamp(FMath::Min(TalkNow.Age / Fade, (Line.Duration - TalkNow.Age) / Fade), 0.f, 1.f);
-	const FVector2f TailFrom(FMath::Clamp(Head.X, X + Pad, X + W - Pad), Y + H);
-	DrawLine(TailFrom, FVector2f(Head.X, Head.Y - L.BubbleGap), YJJUI::WithAlpha(YJJUI::Ink, Alpha), L.BubbleTail);
 	DrawPanel(X, Y, W, H, YJJUI::WithAlpha(YJJUI::PanelTint, Alpha), FMath::RoundToInt(L.UiPanelDark));
-	DrawLabel(Name, X + Pad, Y + Pad, L.SmallText, YJJUI::WithAlpha(Speaker.Team == EYJJTeam::Enemy ? YJJUI::BossText : YJJUI::Highlight, Alpha));
+	DrawLabel(Name, X + PadX, Y + PadY, L.BubbleNameText, YJJUI::WithAlpha(Speaker.Team == EYJJTeam::Enemy ? YJJUI::BossText : YJJUI::Highlight, Alpha));
 
 	// 글자가 하나씩 (줄을 넘어가며)
 	int32 CharsLeft = FMath::FloorToInt(TalkNow.Age * L.BubbleTypeSpeed);
+	const float TextTop = Y + PadY + L.BubbleNameText + L.BubbleNameGap;
 	for (int32 Row = 0; Row < Rows.Num() && CharsLeft > 0; ++Row)
 	{
-		DrawLabel(Rows[Row].Left(CharsLeft), X + Pad, Y + Pad + L.SmallText + L.TipLineH * Row, L.MidText, YJJUI::WithAlpha(YJJUI::Paper, Alpha));
+		DrawLabel(Rows[Row].Left(CharsLeft), X + PadX, TextTop + L.BubbleLineH * Row, L.BubbleText, YJJUI::WithAlpha(YJJUI::Paper, Alpha));
 		CharsLeft -= Rows[Row].Len();
 	}
 }
