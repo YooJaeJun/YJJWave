@@ -90,6 +90,8 @@ struct FYJJStageRow : public FTableRowBase
 	UPROPERTY() float MapX = 0.f;
 	UPROPERTY() float MapY = 0.f;
 	UPROPERTY() FString Ground;
+	/** 처음부터 지어져 있는 병영 (빈칸으로 여럿) */
+	UPROPERTY() FString StartBuild;
 	UPROPERTY() FString Note;
 };
 

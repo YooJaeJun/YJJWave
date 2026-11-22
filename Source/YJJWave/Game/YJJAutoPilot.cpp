@@ -143,6 +143,12 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 			HUD->FocusWorld(Effect.Pos, PromoteShotZoom);
 			Mode->TakeShot(FString::Printf(TEXT("%sPromote"), ShotPrefix));
 		}
+		if (!bSmackShot && HUD && Effect.Kind == EYJJEffectKind::SmackFall && Effect.Age >= Effect.Life * SmackShotAt)
+		{
+			bSmackShot = true;
+			HUD->FocusWorld(Effect.Pos, PromoteShotZoom);
+			Mode->TakeShot(FString::Printf(TEXT("%sSmack"), ShotPrefix));
+		}
 		if (!bBurnShot && bShowing && Effect.Kind == EYJJEffectKind::Burn)
 		{
 			bBurnShot = true;
@@ -278,6 +284,12 @@ void FYJJAutoPilot::Think(FYJJBattle& Battle)
 	if (bPotShot && Battle.PotStage() >= YJJData::Tune().BotPotStage)
 	{
 		Battle.OpenPot();
+	}
+	// 국자: 적 앞줄을 내려친다 (사람이 클릭하듯)
+	const float EnemyFront = Battle.Horde.FrontX(EYJJTeam::Enemy);
+	if (EnemyFront > 0.f && Battle.CanSmack())
+	{
+		Battle.Smack(FVector2f(EnemyFront + YJJData::Tune().BotMeteorLead * Half, Random.FRandRange(Battle.FieldHeight * Half - YJJData::Tune().BotSmackSpread, Battle.FieldHeight * Half + YJJData::Tune().BotSmackSpread)));
 	}
 }
 

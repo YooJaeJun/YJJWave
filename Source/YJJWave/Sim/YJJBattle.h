@@ -30,6 +30,7 @@ enum class EYJJEffectKind : uint8
 	Promote,      // 진급 빛줄기
 	BoneFly,      // 쓰러진 적의 뼈가 냄비로 날아간다 (Pos = 출발)
 	PotSteam,     // 냄비 김 (뚜껑 열기·끓어 넘침)
+	SmackFall,    // 국자가 내려오는 중 (끝나면 쾅)
 };
 
 /** 화면 연출 + 늦게 터지는 주문 (MeteorFall·QuakeHit 끝, Burn 동안의 피해) */
@@ -115,6 +116,14 @@ public:
 	int32 NumAllocated() const { return PerksTaken; }
 	/** 특성이 올린 비율 합 (Building = INDEX_NONE 이면 모든 병영 공통분만) */
 	float Bonus(EYJJStat Stat, int32 Building) const;
+
+	// ---- 국자 내려치기: 전장을 클릭하면 그 자리를 큰 국자로 쾅 (횟수가 차오른다) ----
+	bool CanSmack() const { return !bGameOver && SmackCharge >= 1.f; }
+	bool Smack(const FVector2f& Where);
+	/** 지금 쓸 수 있는 횟수 (소수 = 다음 한 번이 차오르는 중) */
+	float SmackCharges() const { return SmackCharge; }
+	/** HUD가 화면을 흔들고 0으로 */
+	int32 ShakeRequests = 0;
 
 	// ---- 왕국의 마지막 냄비 (적의 뼈를 고아 군대를 먹인다, 이번 판 한정) ----
 	FVector2f PotPos() const;
@@ -233,6 +242,10 @@ private:
 	float SoulBurstMult = 1.f;
 	float MeteorTwiceDelay = 0.f;
 	float RallyHealFraction = 0.f;
+
+	float SmackCharge = 0.f;
+	inline static const FName SoundSmack = TEXT("Smack");
+	inline static const FName SoundSwing = TEXT("Swing");
 
 	// 냄비
 	float BonesInPot = 0.f;

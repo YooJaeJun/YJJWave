@@ -199,7 +199,9 @@ void AYJJWaveHUD::DrawWorldMap()
 
 	// 머리글 + 타이틀로
 	const float Pad = L.PanelPad;
-	DrawLabel(YJJLoc::Get(TEXT("Map.Title")), Pad * 2.f, Pad, L.TitleText, YJJUI::Highlight);
-	DrawLabel(YJJLoc::Get(TEXT("Map.Hint")), Pad * 2.f, Pad * 2.f + L.TitleText, L.SmallText, YJJUI::Paper);
+	// 머리글은 어두운 판 위에 (지도 가장자리 구름이 희어서)
+	DrawPanel(Pad, Pad, L.MapHeaderW, L.TitleText + L.SmallText + L.TextPad * 2.f + Pad, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
+	DrawLabel(YJJLoc::Get(TEXT("Map.Title")), Pad + L.TextPad, Pad + L.TextPad, L.TitleText, YJJUI::Highlight);
+	DrawLabel(YJJLoc::Get(TEXT("Map.Hint")), Pad + L.TextPad, Pad + L.TextPad + L.TitleText + Pad, L.SmallText, YJJUI::Paper);
 	DrawMenuButton(EButton::WorldBack, 0, VirtualW - Pad - L.TitleButtonW, Pad, L.TitleButtonW, L.TitleButtonH, YJJLoc::Get(TEXT("Map.Back")), false);
 }

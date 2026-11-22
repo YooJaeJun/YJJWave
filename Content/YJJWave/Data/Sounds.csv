@@ -67,3 +67,6 @@ Star,SFX_Star,0.7,Sfx,0,1.15,1.35,결과 별이 하나 나올 때
 Line_PotReady1,VO_Line_PotReady1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
 Line_PotReady2,VO_Line_PotReady2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
 Line_BossDown1,VO_Line_BossDown1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Smack,SFX_Smack,0.8,Sfx,0.05,0.9,1.1,국자 내려치기 쾅
+Swing,SFX_Swing,0.5,Sfx,0.05,0.95,1.1,국자 휘두르기
+Line_Start4,VO_Line_Start4,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)

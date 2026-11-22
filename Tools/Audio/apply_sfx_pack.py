@@ -37,7 +37,8 @@ SOUNDS = {
     "SFX_Star": "select_006",
     "SFX_PotOpen": "metalPot1",
     "SFX_PotOverflow": "metalPot3",
-    "SFX_Smack": "drawKnife2",
+    "SFX_Smack": "impactMetal_heavy_001",
+    "SFX_Swing": "drawKnife2",
 }
 
 

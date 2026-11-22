@@ -222,6 +222,10 @@ private:
 	void DrawSpeedButton();
 	/** 영웅·보스 머리 위 작은 체력 게이지 */
 	void DrawUnitBars();
+	/** 커서 옆 국자 내려치기 남은 횟수 (전장 위에서만) */
+	void DrawSmackCharges();
+	/** 연속 처치 숫자 (화면 오른쪽, 처치할수록 커지고 붉어진다) */
+	void DrawCombo();
 	float BuyCountOf(int32 Index) const;
 	void DrawPlotTooltip();
 	void DrawTree();
@@ -394,6 +398,9 @@ private:
 	float KillWindow = 0.f;
 	int32 KillsAtWindow = 0;
 	bool bBossSeen = false;
+	int32 ComboCount = 0;
+	float ComboTimer = 0.f;
+	float ComboPop = 0.f;
 	float ShakeLeft = 0.f;
 	FVector2f ShakeOffset = FVector2f::ZeroVector;
 

@@ -260,6 +260,7 @@ struct FYJJStageDef
 	int32 Region = INDEX_NONE;
 	FVector2f MapPos = FVector2f::ZeroVector;   // 월드맵 위 스테이지 자리 (화면 비율 0~1)
 	FString Ground;                              // 바닥 그림 파일 (Content/YJJWave/Art)
+	TArray<int32> StartBuild;                    // 처음부터 지어져 있는 병영 (시작하자마자 병사가 쏟아진다)
 	TArray<FYJJWaveLevel> Waves;   // 0번 = 1웨이브
 	TArray<FYJJCutLine> Cutscene;  // 시작 컷씬 (Cutscenes.csv, Order 순서)
 };

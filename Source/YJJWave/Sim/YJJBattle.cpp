@@ -97,6 +97,15 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 
 	EnemyCarry.Reset();
 	EnemyCarry.AddZeroed(YJJData::Units().Num());
+	// 처음부터 지어진 병영: 시작하자마자 병사가 나온다 (첫 칸부터 차례로)
+	for (int32 Index = 0; Index < StageDef().StartBuild.Num() && Plots.IsValidIndex(Index); ++Index)
+	{
+		Plots[Index].Building = StageDef().StartBuild[Index];
+		Plots[Index].Level = 1;
+		Plots[Index].SpawnTimer = SpawnInterval(Index);
+	}
+	SmackCharge = T.SmackCharges;
+	ShakeRequests = 0;
 	SpawnHero();
 	StartLevel(1);
 }
@@ -145,6 +154,20 @@ void FYJJBattle::PreStep(float Dt)
 	}
 }
 
+bool FYJJBattle::Smack(const FVector2f& Where)
+{
+	if (!CanSmack())
+	{
+		return false;
+	}
+	const FYJJTuning& T = YJJData::Tune();
+	SmackCharge -= 1.f;
+	const float Damage = T.SmackDamage * (1.f + Bonus(EYJJStat::SpellPower, INDEX_NONE)) * StageDef().HPScale;
+	AddEffect(EYJJEffectKind::SmackFall, Where, T.SmackDelay, T.SmackRadius, Damage);
+	Sounds.Add(SoundSwing);
+	return true;
+}
+
 void FYJJBattle::AddEvent(EYJJTalkTrigger Trigger, int32 Unit)
 {
 	Events.Add({ Trigger, Unit, Level });
@@ -191,6 +214,7 @@ void FYJJBattle::TickPot(float Dt)
 {
 	const FYJJTuning& T = YJJData::Tune();
 	BoneFlyBudget = FMath::Min(BoneFlyBudget + T.BoneFlyPerSecond * Dt, T.BoneFlyPerSecond);
+	SmackCharge = FMath::Min(SmackCharge + Dt / FMath::Max(T.SmackRecharge, KINDA_SMALL_NUMBER), T.SmackCharges);
 	if (LidAge >= 0.f)
 	{
 		LidAge += Dt;
@@ -703,6 +727,18 @@ void FYJJBattle::TickEffects(float Dt)
 			{
 				AddEffect(EYJJEffectKind::Burn, Landed.Pos, Landed.BurnTime, Landed.Radius, Landed.BurnPower);
 			}
+			continue;
+		}
+		if (Effect.Kind == EYJJEffectKind::SmackFall)
+		{
+			// 쾅: 작은 범위 피해 + 크게 밀쳐내기 + 먼지 + 화면 흔들림
+			const FYJJEffect Landed = Effect;
+			Effects.RemoveAtSwap(Index, EAllowShrinking::No);
+			Horde.DamageArea(Landed.Pos, Landed.Radius, Landed.Power, T.SmackKnockback, EYJJTeam::Enemy);
+			AddEffect(EYJJEffectKind::Build, Landed.Pos, T.BuildEffectTime, Landed.Radius * T.SmackDustScale);
+			AddEffect(EYJJEffectKind::Rally, Landed.Pos, T.SmackRingTime, Landed.Radius);
+			Sounds.Add(SoundSmack);
+			++ShakeRequests;
 			continue;
 		}
 		if (Effect.Kind == EYJJEffectKind::QuakeHit)

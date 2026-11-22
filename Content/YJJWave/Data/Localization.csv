@@ -229,3 +229,5 @@ Pot.Button,열기 Q,Open Q,좌측 패널 냄비 칸 버튼
 Talk.PotReady1,국이 끓는다! 냄비를 눌러 먹여라.,The broth is ready! Click the pot to serve it.,말풍선 (Dialogues.csv PotReady)
 Talk.PotReady2,기다리면 더 진해집니다. 넘치지만 않으면요.,Wait and it gets richer. Just don't let it boil over.,
 Talk.BossDown1,…뼈는 냄비로.,...Bones to the pot.,말풍선 (Dialogues.csv BossDown)
+Talk.Start4,전장을 눌러라. 국자로 내려친다!,Click the field. The ladle comes down!,
+UI.Combo,연속 처치!,Combo!,화면 오른쪽 연속 처치 숫자 아래

@@ -1,3 +1,3 @@
-﻿Name,Order,NameKey,HPScale,Region,MapX,MapY,Ground,Note
-Meadow,0,Stage.Meadow,1,Forest,0.17,0.72,Ground.png,"짧은 첫 판: 3웨이브, 3번째에 해골 왕"
-SkullHill,1,Stage.SkullHill,2.4,Graveyard,0.45,0.76,Ground_Graveyard.png,"6웨이브, 6번째에 해골 왕 둘"
+﻿Name,Order,NameKey,HPScale,Region,MapX,MapY,Ground,StartBuild,Note
+Meadow,0,Stage.Meadow,1,Forest,0.17,0.72,Ground.png,Barracks,"짧은 첫 판: 3웨이브, 3번째에 해골 왕"
+SkullHill,1,Stage.SkullHill,2.4,Graveyard,0.45,0.76,Ground_Graveyard.png,Barracks ArcherPost,"6웨이브, 6번째에 해골 왕 둘"

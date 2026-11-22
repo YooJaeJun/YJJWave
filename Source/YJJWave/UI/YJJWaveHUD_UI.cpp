@@ -811,6 +811,11 @@ void AYJJWaveHUD::ClickWorld()
 		{
 			OpenPot();
 		}
+		else if (World.X > Current->CampEdgeX)
+		{
+			// 진지 밖 전장: 국자로 내려친다
+			Current->Smack(World);
+		}
 		return;
 	}
 	if (Current->Plots[Plot].Building == INDEX_NONE)

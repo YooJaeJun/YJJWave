@@ -112,6 +112,15 @@ struct FYJJTuning
 	UPROPERTY() float PotServeRing = 0.f;   // 국을 나눠 줄 때 퍼지는 고리 크기
 	// ---- 말풍선 대화 (Dialogues.csv) ----
 	UPROPERTY() float HeroLowShare = 0.f;   // 영웅 체력이 이 비율 아래면 HeroLow 대화
+	// ---- 국자 내려치기 (전장 클릭) ----
+	UPROPERTY() float SmackCharges = 0.f;   // 최대 횟수
+	UPROPERTY() float SmackRecharge = 0.f;   // 한 번 차오르는 시간
+	UPROPERTY() float SmackDamage = 0.f;   // 피해 (스테이지 체력 배율·주문 위력 특성만큼 오른다)
+	UPROPERTY() float SmackRadius = 0.f;   // 범위
+	UPROPERTY() float SmackKnockback = 0.f;   // 밀쳐내기
+	UPROPERTY() float SmackDelay = 0.f;   // 국자가 내려오는 시간
+	UPROPERTY() float SmackDustScale = 0.f;   // 쾅 먼지 크기 (범위 배율)
+	UPROPERTY() float SmackRingTime = 0.f;   // 쾅 고리 시간
 	// ---- 마무리·별 ----
 	UPROPERTY() float VictoryDelay = 0.f;   // 적을 다 쓰러뜨린 뒤 결과 창까지 (쓰러지는 연출을 보여 준다)
 	UPROPERTY() float StarThreeHealth = 0.f;   // 이겼을 때 영웅 체력이 이 비율 이상이면 별 3개
@@ -140,6 +149,7 @@ struct FYJJTuning
 	UPROPERTY() float BotBuyGold = 0.f;   // 봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 	UPROPERTY() int32 BotPotStage = 0;   // 봇: 냄비가 이 단계(0부터) 이상이면 뚜껑을 연다
 	UPROPERTY() float BotPotZoom = 0.f;   // 봇: 냄비 스크린샷 확대
+	UPROPERTY() float BotSmackSpread = 0.f;   // 봇 국자: 전장 가운데에서 위아래로 이만큼 안
 	UPROPERTY() float BotExitDelay = 0.f;   // 끝나고 종료까지 기다리는 실제 시간
 	UPROPERTY() float BenchDepth = 0.f;   // 벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
 	UPROPERTY() float BenchCameraZoom = 0.f;   // 벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)
@@ -188,6 +198,27 @@ struct FYJJUILayout
 	UPROPERTY() float BoneSpin = 0.f;   // 뼈 회전 빠르기
 	UPROPERTY() float PromoteRise = 0.f;   // 진급 빛이 떠오르는 높이 (월드)
 	UPROPERTY() float PromoteBannerTier = 0.f;   // 이 진급 단계 이상이면 화면 배너 (2 = 장군)
+	// ---- 국자 · 연속 처치 ----
+	UPROPERTY() float FxLadle = 0.f;   // Fx 칸: 큰 국자
+	UPROPERTY() float UiLadle = 0.f;   // UI 칸: 국자 (남은 횟수)
+	UPROPERTY() float SmackDrawSize = 0.f;   // 내려오는 국자 그림 크기 (월드)
+	UPROPERTY() float SmackStartAngle = 0.f;   // 국자가 휘두르기 시작하는 각도 (라디안)
+	UPROPERTY() float SmackIconSize = 0.f;   // 커서 옆 국자 아이콘 크기
+	UPROPERTY() float SmackIconOffset = 0.f;   // 커서에서 아이콘까지
+	UPROPERTY() float SmackIconGap = 0.f;   // 아이콘 사이
+	UPROPERTY() float SmackEmptyAlpha = 0.f;   // 빈 국자 진하기
+	UPROPERTY() float SmackFillAlpha = 0.f;   // 차오르는 국자 진하기
+	UPROPERTY() float ComboWindow = 0.f;   // 이 시간 안에 또 쓰러뜨리면 연속 처치가 이어진다
+	UPROPERTY() float ComboShowAt = 0.f;   // 이만큼부터 연속 처치 숫자를 보인다
+	UPROPERTY() float ComboHot = 0.f;   // 이만큼이면 가장 크고 붉게
+	UPROPERTY() float ComboText = 0.f;   // 연속 처치 숫자 크기
+	UPROPERTY() float ComboGrow = 0.f;   // 가장 뜨거울 때 커지는 비율
+	UPROPERTY() float ComboPopScale = 0.f;   // 하나 늘 때 툭 커지는 비율
+	UPROPERTY() float ComboPopSpeed = 0.f;   // 툭 커진 것이 돌아오는 빠르기
+	UPROPERTY() float ComboFade = 0.f;   // 끊기기 전 흐려지는 시간
+	UPROPERTY() float ComboRight = 0.f;   // 화면 오른쪽에서 숫자 가운데까지
+	UPROPERTY() float ComboY = 0.f;   // 숫자 높이
+	UPROPERTY() float ComboLabelGap = 0.f;   // 숫자와 글자 사이
 	// ---- 결과 창 ----
 	UPROPERTY() float ResultPopTime = 0.f;   // 결과 창이 커지며 나타나는 시간
 	UPROPERTY() float ResultPopStart = 0.f;   // 결과 창 처음 크기 배율
@@ -233,6 +264,7 @@ struct FYJJUILayout
 	UPROPERTY() float StageNodeHover = 0.f;   // 마우스를 올리면 커지는 배율
 	UPROPERTY() float StageNameGap = 0.f;   // 자리와 이름 사이
 	UPROPERTY() float StageStarSize = 0.f;   // 월드맵 별 크기
+	UPROPERTY() float MapHeaderW = 0.f;   // 월드맵 머리글 판 너비
 	// ---- 냄비 칸 (좌측 패널) ----
 	UPROPERTY() float PotPanelH = 0.f;   // 냄비 칸 높이
 	UPROPERTY() float PotButtonW = 0.f;   // 열기 버튼 너비

@@ -1,5 +1,5 @@
 ﻿Name,Stage,Wave,Duration,Unit,Rate,Burst
-M1_Skeleton,Meadow,1,40,Skeleton,0.4,0
+M1_Skeleton,Meadow,1,40,Skeleton,0.5,10
 M2_Skeleton,Meadow,2,40,Skeleton,0.8,0
 M2_Imp,Meadow,2,40,Imp,0.2,0
 M3_Skeleton,Meadow,3,45,Skeleton,1.2,0

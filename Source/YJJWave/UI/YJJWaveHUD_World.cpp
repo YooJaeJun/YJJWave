@@ -9,6 +9,7 @@
 #include "Sim/YJJBattle.h"
 #include "UI/YJJUIStyle.h"
 #include "UI/YJJWaveHUD.h"
+#include "YJJWaveGameMode.h"
 #include "Async/ParallelFor.h"
 #include "Render/YJJSpriteRenderItem.h"
 
@@ -30,6 +31,53 @@ void AYJJWaveHUD::DrawWorld()
 	DrawEffects();
 	DrawSpellAim();
 	DrawUnitBars();
+}
+
+void AYJJWaveHUD::DrawSmackCharges()
+{
+	// 전장 위 커서 오른쪽 아래에 국자 아이콘: 찬 것은 밝게, 차오르는 것은 아래부터
+	const FYJJBattle* Current = Battle();
+	const FYJJUILayout& L = UI();
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	if (Current->bGameOver || bTreeOpen || bOptionsOpen || IsMouseOverUI() || AimingSpell != INDEX_NONE || HoverPlot != INDEX_NONE || bPotHover || (Mode && Mode->CutsceneLine()))
+	{
+		return;
+	}
+	const FVector2f Mouse = ToVirtual(MouseScreen());
+	if (ScreenToWorld(MouseScreen()).X <= Current->CampEdgeX)
+	{
+		return;
+	}
+	const int32 Max = FMath::RoundToInt(YJJData::Tune().SmackCharges);
+	const float Size = L.SmackIconSize;
+	for (int32 Index = 0; Index < Max; ++Index)
+	{
+		const float Fill = FMath::Clamp(Current->SmackCharges() - Index, 0.f, 1.f);
+		const float X = Mouse.X + L.SmackIconOffset + Index * (Size + L.SmackIconGap);
+		const float Y = Mouse.Y + L.SmackIconOffset;
+		DrawIcon(FMath::RoundToInt(L.UiLadle), X, Y, Size, Fill >= 1.f ? FLinearColor::White : YJJUI::WithAlpha(YJJUI::Ink, L.SmackEmptyAlpha));
+		if (Fill > 0.f && Fill < 1.f)
+		{
+			DrawBox(X, Y + Size * (1.f - Fill), Size, Size * Fill, YJJUI::WithAlpha(YJJUI::Highlight, L.SmackFillAlpha));
+		}
+	}
+}
+
+void AYJJWaveHUD::DrawCombo()
+{
+	// 몇 초 안에 이어서 쓰러뜨린 적 수. 클수록 크고 붉게, 늘 때마다 툭 커진다
+	const FYJJUILayout& L = UI();
+	if (ComboCount < FMath::RoundToInt(L.ComboShowAt) || Battle()->bGameOver)
+	{
+		return;
+	}
+	const float Heat = FMath::Clamp(static_cast<float>(ComboCount) / FMath::Max(L.ComboHot, 1.f), 0.f, 1.f);
+	const float Size = L.ComboText * (1.f + Heat * L.ComboGrow) * (1.f + ComboPop * L.ComboPopScale);
+	const FLinearColor Color = FMath::Lerp(YJJUI::Highlight, YJJUI::Bad, Heat);
+	const float Fade = FMath::Clamp(ComboTimer / FMath::Max(L.ComboFade, KINDA_SMALL_NUMBER), 0.f, 1.f);
+	const float X = VirtualW - L.ComboRight;
+	DrawLabelCentered(FString::FromInt(ComboCount), X, L.ComboY, Size, YJJUI::WithAlpha(Color, Fade));
+	DrawLabelCentered(YJJLoc::Get(TEXT("UI.Combo")), X, L.ComboY + Size * Half + L.ComboLabelGap, L.MidText, YJJUI::WithAlpha(YJJUI::Paper, Fade));
 }
 
 void AYJJWaveHUD::DrawUnitBars()
@@ -416,6 +464,15 @@ void AYJJWaveHUD::DrawEffects()
 			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, 1.f, T);
 			const FVector2f Center = WorldToScreen(Effect.Pos - FVector2f(0.f, UI().PromoteRise * T));
 			AddQuadRotated(Batch, Center, FVector2f(Size), T * UI().BoneSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxPromote)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::Highlight, 1.f - T * T), false);
+			break;
+		}
+		case EYJJEffectKind::SmackFall:
+		{
+			// 머리 위에서 국자가 휘둘러 내려온다 (끝에 쾅: 판이 먼지·고리를 만든다)
+			const float Size = UI().SmackDrawSize * Zoom;
+			const float Angle = FMath::Lerp(UI().SmackStartAngle, 0.f, T * T);
+			const FVector2f Pivot = Ground - FVector2f(0.f, Size * Half);
+			AddQuadRotated(Batch, Pivot, FVector2f(Size), Angle, FxAtlas.UV(FMath::RoundToInt(UI().FxLadle)), FxAtlas.CellUV, FLinearColor::White, false);
 			break;
 		}
 		case EYJJEffectKind::BoneFly:

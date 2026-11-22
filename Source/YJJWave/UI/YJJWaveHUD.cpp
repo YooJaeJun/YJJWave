@@ -224,6 +224,12 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 		return;
 	}
 	ResultAge = Battle()->bGameOver ? ResultAge + DeltaSeconds : 0.f;
+	ComboTimer -= DeltaSeconds;
+	ComboPop = FMath::Max(ComboPop - DeltaSeconds * UI().ComboPopSpeed, 0.f);
+	if (ComboTimer <= 0.f)
+	{
+		ComboCount = 0;
+	}
 	StarsSounded = Battle()->bGameOver ? StarsSounded : 0;
 	TakeDeaths();
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
@@ -274,6 +280,8 @@ void AYJJWaveHUD::DrawHUD()
 	DrawWorld();
 	DrawTalks();
 	DrawBanners();
+	DrawCombo();
+	DrawSmackCharges();
 	if (Battle()->bCardPending && !Battle()->bGameOver)
 	{
 		DrawCardPick();
@@ -400,6 +408,12 @@ void AYJJWaveHUD::TakeDeaths()
 	const int32 MaxDying = FMath::RoundToInt(UI().MaxDying);
 	for (const FYJJDeath& Death : Current->RecentDeaths)
 	{
+		if (Death.Team == EYJJTeam::Enemy)
+		{
+			++ComboCount;
+			ComboTimer = UI().ComboWindow;
+			ComboPop = 1.f;
+		}
 		const FYJJUnitDef& Def = YJJData::Unit(Death.Type);
 		if (Dying.Num() >= MaxDying)
 		{
@@ -426,9 +440,10 @@ void AYJJWaveHUD::TakeDeaths()
 	}
 	Current->RecentDeaths.Reset();
 
-	if (Current->RecentCraters.Num() > 0)
+	if (Current->RecentCraters.Num() > 0 || Current->ShakeRequests > 0)
 	{
 		Shake();
+		Current->ShakeRequests = 0;
 	}
 	for (const FVector3f& Crater : Current->RecentCraters)
 	{

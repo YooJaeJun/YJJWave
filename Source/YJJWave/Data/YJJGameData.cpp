@@ -379,6 +379,16 @@ void FYJJGameDatabase::LoadStages()
 		Def.HPScale = Row.HPScale;
 		Def.MapPos = FVector2f(Row.MapX, Row.MapY);
 		Def.Ground = Row.Ground;
+		TArray<FString> Builds;
+		Row.StartBuild.ParseIntoArrayWS(Builds);
+		for (const FString& Build : Builds)
+		{
+			const int32 Building = FindBuilding(Build, TEXT("Stages.csv StartBuild"));
+			if (Building != INDEX_NONE)
+			{
+				Def.StartBuild.Add(Building);
+			}
+		}
 		Def.Region = Regions.IndexOfByPredicate([&Row](const FYJJRegionDef& Region) { return Region.Id == FName(*Row.Region); });
 		if (Def.Region == INDEX_NONE)
 		{

@@ -11,7 +11,9 @@
 | `Art/generate_art.py` | Pillow로 그림 생성 → `Content/YJJWave/Art/*.png`. 처음 한 번: `python -m venv Tools/Art/.venv` 후 `pip install pillow` |
 | `Data/gen_tables.py` | `Tuning.csv`·`UILayout.csv`와 그 구조체(`Source/YJJWave/Data/YJJTuning.h`)를 만든다. 이미 있는 값은 덮어쓰지 않는다 |
 | `Data/gen_perks.py` | 특성 성좌 `Perks.csv` 생성 (8갈래, 큰 별 16개, 중간 별 효과 그림 `Icon`) |
-| `Audio/generate_voice.py` | 대사 목소리 (AI 성우): `Cutscenes.csv`·`Dialogues.csv`의 `Voice=Line_*` 줄을 Windows 한국어 TTS로 읽히고 ffmpeg로 화자별 가공(음 낮추기·저음·울림) → `Generated/VO_Line_*.wav`, `Sounds.csv` 줄 추가, 대사 시간을 목소리 길이에 맞춘다. 그다음 `Audio/BuildAudio.ps1` |
+| `Audio/generate_voice.py` | 대사 목소리 (AI 성우): `Cutscenes.csv`·`Dialogues.csv`의 `Voice=Line_*` 줄을 신경망 TTS(edge-tts, 아트 venv에 설치)로 읽힌다 → `Generated/VO_Line_*.wav`, `Sounds.csv` 줄 추가, 대사 시간을 목소리 길이에 맞춘다. 그다음 `Audio/BuildAudio.ps1` |
+| `Audio/apply_sfx_pack.py` | 효과음 팩(Kenney CC0, `Audio/Packs/Kenney`)에서 고른 소리로 합성 효과음을 덮어쓴다 (BuildAudio가 부른다) |
+| `Art/world_map.py` | 월드맵: 지역이 맞붙은 대륙, 경계에서 색·장식이 섞임, 언덕 음영, 강·길, 구름 테두리 (`Regions.csv`) |
 
 ## 고칠 곳
 
@@ -42,6 +44,7 @@
 - 흐름: 타이틀(국거리 디펜스) → 월드맵 → 스테이지. 옵션(ESC)의 포기 = 월드맵으로
 - 왼쪽 클릭: 빈 칸 → 고른 병영 짓기, 지은 병영 → 레벨업. 왼쪽·오른쪽 끌기: 화면 이동
 - 유성·대지 가르기는 키·버튼을 누른 뒤 전장을 클릭한 자리에 (오른쪽 클릭·ESC 취소)
+- 진지 밖 전장 클릭: 국자 내려치기 (3번까지, 1.5초마다 하나씩 차오른다)
 - 1~4 병영 고르기, F1 유성(커서 위치), F2 돌격 함성, F3 대지 가르기(커서 x), Q·냄비 클릭 뚜껑 열기, T 특성 성좌, F 배속, P/스페이스 일시정지, R 다시 시작(패배 후), Home 전선으로, F4 성능 표시
 - 휠 확대·축소, 오른쪽 끌기·WASD·화면 가장자리 시점 이동
 

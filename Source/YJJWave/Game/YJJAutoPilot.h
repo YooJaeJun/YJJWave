@@ -54,6 +54,7 @@ private:
 	bool bPotShot = false;
 	bool bTalkShot = false;
 	bool bPromoteShot = false;
+	bool bSmackShot = false;
 	int32 MenuStep = 0;
 	bool bEndingShot = false;
 	bool bResultShot = false;
@@ -94,6 +95,8 @@ private:
 	/** 진급 스크린샷: 빛이 이만큼 진행됐을 때, 이 확대로 */
 	static constexpr float PromoteShotAt = 0.3f;
 	static constexpr float PromoteShotZoom = 1.6f;
+	/** 국자 스크린샷: 내려오는 중 이만큼일 때 */
+	static constexpr float SmackShotAt = 0.7f;
 	/** 메뉴 화면이 그려질 때까지 기다리는 실제 시간 */
 	static constexpr float MenuShotWait = 0.6f;
 	/** 결과 창 별 연출이 다 나올 때까지 (실제 시간) */
