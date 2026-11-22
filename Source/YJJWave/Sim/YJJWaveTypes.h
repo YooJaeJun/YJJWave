@@ -36,6 +36,7 @@ enum class EYJJPerkKind : uint8
 	Small,     // 작은 별: 능력치 숫자만
 	Notable,   // 중간 별: 특수 효과 하나 (EYJJSpecial)
 	Keystone,  // 쐐기: 대가가 있는 큰 규칙 변경 (능력치 + 와 -)
+	Spell,     // 주문 별: 여러 번 찍어 주문 Lv을 올린다 (Spells.csv)
 };
 
 /**
@@ -94,12 +95,64 @@ namespace YJJUnitFlag
 	inline constexpr uint8 Revived = 1 << 1;
 }
 
-/** 스펠 */
+/** 주문 (Spells.csv Spell 열 이름과 같다) */
 enum class EYJJSpell : uint8
 {
-	Meteor,   // Q: 커서 위치에 큰 범위 피해 + 밀쳐내기
-	Rally,    // E: 아군 전체 공격·이동 속도 증가
+	Meteor,   // F1: 커서 위치에 큰 범위 피해 + 밀쳐내기
+	Rally,    // F2: 아군 전체 공격·이동 속도 증가
+	Quake,    // F3: 커서 x 자리 전장을 위아래로 가르는 피해 + 밀쳐내기
 	Count
+};
+
+/**
+ * 주문 Lv 특수 효과 (Spells.csv Fx 열 이름과 같다). 그 Lv에 열리고 위 Lv에도 계속 켜진다. A·B 값의 뜻:
+ *   Burn       유성이 떨어진 자리에 불: 초당 유성 피해 x A, B초
+ *   Shower     작은 운석 A개가 주변에 더 떨어진다 (피해 x B)
+ *   Heal       함성 때 아군 전체 최대 체력의 A만큼 회복
+ *   Reinforce  함성 때 지어 둔 병영마다 병사 A명이 바로 나온다
+ *   Aftershock 대지 가르기가 A초 뒤 한 번 더 (피해 x B)
+ *   Split      양옆으로 A줄 더 갈라진다 (줄 사이 B)
+ */
+enum class EYJJSpellFx : uint8
+{
+	None,
+	Burn,
+	Shower,
+	Heal,
+	Reinforce,
+	Aftershock,
+	Split,
+	Count
+};
+
+/** Spells.csv 한 줄 = 주문 하나의 한 Lv */
+struct FYJJSpellLevel
+{
+	int32 Level = 1;
+	float Power = 0.f;      // 유성·대지 가르기: 피해 / 함성: 공격 속도 배율
+	float Radius = 0.f;     // 유성: 반경 / 대지 가르기: 갈라진 폭의 절반
+	float Cooldown = 0.f;
+	float Duration = 0.f;   // 함성: 지속 시간
+	EYJJSpellFx Fx = EYJJSpellFx::None;
+	float A = 0.f;
+	float B = 0.f;
+};
+
+/** 어떤 Lv에서 쓰는 값: 그 Lv 줄 수치 + 그 Lv까지 열린 특수 효과 */
+struct FYJJSpellStats
+{
+	int32 Level = 0;
+	float Power = 0.f;
+	float Radius = 0.f;
+	float Cooldown = 0.f;
+	float Duration = 0.f;
+	bool bFx[static_cast<int32>(EYJJSpellFx::Count)] = {};
+	float FxA[static_cast<int32>(EYJJSpellFx::Count)] = {};
+	float FxB[static_cast<int32>(EYJJSpellFx::Count)] = {};
+
+	bool Has(EYJJSpellFx Fx) const { return bFx[static_cast<int32>(Fx)]; }
+	float A(EYJJSpellFx Fx) const { return FxA[static_cast<int32>(Fx)]; }
+	float B(EYJJSpellFx Fx) const { return FxB[static_cast<int32>(Fx)]; }
 };
 
 /** Units.csv 한 줄 (병사·몬스터 공통) */
@@ -211,6 +264,8 @@ struct FYJJPerkDef
 	};
 	FSpecial Special;
 	static constexpr int32 HeroTarget = -2;
+	/** 주문 별이 올리는 주문 (EYJJSpell 번호, 아니면 INDEX_NONE) */
+	int32 Spell = INDEX_NONE;
 	TArray<int32> Links;
 	FString NameKey;   // 큰 별 이름 (작은 별은 비움)
 };

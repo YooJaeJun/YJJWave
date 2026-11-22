@@ -597,6 +597,24 @@ def fx_atlas():
     pts = [(64 + (x - 64) * 0.6, 64 + (y - 64) * 0.6) for x, y in pts]
     p.poly(pts, rgba("#FFE46A"), line=False)
     put(9, p.done(C, C))
+
+    # 10 갈라진 땅 (세로로 이어 붙인다: 위아래 끝이 가운데에서 만난다)
+    p = Pen(C, C, lw=3)
+    left = [(64, 0), (54, 18), (62, 34), (48, 52), (58, 70), (46, 88), (56, 106), (64, 128)]
+    right = [(64, 128), (72, 106), (66, 88), (80, 70), (68, 52), (78, 34), (66, 18), (64, 0)]
+    p.poly(left + right, rgba("#3A2418"))
+    p.poly([(62, 8), (58, 30), (54, 52), (52, 76), (54, 100), (62, 120), (64, 100), (62, 76), (62, 52), (64, 30)], rgba("#FF7A2A"), line=False)
+    for x0, y0, x1, y1 in ((52, 52, 30, 44), (78, 34, 100, 26), (70, 88, 96, 98), (50, 88, 28, 100)):
+        p.stick(x0, y0, x1, y1, 3)
+    for x, y, r in ((24, 30, 7), (104, 52, 6), (20, 82, 5), (106, 110, 7)):
+        p.ellipse(x, y, r, r * 0.8, rgba("#8C6B45"))
+    put(10, p.done(C, C))
+
+    # 11 불꽃 (아래가 바닥)
+    p = Pen(C, C, lw=3)
+    p.poly([(64, 6), (88, 44), (100, 82), (92, 112), (64, 124), (36, 112), (28, 82), (44, 56), (52, 70), (56, 36)], rgba("#FF7A2A"))
+    p.poly([(64, 46), (80, 78), (84, 104), (64, 116), (44, 104), (48, 80), (58, 90)], rgba("#FFE46A"), line=False)
+    put(11, p.done(C, C))
     return atlas
 
 
@@ -720,6 +738,12 @@ def ui_icon(i):
         u = UNITS[i - 9]
         face = draw_unit(u, IDLE_POSES[0]).crop((16, 0, 112, 96)).resize((C, C), Image.LANCZOS)
         return face
+    elif i == 16:  # 대지 가르기: 쪼개진 땅덩이와 튀는 돌
+        p.poly([(8, 84), (58, 70), (64, 118), (12, 112)], rgba("#8C6B45"))
+        p.poly([(70, 70), (120, 84), (116, 112), (64, 118)], rgba("#8C6B45"))
+        p.poly([(58, 70), (66, 48), (72, 70), (64, 118)], rgba("#FF7A2A"))
+        for x, y, r in ((36, 40, 9), (92, 30, 11), (64, 18, 7)):
+            p.ellipse(x, y, r, r * 0.85, rgba("#6E5236"))
     elif i in (13, 14, 15):   # 패널 (9칸 늘리기용. 모서리 = 칸의 1/4)
         fill = {13: rgba("#5C3B28"), 14: rgba("#2E1E16", 235), 15: rgba("#6E4A30")}[i]
         p = Pen(C, C, lw=0)
@@ -729,10 +753,13 @@ def ui_icon(i):
     return p.done(C, C)
 
 
+UI_ICONS = 17   # 0~15 + 16 대지 가르기 (UILayout.csv Ui* 와 같아야 한다)
+
+
 def ui_atlas():
     C = 128
-    atlas = Image.new("RGBA", (C * 8, C * 2), (0, 0, 0, 0))
-    for i in range(16):
+    atlas = Image.new("RGBA", (C * 8, C * 3), (0, 0, 0, 0))
+    for i in range(UI_ICONS):
         atlas.alpha_composite(ui_icon(i), ((i % 8) * C, (i // 8) * C))
     return atlas
 

@@ -145,6 +145,25 @@ struct FYJJPerkRow : public FYJJEffectRow
 	UPROPERTY() float X = 0.f;
 	UPROPERTY() float Y = 0.f;
 	UPROPERTY() FString Links;
+	/** 주문 별(Kind=Spell)이 올리는 주문 이름 */
+	UPROPERTY() FString Spell;
+};
+
+/** Spells.csv: 주문 하나의 한 Lv */
+USTRUCT()
+struct FYJJSpellRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString Spell;
+	UPROPERTY() int32 Level = 1;
+	UPROPERTY() float Power = 0.f;
+	UPROPERTY() float Radius = 0.f;
+	UPROPERTY() float Cooldown = 0.f;
+	UPROPERTY() float Duration = 0.f;
+	UPROPERTY() FString Fx;
+	UPROPERTY() float A = 0.f;
+	UPROPERTY() float B = 0.f;
 };
 
 /** Cards.csv: 웨이브가 바뀔 때 고르는 이번 판 한정 카드 */

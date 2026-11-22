@@ -69,15 +69,19 @@ struct FYJJTuning
 	UPROPERTY() float WalkStrideMax = 0.f;   // 걸음 한 바퀴 최대 거리 (큰 보스도 다리가 보이게 움직인다)
 	UPROPERTY() float DeathFling = 0.f;   // 죽을 때 맞은 방향으로 날아가는 속도
 	// ---- 스펠 ----
-	UPROPERTY() float MeteorDamage = 0.f;   // 유성 피해
-	UPROPERTY() float MeteorRadius = 0.f;   // 유성 반경
 	UPROPERTY() float MeteorKnockback = 0.f;   // 유성 밀쳐내기 (질량으로 나눈다)
 	UPROPERTY() float MeteorFallTime = 0.f;   // 유성이 떨어지는 시간
-	UPROPERTY() float MeteorCooldown = 0.f;   // 유성 재사용 대기
-	UPROPERTY() float RallyDuration = 0.f;   // 돌격 함성 지속
-	UPROPERTY() float RallyMoveSpeed = 0.f;   // 함성 중 이동 속도 배율
-	UPROPERTY() float RallyAttackSpeed = 0.f;   // 함성 중 공격 속도 배율
-	UPROPERTY() float RallyCooldown = 0.f;   // 함성 재사용 대기
+	UPROPERTY() float RallyMoveSpeed = 0.f;   // 함성 중 이동 속도 배율 (공격 속도·지속·대기는 Spells.csv Lv별)
+	UPROPERTY() float QuakeDelay = 0.f;   // 대지 가르기: 누르고 갈라지기까지
+	UPROPERTY() float QuakeSplitDelay = 0.f;   // 대지 가르기: 옆 줄이 한 줄마다 늦게 갈라지는 시간
+	UPROPERTY() float QuakeHitStep = 0.f;   // 대지 가르기 판정 원 간격 (폭의 절반 배율)
+	UPROPERTY() float QuakeKnockback = 0.f;   // 대지 가르기 밀쳐내기 (질량으로 나눈다)
+	UPROPERTY() float QuakeEffectTime = 0.f;   // 갈라진 땅 연출 시간
+	UPROPERTY() float QuakeScarScale = 0.f;   // 갈라진 자리 그을음 크기 (폭의 절반 배율)
+	UPROPERTY() float BurnTick = 0.f;   // 불바다 피해 간격
+	UPROPERTY() float ShowerSpread = 0.f;   // 유성우: 작은 운석이 떨어지는 범위 (반경 배율)
+	UPROPERTY() float ShowerDelay = 0.f;   // 유성우: 운석 사이 시간
+	UPROPERTY() float ShowerRadiusScale = 0.f;   // 유성우: 작은 운석 반경 배율
 	UPROPERTY() float MinCooldownScale = 0.f;   // 재사용 대기 감소의 바닥
 	UPROPERTY() float BlastEffectTime = 0.f;   // 유성 폭발 연출 시간
 	UPROPERTY() float RallyEffectTime = 0.f;   // 함성 고리 연출 시간
@@ -105,6 +109,7 @@ struct FYJJTuning
 	UPROPERTY() float BotCameraZoom = 0.f;   // 봇 카메라 확대
 	UPROPERTY() float BotMeteorLead = 0.f;   // 봇 유성: 적 앞줄보다 이만큼 뒤
 	UPROPERTY() float BotRallyRatio = 0.f;   // 적 수가 아군의 이 배를 넘으면 함성
+	UPROPERTY() float BotQuakeMinEnemies = 0.f;   // 봇 대지 가르기: 적이 이만큼 있을 때만
 	UPROPERTY() float BotBuyGold = 0.f;   // 봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 	UPROPERTY() float BotExitDelay = 0.f;   // 끝나고 종료까지 기다리는 실제 시간
 	UPROPERTY() float BenchDepth = 0.f;   // 벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
@@ -151,12 +156,15 @@ struct FYJJUILayout
 	UPROPERTY() float FxRing = 0.f;   // Fx 칸: 고리
 	UPROPERTY() float FxMeteor = 0.f;   // Fx 칸: 운석
 	UPROPERTY() float FxBlast = 0.f;   // Fx 칸: 폭발
+	UPROPERTY() float FxCrack = 0.f;   // Fx 칸: 갈라진 땅 (세로)
+	UPROPERTY() float FxFlame = 0.f;   // Fx 칸: 불꽃
 	UPROPERTY() float UiCoin = 0.f;   // UI 칸: 금화
 	UPROPERTY() float UiSoul = 0.f;   // UI 칸: 영혼
 	UPROPERTY() float UiSword = 0.f;   // UI 칸: 아군 수
 	UPROPERTY() float UiSkull = 0.f;   // UI 칸: 적 수
 	UPROPERTY() float UiMeteor = 0.f;   // UI 칸: 유성
 	UPROPERTY() float UiRally = 0.f;   // UI 칸: 함성
+	UPROPERTY() float UiQuake = 0.f;   // UI 칸: 대지 가르기
 	UPROPERTY() float UiStar = 0.f;   // UI 칸: 작은 별
 	UPROPERTY() float UiBigStar = 0.f;   // UI 칸: 큰 별
 	UPROPERTY() float UiHero = 0.f;   // UI 칸: 영웅 얼굴
@@ -209,7 +217,19 @@ struct FYJJUILayout
 	UPROPERTY() float BloodAlphaMin = 0.f;   // 피 웅덩이 최소 진하기
 	UPROPERTY() float CraterScale = 0.f;   // 유성 그을음 크기 (반경 배율)
 	UPROPERTY() float AimRingStart = 0.f;   // 유성 표시 고리 시작 배율
-	UPROPERTY() float AimAlpha = 0.f;   // 유성 조준 고리 진하기
+	UPROPERTY() float AimAlpha = 0.f;   // 주문 조준 표시 진하기
+	UPROPERTY() float QuakeCrackScale = 0.f;   // 갈라진 땅 그림 크기 (폭의 절반 배율)
+	UPROPERTY() float QuakeCrackStep = 0.f;   // 갈라진 땅 그림 간격 (그림 크기 배율)
+	UPROPERTY() float QuakeWarnAlpha = 0.f;   // 곧 갈라질 줄 진하기
+	UPROPERTY() float QuakeEndScale = 0.f;   // 갈라진 땅이 사라지며 커지는 배율
+	UPROPERTY() float BurnFlames = 0.f;   // 불바다 불꽃 수
+	UPROPERTY() float BurnSpread = 0.f;   // 불꽃이 퍼지는 반경 배율
+	UPROPERTY() float BurnFlameScale = 0.f;   // 불꽃 크기 (반경 배율)
+	UPROPERTY() float BurnFlicker = 0.f;   // 불꽃 일렁임 크기
+	UPROPERTY() float BurnFlickerSpeed = 0.f;   // 불꽃 일렁임 빠르기
+	UPROPERTY() float BurnFlickerPhase = 0.f;   // 불꽃마다 일렁임 어긋남
+	UPROPERTY() float BurnFadeShare = 0.f;   // 불바다 끝 무렵 이 비율 동안 사그라든다
+	UPROPERTY() float GroundSquash = 0.f;   // 바닥 원을 눌러 보이는 세로 비율
 	UPROPERTY() float MeteorOffsetX = 0.f;   // 운석이 떨어지기 시작하는 x 차이
 	UPROPERTY() float MeteorFallHeight = 0.f;   // 운석이 떨어지기 시작하는 높이
 	UPROPERTY() float MeteorDrawSize = 0.f;   // 운석 그림 크기
@@ -302,6 +322,8 @@ struct FYJJUILayout
 	UPROPERTY() float OptionsCloseW = 0.f;   // 닫기 버튼 너비
 	UPROPERTY() float OptionsVolumeStep = 0.f;   // 볼륨 버튼 한 번에 바뀌는 양
 	UPROPERTY() float OptionsOpenH = 0.f;   // 좌측 패널 옵션 버튼 높이
+	UPROPERTY() float TreeBarH = 0.f;   // 좌측 패널 특성 막대 높이
+	UPROPERTY() float TreeBarIcon = 0.f;   // 특성 막대 별 그림 크기
 	// ---- 특성 성좌 화면 ----
 	UPROPERTY() float TreeTitleY = 0.f;   // 성좌 제목 y
 	UPROPERTY() float TreeCenterY = 0.f;   // 성좌 중심 y
@@ -311,6 +333,8 @@ struct FYJJUILayout
 	UPROPERTY() float PerkKeystone = 0.f;   // 쐐기 반지름
 	UPROPERTY() float TipKindW = 0.f;   // 설명창 오른쪽 위 별 종류 글자 너비
 	UPROPERTY() float PerkHoverScale = 0.f;   // 마우스 올린 별 확대
+	UPROPERTY() float SpellNodeIcon = 0.f;   // 주문 별 위 주문 그림 크기 (별 지름 배율)
+	UPROPERTY() float SpellNodeLvGap = 0.f;   // 주문 별 아래 Lv 글자 간격
 	UPROPERTY() float LinkWidth = 0.f;   // 선 굵기
 	UPROPERTY() float LinkTakenWidth = 0.f;   // 찍은 선 굵기
 };

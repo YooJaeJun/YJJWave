@@ -48,10 +48,10 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 			bTreeShot = true;
 			HUD->SetBuyPopup(INDEX_NONE);
 			HUD->SetTreeOpen(true);
-			// 찍은 중간 별 하나의 설명창을 함께 찍는다
+			// 주문 별 하나의 설명창을 함께 찍는다 (Lv·다음 Lv·특수 효과)
 			for (int32 Perk = 0; Perk < YJJData::Perks().Num(); ++Perk)
 			{
-				if (Battle.IsAllocated(Perk) && YJJData::Perks()[Perk].Kind == EYJJPerkKind::Notable)
+				if (YJJData::Perks()[Perk].Kind == EYJJPerkKind::Spell)
 				{
 					HUD->SetForcedHoverPerk(Perk);
 					break;
@@ -96,6 +96,22 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	{
 		HUD->SetTreeOpen(false);
 		FollowFront(Battle, HUD, RealDeltaSeconds);
+	}
+
+	// 주문 연출 확인용: 갈라진 땅·불바다가 처음 보이면 한 장씩
+	for (const FYJJEffect& Effect : Battle.Effects)
+	{
+		const bool bShowing = Effect.Age >= Effect.Life * SpellShotAt;
+		if (!bQuakeShot && bShowing && Effect.Kind == EYJJEffectKind::Quake)
+		{
+			bQuakeShot = true;
+			Mode->TakeShot(FString::Printf(TEXT("%sQuake"), ShotPrefix));
+		}
+		if (!bBurnShot && bShowing && Effect.Kind == EYJJEffectKind::Burn)
+		{
+			bBurnShot = true;
+			Mode->TakeShot(FString::Printf(TEXT("%sBurn"), ShotPrefix));
+		}
 	}
 
 	// 컷씬: 첫 번째만 대사가 다 나온 뒤 한 장 찍고, 나머지는 건너뛴다
@@ -267,7 +283,8 @@ void FYJJAutoPilot::SpendSouls(FYJJBattle& Battle)
 			if (Battle.IsReachable(Perk))
 			{
 				Choices.Add(Perk);
-				if (YJJData::Perks()[Perk].Kind == EYJJPerkKind::Notable)
+				// 봇은 중간 별·주문 별을 먼저
+				if (YJJData::Perks()[Perk].Kind == EYJJPerkKind::Notable || YJJData::Perks()[Perk].Kind == EYJJPerkKind::Spell)
 				{
 					Notables.Add(Perk);
 				}
@@ -287,7 +304,14 @@ void FYJJAutoPilot::CastSpells(FYJJBattle& Battle)
 	const float EnemyFront = Battle.Horde.FrontX(EYJJTeam::Enemy);
 	if (EnemyFront > 0.f && Battle.CanCast(EYJJSpell::Meteor))
 	{
-		Battle.Cast(EYJJSpell::Meteor, FVector2f(EnemyFront + T.BotMeteorLead, Random.FRandRange(T.MeteorRadius, Battle.FieldHeight - T.MeteorRadius)));
+		const float Radius = Battle.SpellNow(EYJJSpell::Meteor).Radius;
+		Battle.Cast(EYJJSpell::Meteor, FVector2f(EnemyFront + T.BotMeteorLead, Random.FRandRange(Radius, Battle.FieldHeight - Radius)));
+	}
+	// 대지 가르기: 적이 몰려 있을 때 두 앞줄이 부딪히는 곳에
+	const float PlayerFront = Battle.Horde.FrontX(EYJJTeam::Player);
+	if (EnemyFront > 0.f && PlayerFront > 0.f && Battle.Horde.Num(EYJJTeam::Enemy) >= T.BotQuakeMinEnemies && Battle.CanCast(EYJJSpell::Quake))
+	{
+		Battle.Cast(EYJJSpell::Quake, FVector2f((PlayerFront + EnemyFront) * 0.5f + T.BotMeteorLead, 0.f));
 	}
 	if (Battle.Horde.Num(EYJJTeam::Enemy) > Battle.Horde.Num(EYJJTeam::Player) * T.BotRallyRatio)
 	{

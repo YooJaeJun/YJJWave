@@ -113,7 +113,7 @@ void AYJJWaveHUD::ResetBattleView()
 	ShakeLeft = 0.f;
 	bGroundReady = false;
 	bTreeOpen = false;
-	bAimingMeteor = false;
+	AimingSpell = INDEX_NONE;
 	if (const FYJJBattle* Current = Battle())
 	{
 		Zoom = UI().ZoomDefault;
@@ -364,11 +364,11 @@ void AYJJWaveHUD::TakeDeaths()
 	{
 		Shake();
 	}
-	for (const FVector2f& Crater : Current->RecentCraters)
+	for (const FVector3f& Crater : Current->RecentCraters)
 	{
 		FYJJStamp& Stamp = Stamps.AddDefaulted_GetRef();
-		Stamp.Pos = Crater;
-		Stamp.Size = YJJData::Tune().MeteorRadius * UI().CraterScale;
+		Stamp.Pos = FVector2f(Crater.X, Crater.Y);
+		Stamp.Size = Crater.Z * UI().CraterScale;
 		Stamp.Cell = FMath::RoundToInt(UI().FxScorch);
 		Stamp.Angle = Random.FRand() * FullTurn;
 		Stamp.Color = FLinearColor::White;

@@ -47,6 +47,8 @@ private:
 	bool bOptionsShot = false;
 	bool bCutShot = false;
 	bool bBuyShot = false;
+	bool bQuakeShot = false;
+	bool bBurnShot = false;
 	float CardShotWait = 0.f;
 
 	// 성능 기록
@@ -74,6 +76,8 @@ private:
 	static constexpr float BuyShotAt = 0.85f;
 	static constexpr int32 BuyShotBuilding = 1;
 	static constexpr float TreeShotAt = 0.6f;
+	/** 주문 연출이 이만큼 지났을 때 한 장 (갈라진 땅·불바다 확인용) */
+	static constexpr float SpellShotAt = 0.15f;
 	/** 그다음 옵션 화면 */
 	static constexpr float OptionsShotAt = 0.25f;
 	/** 컷씬 첫 줄이 이만큼 지나면 찍는다 */

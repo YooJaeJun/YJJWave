@@ -1,6 +1,7 @@
-#include "Sim/YJJBattle.h"
+﻿#include "Sim/YJJBattle.h"
 #include "Data/YJJGameData.h"
 #include "YJJWave.h"
+#include "Algo/Count.h"
 
 int32 FYJJBattle::ModIndex(EYJJStat Stat, int32 Column) const
 {
@@ -50,6 +51,7 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	CorpseCursor = 0;
 	NecroTimer = 0.f;
 	RallyTime = 0.f;
+	RallyAttack = 1.f;
 	for (float& Cooldown : Cooldowns)
 	{
 		Cooldown = 0.f;
@@ -68,9 +70,14 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 		{
 			PerkAllocated[Perk] = 1;
 		}
-		else if (Progress.Perks.Contains(Def.Id))
+		else
 		{
-			ApplyPerk(Perk);
+			// 주문 별은 찍은 수만큼 같은 이름이 저장돼 있다
+			const int32 Points = FMath::Min(static_cast<int32>(Algo::Count(Progress.Perks, Def.Id)), PerkMaxLevel(Perk));
+			for (int32 Point = 0; Point < Points; ++Point)
+			{
+				ApplyPerk(Perk);
+			}
 		}
 	}
 
@@ -106,7 +113,7 @@ void FYJJBattle::PreStep(float Dt)
 	RallyTime = FMath::Max(RallyTime - Dt, 0.f);
 	const int32 PlayerTeam = static_cast<int32>(EYJJTeam::Player);
 	Horde.MoveBuff[PlayerTeam] = RallyTime > 0.f ? T.RallyMoveSpeed : 1.f;
-	Horde.AttackBuff[PlayerTeam] = RallyTime > 0.f ? T.RallyAttackSpeed : 1.f;
+	Horde.AttackBuff[PlayerTeam] = RallyTime > 0.f ? RallyAttack : 1.f;
 
 	if (Horde.Hero() != INDEX_NONE)
 	{
@@ -497,6 +504,15 @@ void FYJJBattle::TickEffects(float Dt)
 	{
 		FYJJEffect& Effect = Effects[Index];
 		Effect.Age += Dt;
+		if (Effect.Kind == EYJJEffectKind::Burn)
+		{
+			Effect.Tick += Dt;
+			while (Effect.Tick >= T.BurnTick)
+			{
+				Effect.Tick -= T.BurnTick;
+				Horde.DamageArea(Effect.Pos, Effect.Radius, Effect.Power * T.BurnTick, 0.f, EYJJTeam::Enemy);
+			}
+		}
 		if (Effect.Age < Effect.Life)
 		{
 			continue;
@@ -504,19 +520,29 @@ void FYJJBattle::TickEffects(float Dt)
 		if (Effect.Kind == EYJJEffectKind::MeteorFall)
 		{
 			Horde.DamageArea(Effect.Pos, Effect.Radius, Effect.Power, T.MeteorKnockback, EYJJTeam::Enemy);
-			RecentCraters.Add(Effect.Pos);
+			RecentCraters.Add(FVector3f(Effect.Pos.X, Effect.Pos.Y, Effect.Radius));
 			Sounds.Add(SoundMeteorBoom);
-			const FVector2f BlastPos = Effect.Pos;
-			const float BlastRadius = Effect.Radius;
+			const FYJJEffect Landed = Effect;
 			Effects.RemoveAtSwap(Index, EAllowShrinking::No);
-			AddEffect(EYJJEffectKind::MeteorBlast, BlastPos, T.BlastEffectTime, BlastRadius);
+			AddEffect(EYJJEffectKind::MeteorBlast, Landed.Pos, T.BlastEffectTime, Landed.Radius);
+			if (Landed.BurnPower > 0.f)
+			{
+				AddEffect(EYJJEffectKind::Burn, Landed.Pos, Landed.BurnTime, Landed.Radius, Landed.BurnPower);
+			}
+			continue;
+		}
+		if (Effect.Kind == EYJJEffectKind::QuakeHit)
+		{
+			const FYJJEffect Landed = Effect;
+			Effects.RemoveAtSwap(Index, EAllowShrinking::No);
+			QuakeStrike(Landed.Pos.X, Landed.Radius, Landed.Power);
 			continue;
 		}
 		Effects.RemoveAtSwap(Index, EAllowShrinking::No);
 	}
 }
 
-void FYJJBattle::AddEffect(EYJJEffectKind Kind, const FVector2f& Pos, float Life, float Radius, float Power)
+FYJJEffect& FYJJBattle::AddEffect(EYJJEffectKind Kind, const FVector2f& Pos, float Life, float Radius, float Power)
 {
 	FYJJEffect& Effect = Effects.AddDefaulted_GetRef();
 	Effect.Kind = Kind;
@@ -524,6 +550,7 @@ void FYJJBattle::AddEffect(EYJJEffectKind Kind, const FVector2f& Pos, float Life
 	Effect.Life = Life;
 	Effect.Radius = Radius;
 	Effect.Power = Power;
+	return Effect;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -556,8 +583,15 @@ bool FYJJBattle::Buy(int32 Building, int32 Count)
 	{
 		return false;
 	}
-	const FYJJTuning& T = YJJData::Tune();
 	Gold -= BuyCost(Building, Count);
+	SpawnSquad(Building, Count);
+	Sounds.Add(SoundBuy);
+	return true;
+}
+
+void FYJJBattle::SpawnSquad(int32 Building, int32 Count)
+{
+	const FYJJTuning& T = YJJData::Tune();
 	int32 BestLevel = 1;
 	for (const FYJJPlot& Plot : Plots)
 	{
@@ -573,9 +607,7 @@ bool FYJJBattle::Buy(int32 Building, int32 Count)
 		}
 	}
 	AddEffect(EYJJEffectKind::Build, FVector2f(CampEdgeX, FieldHeight * Half), T.BuildEffectTime, T.PlotSize);
-	Sounds.Add(SoundBuy);
 	Sounds.Add(YJJData::Unit(YJJData::Building(Building).Unit).VoiceKey);
-	return true;
 }
 
 int32 FYJJBattle::BuildCost(int32 Building) const
@@ -641,8 +673,7 @@ bool FYJJBattle::Upgrade(int32 PlotIndex)
 float FYJJBattle::CooldownMax(EYJJSpell Spell) const
 {
 	const FYJJTuning& T = YJJData::Tune();
-	const float Base = Spell == EYJJSpell::Meteor ? T.MeteorCooldown : T.RallyCooldown;
-	return Base * FMath::Max(1.f - Bonus(EYJJStat::SpellCooldown, INDEX_NONE), T.MinCooldownScale);
+	return SpellNow(Spell).Cooldown * FMath::Max(1.f - Bonus(EYJJStat::SpellCooldown, INDEX_NONE), T.MinCooldownScale);
 }
 
 bool FYJJBattle::CanCast(EYJJSpell Spell) const
@@ -656,31 +687,144 @@ bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
 	{
 		return false;
 	}
-	const FYJJTuning& T = YJJData::Tune();
 	const float Power = 1.f + Bonus(EYJJStat::SpellPower, INDEX_NONE);
+	const FYJJSpellStats Stats = SpellNow(Spell);
 	Cooldowns[static_cast<int32>(Spell)] = CooldownMax(Spell);
-	if (Spell == EYJJSpell::Meteor)
+	const FVector2f Target(FMath::Clamp(Where.X, CampEdgeX, FieldWidth), FMath::Clamp(Where.Y, 0.f, FieldHeight));
+	switch (Spell)
 	{
-		const FVector2f Target(FMath::Clamp(Where.X, CampEdgeX, FieldWidth), FMath::Clamp(Where.Y, 0.f, FieldHeight));
-		AddEffect(EYJJEffectKind::MeteorFall, Target, T.MeteorFallTime, T.MeteorRadius, T.MeteorDamage * Power);
-		Sounds.Add(SoundMeteorFall);
-		if (MeteorTwiceDelay > 0.f)
-		{
-			AddEffect(EYJJEffectKind::MeteorFall, Target, T.MeteorFallTime + MeteorTwiceDelay, T.MeteorRadius, T.MeteorDamage * Power);
-		}
-	}
-	else
-	{
-		RallyTime = T.RallyDuration * Power;
-		Sounds.Add(SoundRally);
-		Sounds.Add(SoundHeroVoice);
-		if (RallyHealFraction > 0.f)
-		{
-			Horde.HealTeam(EYJJTeam::Player, RallyHealFraction);
-		}
-		AddEffect(EYJJEffectKind::Rally, FVector2f(CampEdgeX, FieldHeight * Half), T.RallyEffectTime, FieldHeight);
+	case EYJJSpell::Meteor: CastMeteor(Stats, Target, Power); break;
+	case EYJJSpell::Rally: CastRally(Stats, Power); break;
+	case EYJJSpell::Quake: CastQuake(Stats, Target.X, Power); break;
+	default: break;
 	}
 	return true;
+}
+
+void FYJJBattle::CastMeteor(const FYJJSpellStats& Stats, const FVector2f& Target, float Power)
+{
+	const FYJJTuning& T = YJJData::Tune();
+	const float Damage = Stats.Power * Power;
+	// 불바다: 떨어진 자리에 남는 불 (초당 유성 피해 x A, B초)
+	const float BurnPower = Stats.Has(EYJJSpellFx::Burn) ? Damage * Stats.A(EYJJSpellFx::Burn) : 0.f;
+	const float BurnTime = Stats.B(EYJJSpellFx::Burn);
+	DropMeteor(Target, T.MeteorFallTime, Stats.Radius, Damage, BurnPower, BurnTime);
+	Sounds.Add(SoundMeteorFall);
+	if (MeteorTwiceDelay > 0.f)
+	{
+		DropMeteor(Target, T.MeteorFallTime + MeteorTwiceDelay, Stats.Radius, Damage, BurnPower, BurnTime);
+	}
+	// 유성우: 주변에 작은 운석 A개 (피해 x B)
+	if (Stats.Has(EYJJSpellFx::Shower))
+	{
+		const int32 Count = FMath::RoundToInt(Stats.A(EYJJSpellFx::Shower));
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			const FVector2f Offset = FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * Stats.Radius * T.ShowerSpread;
+			const FVector2f Pos(FMath::Clamp(Target.X + Offset.X, CampEdgeX, FieldWidth), FMath::Clamp(Target.Y + Offset.Y, 0.f, FieldHeight));
+			DropMeteor(Pos, T.MeteorFallTime + T.ShowerDelay * (Index + 1), Stats.Radius * T.ShowerRadiusScale, Damage * Stats.B(EYJJSpellFx::Shower), 0.f, 0.f);
+		}
+	}
+}
+
+void FYJJBattle::DropMeteor(const FVector2f& Pos, float Delay, float Radius, float Damage, float BurnPower, float BurnTime)
+{
+	FYJJEffect& Fall = AddEffect(EYJJEffectKind::MeteorFall, Pos, Delay, Radius, Damage);
+	Fall.BurnPower = BurnPower;
+	Fall.BurnTime = BurnTime;
+}
+
+void FYJJBattle::CastRally(const FYJJSpellStats& Stats, float Power)
+{
+	const FYJJTuning& T = YJJData::Tune();
+	RallyTime = Stats.Duration * Power;
+	RallyAttack = Stats.Power;
+	Sounds.Add(SoundRally);
+	Sounds.Add(SoundHeroVoice);
+	const float Heal = RallyHealFraction + (Stats.Has(EYJJSpellFx::Heal) ? Stats.A(EYJJSpellFx::Heal) : 0.f);
+	if (Heal > 0.f)
+	{
+		Horde.HealTeam(EYJJTeam::Player, Heal);
+	}
+	// 지원군: 지어 둔 병영마다 병사가 바로 나온다
+	if (Stats.Has(EYJJSpellFx::Reinforce))
+	{
+		const int32 Count = FMath::RoundToInt(Stats.A(EYJJSpellFx::Reinforce));
+		for (int32 Building = 0; Building < YJJData::Buildings().Num(); ++Building)
+		{
+			if (BuildingCount(Building) > 0)
+			{
+				SpawnSquad(Building, Count);
+			}
+		}
+	}
+	AddEffect(EYJJEffectKind::Rally, FVector2f(CampEdgeX, FieldHeight * Half), T.RallyEffectTime, FieldHeight);
+}
+
+void FYJJBattle::CastQuake(const FYJJSpellStats& Stats, float X, float Power)
+{
+	const FYJJTuning& T = YJJData::Tune();
+	const float Damage = Stats.Power * Power;
+	AddQuake(X, T.QuakeDelay, Stats.Radius, Damage);
+	// 여진: A초 뒤 같은 자리 한 번 더 (피해 x B)
+	if (Stats.Has(EYJJSpellFx::Aftershock))
+	{
+		AddQuake(X, T.QuakeDelay + Stats.A(EYJJSpellFx::Aftershock), Stats.Radius, Damage * Stats.B(EYJJSpellFx::Aftershock));
+	}
+	// 세 갈래: 양옆으로 번갈아 A줄 더 (줄 사이 B), 바깥 줄일수록 조금 늦게
+	if (Stats.Has(EYJJSpellFx::Split))
+	{
+		const int32 Count = FMath::RoundToInt(Stats.A(EYJJSpellFx::Split));
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			const int32 Ring = Index / 2 + 1;
+			const float Side = Index % 2 == 0 ? 1.f : -1.f;
+			AddQuake(X + Side * Ring * Stats.B(EYJJSpellFx::Split), T.QuakeDelay + T.QuakeSplitDelay * Ring, Stats.Radius, Damage);
+		}
+	}
+}
+
+void FYJJBattle::AddQuake(float X, float Delay, float HalfWidth, float Damage)
+{
+	if (X < CampEdgeX || X > FieldWidth)
+	{
+		return;
+	}
+	AddEffect(EYJJEffectKind::QuakeHit, FVector2f(X, FieldHeight * Half), Delay, HalfWidth, Damage);
+}
+
+void FYJJBattle::QuakeStrike(float X, float HalfWidth, float Damage)
+{
+	const FYJJTuning& T = YJJData::Tune();
+	const float Step = FMath::Max(HalfWidth * T.QuakeHitStep, 1.f);
+	for (float Y = Step * Half; Y < FieldHeight + Step * Half; Y += Step)
+	{
+		Horde.DamageArea(FVector2f(X, Y), HalfWidth, Damage, T.QuakeKnockback, EYJJTeam::Enemy);
+		RecentCraters.Add(FVector3f(X, Y, HalfWidth * T.QuakeScarScale));
+	}
+	Sounds.Add(SoundQuake);
+	AddEffect(EYJJEffectKind::Quake, FVector2f(X, FieldHeight * Half), T.QuakeEffectTime, HalfWidth);
+}
+
+int32 FYJJBattle::SpellLevel(EYJJSpell Spell) const
+{
+	int32 SpellLv = 1;
+	const TConstArrayView<FYJJPerkDef> Perks = YJJData::Perks();
+	for (int32 Perk = 0; Perk < PerkAllocated.Num(); ++Perk)
+	{
+		if (Perks[Perk].Kind == EYJJPerkKind::Spell && Perks[Perk].Spell == static_cast<int32>(Spell))
+		{
+			SpellLv += PerkAllocated[Perk];
+		}
+	}
+	return FMath::Clamp(SpellLv, 1, YJJData::SpellMaxLevel(Spell));
+}
+
+int32 FYJJBattle::PerkMaxLevel(int32 Perk) const
+{
+	const FYJJPerkDef& Def = YJJData::Perks()[Perk];
+	// 주문은 Lv 1에서 시작하므로 별에는 (최고 Lv - 1)번 찍는다
+	return Def.Kind == EYJJPerkKind::Spell ? FMath::Max(YJJData::SpellMaxLevel(static_cast<EYJJSpell>(Def.Spell)) - 1, 0) : 1;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -694,9 +838,14 @@ int32 FYJJBattle::PerkCost() const
 
 bool FYJJBattle::IsReachable(int32 Perk) const
 {
-	if (!YJJData::Perks().IsValidIndex(Perk) || IsAllocated(Perk))
+	if (!YJJData::Perks().IsValidIndex(Perk) || PerkLevel(Perk) >= PerkMaxLevel(Perk))
 	{
 		return false;
+	}
+	// 주문 별: 한 번 찍었으면 이웃과 상관없이 계속 올린다
+	if (IsAllocated(Perk))
+	{
+		return true;
 	}
 	for (const int32 Link : YJJData::Perks()[Perk].Links)
 	{
@@ -727,7 +876,7 @@ bool FYJJBattle::Allocate(int32 Perk)
 
 void FYJJBattle::ApplyPerk(int32 Perk)
 {
-	PerkAllocated[Perk] = 1;
+	++PerkAllocated[Perk];
 	++PerksTaken;
 	for (const FYJJPerkDef::FMod& Mod : YJJData::Perks()[Perk].Mods)
 	{
@@ -780,7 +929,12 @@ void FYJJBattle::WriteProgress(FYJJProgress& Progress) const
 	Progress.Perks.Reset();
 	for (int32 Perk = 0; Perk < PerkAllocated.Num(); ++Perk)
 	{
-		if (PerkAllocated[Perk] && YJJData::Perks()[Perk].Kind != EYJJPerkKind::Start)
+		if (YJJData::Perks()[Perk].Kind == EYJJPerkKind::Start)
+		{
+			continue;
+		}
+		// 주문 별은 찍은 수만큼 같은 이름을 적는다
+		for (int32 Point = 0; Point < PerkAllocated[Perk]; ++Point)
 		{
 			Progress.Perks.Add(YJJData::Perks()[Perk].Id);
 		}

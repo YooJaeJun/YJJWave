@@ -26,7 +26,7 @@ void AYJJWaveHUD::DrawWorld()
 	DrawDying();
 	DrawProjectiles();
 	DrawEffects();
-	DrawMeteorAim();
+	DrawSpellAim();
 }
 
 void AYJJWaveHUD::DrawGround()
@@ -318,7 +318,7 @@ void AYJJWaveHUD::DrawEffects()
 	{
 		return;
 	}
-	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, FxAtlas.Texture, Current->Effects.Num() * 2);
+	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, FxAtlas.Texture, Current->Effects.Num() * EffectQuadsGuess);
 	for (const FYJJEffect& Effect : Current->Effects)
 	{
 		const float T = FMath::Clamp(Effect.Age / FMath::Max(Effect.Life, KINDA_SMALL_NUMBER), 0.f, 1.f);
@@ -360,6 +360,33 @@ void AYJJWaveHUD::DrawEffects()
 			AddQuad(Batch, Ground - FVector2f(Size * Half, Size * UI().PlotAnchor), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxDust)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::PerkKeystone, 1.f - T), false);
 			break;
 		}
+		case EYJJEffectKind::QuakeHit:
+		{
+			// 곧 갈라질 줄: 점점 진해진다 (여진·옆 줄 예고)
+			AddQuakeLine(Batch, Effect.Pos.X, Effect.Radius, YJJUI::WithAlpha(YJJUI::Bad, T * UI().QuakeWarnAlpha));
+			break;
+		}
+		case EYJJEffectKind::Quake:
+		{
+			AddQuakeLine(Batch, Effect.Pos.X, Effect.Radius * FMath::Lerp(1.f, UI().QuakeEndScale, T), FLinearColor(1.f, 1.f, 1.f, 1.f - T));
+			break;
+		}
+		case EYJJEffectKind::Burn:
+		{
+			// 불꽃 몇 개가 원 안에서 일렁인다. 끝날 즈음 사그라진다
+			const int32 Flames = FMath::RoundToInt(UI().BurnFlames);
+			const float Fade = FMath::Clamp((1.f - T) / FMath::Max(UI().BurnFadeShare, KINDA_SMALL_NUMBER), 0.f, 1.f);
+			for (int32 Index = 0; Index < Flames; ++Index)
+			{
+				const float Angle = Index * UE_TWO_PI / Flames + Index;
+				const float Ring = Effect.Radius * UI().BurnSpread * ((Index % 2) ? 1.f : Half);
+				const FVector2f Pos = Effect.Pos + FVector2f(FMath::Cos(Angle), FMath::Sin(Angle) * UI().GroundSquash) * Ring;
+				const float Flicker = 1.f + UI().BurnFlicker * FMath::Sin(Effect.Age * UI().BurnFlickerSpeed + Index * UI().BurnFlickerPhase);
+				const float Size = Effect.Radius * UI().BurnFlameScale * Flicker * Zoom;
+				AddQuad(Batch, WorldToScreen(Pos) - FVector2f(Size * Half, Size), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxFlame)), FxAtlas.CellUV, FLinearColor(1.f, 1.f, 1.f, Fade), (Index % 2) != 0);
+			}
+			break;
+		}
 		case EYJJEffectKind::Build:
 		{
 			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);
@@ -370,15 +397,37 @@ void AYJJWaveHUD::DrawEffects()
 	}
 }
 
-void AYJJWaveHUD::DrawMeteorAim()
+void AYJJWaveHUD::DrawSpellAim()
 {
-	if (!bAimingMeteor || !FxAtlas.Texture || IsMouseOverUI())
+	if (AimingSpell == INDEX_NONE || !FxAtlas.Texture || IsMouseOverUI())
 	{
 		return;
 	}
-	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, FxAtlas.Texture, 1);
-	const float Size = YJJData::Tune().MeteorRadius * 2.f * Zoom;
-	AddQuad(Batch, MouseScreen() - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::Highlight, UI().AimAlpha), false);
+	const EYJJSpell Spell = static_cast<EYJJSpell>(AimingSpell);
+	const FYJJSpellStats Stats = Battle()->SpellNow(Spell);
+	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, FxAtlas.Texture, EffectQuadsGuess);
+	const FLinearColor Color = YJJUI::WithAlpha(YJJUI::Highlight, UI().AimAlpha);
+	if (Spell == EYJJSpell::Quake)
+	{
+		AddQuakeLine(Batch, ScreenToWorld(MouseScreen()).X, Stats.Radius, Color);
+		return;
+	}
+	const float Size = Stats.Radius * 2.f * Zoom;
+	AddQuad(Batch, MouseScreen() - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, Color, false);
+}
+
+void AYJJWaveHUD::AddQuakeLine(const FYJJQuadBatch& Batch, float WorldX, float HalfWidth, const FLinearColor& Color) const
+{
+	// 갈라진 땅 그림을 전장 위에서 아래까지 세로로 잇는다
+	const FYJJBattle* Current = Battle();
+	const float Size = HalfWidth * UI().QuakeCrackScale;
+	const float Step = FMath::Max(Size * UI().QuakeCrackStep, 1.f);
+	int32 Piece = 0;
+	for (float Y = 0.f; Y < Current->FieldHeight + Step; Y += Step, ++Piece)
+	{
+		const FVector2f Center = WorldToScreen(FVector2f(WorldX, Y));
+		AddQuad(Batch, Center - FVector2f(Size * Zoom * Half), FVector2f(Size * Zoom), FxAtlas.UV(FMath::RoundToInt(UI().FxCrack)), FxAtlas.CellUV, Color, (Piece % 2) != 0);
+	}
 }
 
 // ---------------------------------------------------------------------------------------------

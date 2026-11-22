@@ -1,0 +1,16 @@
+﻿Name,Spell,Level,Power,Radius,Cooldown,Duration,Fx,A,B
+Meteor1,Meteor,1,400,140,12,0,,0,0
+Meteor2,Meteor,2,560,150,11,0,,0,0
+Meteor3,Meteor,3,760,160,10,0,Burn,0.12,4
+Meteor4,Meteor,4,1000,170,9,0,,0,0
+Meteor5,Meteor,5,1300,180,8,0,Shower,5,0.35
+Rally1,Rally,1,1.6,0,25,6,,0,0
+Rally2,Rally,2,1.7,0,23,7,,0,0
+Rally3,Rally,3,1.8,0,21,8,Heal,0.25,0
+Rally4,Rally,4,1.9,0,19,9,,0,0
+Rally5,Rally,5,2.0,0,17,10,Reinforce,6,0
+Quake1,Quake,1,260,55,16,0,,0,0
+Quake2,Quake,2,360,60,15,0,,0,0
+Quake3,Quake,3,480,65,14,0,Aftershock,1.0,0.6
+Quake4,Quake,4,620,70,13,0,,0,0
+Quake5,Quake,5,800,75,12,0,Split,2,240

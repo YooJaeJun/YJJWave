@@ -172,7 +172,10 @@ private:
 	void DrawDying();
 	void DrawProjectiles();
 	void DrawEffects();
-	void DrawMeteorAim();
+	/** 조준 중인 주문: 유성은 고리, 대지 가르기는 세로 줄 */
+	void DrawSpellAim();
+	/** 대지 가르기 갈라진 줄 (월드 x, 폭의 절반) */
+	void AddQuakeLine(const FYJJQuadBatch& Batch, float WorldX, float HalfWidth, const FLinearColor& Color) const;
 
 	// 사각형 배치 (캔버스 배치에 직접)
 	FYJJQuadBatch BeginBatch(FCanvas* Target, UTexture2D* Texture, int32 ExpectedQuads) const;
@@ -217,6 +220,13 @@ private:
 	FString PerkText(int32 Perk) const;
 	/** 특성·카드 공통: 능력치 줄 + 특수 효과 줄 */
 	FString EffectText(const FYJJPerkDef& Def) const;
+	/** 주문 별 설명: 지금 Lv 수치, 다음 Lv, Lv별 특수 효과 */
+	FString SpellText(EYJJSpell Spell) const;
+	FString SpellStatText(EYJJSpell Spell, const FYJJSpellStats& Stats) const;
+	int32 SpellIcon(EYJJSpell Spell) const;
+	/** 주문 키·버튼: 조준이 필요한 주문은 커서가 전장 위면 바로, 아니면 조준 상태로 */
+	void PressSpell(EYJJSpell Spell);
+	static bool NeedsAim(EYJJSpell Spell) { return Spell != EYJJSpell::Rally; }
 	void DrawCardPick();
 	void DrawCutscene();
 	void UpdateCutsceneCamera(float Dt);
@@ -237,6 +247,8 @@ private:
 	static FString FormatCount(double Value);
 	/** 1~6 키 → 병영 번호 */
 	static int32 BuildingIndexForKey(const FKey& Key);
+	/** F1·F2·F3 → 주문 번호 */
+	static int32 SpellIndexForKey(const FKey& Key);
 
 	UPROPERTY() TObjectPtr<UTexture2D> UnitTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> BigUnitTexture;
@@ -287,7 +299,8 @@ private:
 	float BuyPopupY = 0.f;
 	bool bTreeOpen = false;
 	bool bOptionsOpen = false;
-	bool bAimingMeteor = false;
+	/** 조준 중인 주문 (EYJJSpell 번호, 없으면 INDEX_NONE) */
+	int32 AimingSpell = INDEX_NONE;
 	bool bShowDebug = true;
 	int32 HoverPlot = INDEX_NONE;
 	int32 HoverPerk = INDEX_NONE;
@@ -334,6 +347,8 @@ private:
 	static constexpr int32 OptionResolutionNext = 31;
 	static constexpr int32 OptionClose = 40;
 	static constexpr int32 NumLanguages = 2;
+	/** 연출 하나가 그리는 사각형 수 어림 (대지 가르기 줄·불꽃이 여러 개) */
+	static constexpr int32 EffectQuadsGuess = 12;
 	static constexpr int32 BuyCountKeys[] = { 0, 1, 2 };   // 팝업 버튼 3개 (마리 수는 UILayout BuyCountA·B·C)
 	inline static const TCHAR* const LanguageCodes[NumLanguages] = { TEXT("ko"), TEXT("en") };
 	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice") };

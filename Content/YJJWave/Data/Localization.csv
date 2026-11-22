@@ -7,7 +7,7 @@ UI.HeroHP,{0} / {1},{0} / {1},영웅 체력
 UI.Speed,x{0},x{0},배속 버튼
 UI.Paused,멈춤,Paused,일시정지
 UI.Owned,x{0},x{0},지은 수
-UI.Tree,특성,Perks,특성 성좌 버튼
+UI.Tree,특성 (T),Perks (T),특성 성좌 버튼
 UI.TreeTitle,특성 성좌,Constellation,
 UI.TreeNext,다음 별 {0} 영혼 · 찍은 별 {1}개,Next star {0} souls · {1} taken,
 UI.TreeClose,닫기 (T),Close (T),
@@ -26,11 +26,30 @@ UI.Debug1,유닛 {0} · {1} fps · 화살 {2},Units {0} · {1} fps · arrows {2}
 UI.Debug2,시뮬 {0}ms · 그리기 {1}ms · 대기 {2}ms,Sim {0}ms · draw {1}ms · wait {2}ms,
 Num.Man,{0}만,{0}0k,만 단위 (en은 근사 표기)
 Num.Eok,{0}억,{0}00M,억 단위 (en은 근사 표기)
-Key.Meteor,Q,Q,
-Key.Rally,E,E,
+Key.Meteor,F1,F1,
+Key.Rally,F2,F2,
 Key.Tree,T,T,
 Spell.Meteor,유성 낙하,Meteor,
 Spell.Rally,돌격 함성,War Cry,
+Key.Quake,F3,F3,
+Spell.Quake,대지 가르기,Earthsplitter,주문 F3
+Perk.KindSpell,주문,Spell,성좌 설명창 종류
+Spell.Lv,Lv{0},Lv{0},좌측 패널 주문 칸
+Spell.LvOf,Lv {0}/{1},Lv {0}/{1},주문 별
+SpellStat.Meteor,피해 {0} · 반경 {1} · 대기 {2}초,Damage {0} · Radius {1} · Cooldown {2}s,{0} 위력 {1} 반경 {2} 대기 {3} 지속 {4} 폭
+SpellStat.Rally,공격 속도 x{0} · {3}초 · 대기 {2}초,Attack speed x{0} · {3}s · Cooldown {2}s,
+SpellStat.Quake,피해 {0} · 폭 {4} · 대기 {2}초,Damage {0} · Width {4} · Cooldown {2}s,
+Spell.Next,다음 Lv {0}: {1},Next Lv {0}: {1},
+Spell.FxOn,[Lv{0}] {1},[Lv{0}] {1},열린 특수 효과
+Spell.FxLocked,[Lv{0} 잠김] {1},[Lv{0} locked] {1},아직 안 열린 특수 효과
+Spell.LevelUp,Lv 올리기: 영혼 {0},Level up: {0} souls,
+Spell.Max,최고 Lv,Max level,
+SpellFx.Burn,불바다: {1}초 동안 초당 유성 피해의 {2}%,Firestorm: {2}% of meteor damage per second for {1}s,{0} A {1} B {2} A% {3} B%
+SpellFx.Shower,유성우: 작은 운석 {0}개 더 (피해 {3}%),Meteor shower: {0} more small meteors ({3}% damage),
+SpellFx.Heal,함성 때 아군 전체 체력 {2}% 회복,War Cry heals all troops {2}%,
+SpellFx.Reinforce,지원군: 지어 둔 병영마다 병사 {0}명 바로 출전,Reinforcements: {0} troops from each built barracks,
+SpellFx.Aftershock,여진: {0}초 뒤 한 번 더 (피해 {3}%),Aftershock: strikes again after {0}s ({3}% damage),
+SpellFx.Split,세 갈래: 양옆으로 {0}줄 더 갈라짐,Trident: {0} more fissures on the sides,
 Building.Barracks,졸병 막사,Barracks,
 Building.BarracksDesc,싸고 많다. 물량의 기본,Cheap and many,
 Building.ArcherPost,궁수 초소,Archer Post,

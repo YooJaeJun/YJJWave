@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Sim/YJJHorde.h"
 #include "Sim/YJJWaveTypes.h"
+#include "Data/YJJGameData.h"
 
 /** 진지의 건설 칸 하나 */
 struct FYJJPlot
@@ -23,9 +24,12 @@ enum class EYJJEffectKind : uint8
 	Build,        // 건설·레벨업 먼지
 	Rescue,       // 최후의 저항·부활 (초록 고리)
 	Raise,        // 강령술사가 시체를 일으킴 (보라 연기)
+	QuakeHit,     // 대지 가르기가 곧 갈라질 줄 (끝나면 피해)
+	Quake,        // 갈라진 땅
+	Burn,         // 불바다 (살아 있는 동안 BurnTick마다 피해)
 };
 
-/** 화면 연출 (규칙에 쓰이는 것은 MeteorFall 이 끝날 때의 피해뿐) */
+/** 화면 연출 + 늦게 터지는 주문 (MeteorFall·QuakeHit 끝, Burn 동안의 피해) */
 struct FYJJEffect
 {
 	EYJJEffectKind Kind = EYJJEffectKind::Build;
@@ -34,6 +38,11 @@ struct FYJJEffect
 	float Life = 0.f;
 	float Radius = 0.f;
 	float Power = 0.f;
+	/** Burn: 다음 피해까지 쌓인 시간 */
+	float Tick = 0.f;
+	/** MeteorFall: 떨어진 자리에 남길 불 (초당 피해, 시간) */
+	float BurnPower = 0.f;
+	float BurnTime = 0.f;
 };
 
 /** 판이 끝나도 남는 것: 영혼과 찍은 특성, 깬 스테이지 (저장 파일과 주고받는다) */
@@ -80,16 +89,22 @@ public:
 	int32 SpawnCount(int32 Plot) const;
 	float SpawnInterval(int32 Plot) const;
 
-	// ---- 스펠 ----
+	// ---- 주문 (F1·F2·F3, Lv은 특성 성좌의 주문 별로 올린다) ----
 	bool CanCast(EYJJSpell Spell) const;
 	bool Cast(EYJJSpell Spell, const FVector2f& Where);
 	float CooldownLeft(EYJJSpell Spell) const { return Cooldowns[static_cast<int32>(Spell)]; }
 	float CooldownMax(EYJJSpell Spell) const;
 	float RallyLeft() const { return RallyTime; }
+	/** 1 + 그 주문 별에 찍은 수 */
+	int32 SpellLevel(EYJJSpell Spell) const;
+	FYJJSpellStats SpellNow(EYJJSpell Spell) const { return YJJData::SpellStats(Spell, SpellLevel(Spell)); }
 
 	// ---- 특성 성좌 (판이 끝나도 남는다) ----
 	int32 PerkCost() const;
 	bool IsAllocated(int32 Perk) const { return PerkAllocated.IsValidIndex(Perk) && PerkAllocated[Perk] != 0; }
+	/** 찍은 수 (주문 별은 여러 번, 나머지는 0 또는 1) */
+	int32 PerkLevel(int32 Perk) const { return PerkAllocated.IsValidIndex(Perk) ? PerkAllocated[Perk] : 0; }
+	int32 PerkMaxLevel(int32 Perk) const;
 	bool IsReachable(int32 Perk) const;
 	bool CanAllocate(int32 Perk) const;
 	bool Allocate(int32 Perk);
@@ -109,8 +124,8 @@ public:
 	TArray<FYJJEffect> Effects;
 	/** HUD가 시체·피 연출에 쓰고 비운다 */
 	TArray<FYJJDeath> RecentDeaths;
-	/** HUD가 바닥에 그을음으로 굽고 비운다 */
-	TArray<FVector2f> RecentCraters;
+	/** HUD가 바닥에 그을음으로 굽고 비운다 (x, y, 반경) */
+	TArray<FVector3f> RecentCraters;
 	/** 소리 사건 (Sounds.csv 키). 게임 모드가 틀고 비운다 */
 	TArray<FName> Sounds;
 
@@ -150,7 +165,16 @@ private:
 	void ApplySpecialDef(const FYJJPerkDef& Def, TArray<FYJJUnitSpecial>& Specials);
 	void SpawnHero();
 	FYJJSpawnStats PlayerStats(int32 Building, int32 BuildingLevel) const;
-	void AddEffect(EYJJEffectKind Kind, const FVector2f& Pos, float Life, float Radius, float Power = 0.f);
+	FYJJEffect& AddEffect(EYJJEffectKind Kind, const FVector2f& Pos, float Life, float Radius, float Power = 0.f);
+	void CastMeteor(const FYJJSpellStats& Stats, const FVector2f& Target, float Power);
+	void DropMeteor(const FVector2f& Pos, float Delay, float Radius, float Damage, float BurnPower, float BurnTime);
+	void CastRally(const FYJJSpellStats& Stats, float Power);
+	void CastQuake(const FYJJSpellStats& Stats, float X, float Power);
+	void AddQuake(float X, float Delay, float HalfWidth, float Damage);
+	/** 땅이 갈라진다: 전장 위에서 아래까지 원을 이어 붙여 피해 */
+	void QuakeStrike(float X, float HalfWidth, float Damage);
+	/** 병영 병사 Count 명을 진지 끝에서 바로 내보낸다 (값 없이) */
+	void SpawnSquad(int32 Building, int32 Count);
 	void ApplyPerk(int32 Perk);
 	void RecomputeHero();
 	/** 찍힌 중간 별로 유닛 종류별 특수 효과와 판 단위 효과를 다시 계산 */
@@ -162,8 +186,10 @@ private:
 	/** [능력치][0 = 공통, 1+ = 병영 번호+1] */
 	TArray<float> Mods;
 	TArray<float> EnemyCarry;   // 몬스터별 소수 생산 누적
-	float Cooldowns[static_cast<int32>(EYJJSpell::Count)] = { 0.f, 0.f };
+	float Cooldowns[static_cast<int32>(EYJJSpell::Count)] = {};
 	float RallyTime = 0.f;
+	/** 지금 함성의 공격 속도 배율 (함성 Lv) */
+	float RallyAttack = 1.f;
 	FRandomStream Random;
 
 	// 판 단위 특수 효과 (중간 별)
@@ -197,6 +223,7 @@ private:
 	inline static const FName SoundMeteorFall = TEXT("MeteorFall");
 	inline static const FName SoundMeteorBoom = TEXT("MeteorBoom");
 	inline static const FName SoundRally = TEXT("Rally");
+	inline static const FName SoundQuake = TEXT("MeteorBoom");
 	inline static const FName SoundHeroVoice = TEXT("Voice_Hero");
 	inline static const FName SoundBossAppear = TEXT("BossAppear");
 	inline static const FName SoundCard = TEXT("Card");

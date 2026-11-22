@@ -121,23 +121,23 @@ void AYJJWaveHUD::DrawSidePanel()
 
 	}
 
-	// ---- 스펠 Q·E + 특성 T (3칸) ----
+	// ---- 주문 F1·F2·F3 (3칸) + 특성 T (가로 막대) ----
 	{
 		const int32 NumSpells = static_cast<int32>(EYJJSpell::Count);
-		const int32 Slots = NumSpells + 1;
-		const float SlotW = (W - L.CardGap * (Slots - 1)) / Slots;
+		const float SlotW = (W - L.CardGap * (NumSpells - 1)) / NumSpells;
 		const float H = L.SpellH;
 		for (int32 Index = 0; Index < NumSpells; ++Index)
 		{
 			const EYJJSpell Spell = static_cast<EYJJSpell>(Index);
 			const float SX = X + Index * (SlotW + L.CardGap);
 			const bool bReady = Current->CanCast(Spell);
-			const bool bArmed = Spell == EYJJSpell::Meteor && bAimingMeteor;
+			const bool bArmed = AimingSpell == Index;
+			const FString Key = YJJData::SpellKey(Spell);
 			DrawPanel(SX, Y, SlotW, H, bArmed ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
-			const int32 IconCell = FMath::RoundToInt(Spell == EYJJSpell::Meteor ? L.UiMeteor : L.UiRally);
-			DrawIcon(IconCell, SX + (SlotW - L.CardIcon) * Half, Y + Pad, L.CardIcon, bReady ? FLinearColor::White : YJJUI::Muted);
-			DrawLabel(YJJLoc::Get(Spell == EYJJSpell::Meteor ? TEXT("Key.Meteor") : TEXT("Key.Rally")), SX + Pad, Y + Pad * Half, L.SmallText, YJJUI::Paper);
-			DrawLabelCentered(YJJLoc::Get(Spell == EYJJSpell::Meteor ? TEXT("Spell.Meteor") : TEXT("Spell.Rally")), SX + SlotW * Half, Y + Pad + L.CardIcon + L.SmallText * Half, L.SmallText, YJJUI::Paper, SlotW - Pad);
+			DrawIcon(SpellIcon(Spell), SX + (SlotW - L.CardIcon) * Half, Y + Pad, L.CardIcon, bReady ? FLinearColor::White : YJJUI::Muted);
+			DrawLabel(YJJLoc::Get(TEXT("Key.") + Key), SX + Pad, Y + Pad * Half, L.SmallText, YJJUI::Paper);
+			DrawLabel(YJJLoc::Format(TEXT("Spell.Lv"), { Current->SpellLevel(Spell) }), SX + SlotW - Pad, Y + Pad * Half, L.SmallText, YJJUI::Highlight, 1.f);
+			DrawLabelCentered(YJJLoc::Get(TEXT("Spell.") + Key), SX + SlotW * Half, Y + Pad + L.CardIcon + L.SmallText * Half, L.SmallText, YJJUI::Paper, SlotW - Pad);
 			if (!bReady && !Current->bGameOver)
 			{
 				const float Fraction = Current->CooldownLeft(Spell) / FMath::Max(Current->CooldownMax(Spell), KINDA_SMALL_NUMBER);
@@ -147,16 +147,17 @@ void AYJJWaveHUD::DrawSidePanel()
 			AddButton(EButton::Spell, Index, SX, Y, SlotW, H);
 		}
 
-		// 특성 성좌: 찍을 수 있으면 반짝, 열려 있으면 닫기
-		const float TX = X + NumSpells * (SlotW + L.CardGap);
+		Y += H + L.CardGap;
+
+		// 특성 성좌: 가로 막대. 찍을 수 있으면 반짝, 열려 있으면 닫기
+		const float TH = L.TreeBarH;
 		const bool bCanPerk = Current->Souls >= Current->PerkCost();
 		const float Glow = bCanPerk && !bTreeOpen ? Half + Half * FMath::Sin(GetWorld()->GetRealTimeSeconds() * L.GlowSpeed) : 0.f;
-		DrawPanel(TX, Y, SlotW, H, bTreeOpen ? YJJUI::Highlight : FMath::Lerp(YJJUI::PanelTint, YJJUI::Soul, Glow), FMath::RoundToInt(L.UiCard));
-		DrawIcon(FMath::RoundToInt(L.UiStar), TX + (SlotW - L.CardIcon) * Half, Y + Pad, L.CardIcon);
-		DrawLabel(YJJLoc::Get(TEXT("Key.Tree")), TX + Pad, Y + Pad * Half, L.SmallText, YJJUI::Paper);
-		DrawLabelCentered(YJJLoc::Get(bTreeOpen ? TEXT("UI.TreeClose") : TEXT("UI.Tree")), TX + SlotW * Half, Y + Pad + L.CardIcon + L.SmallText * Half, L.SmallText, YJJUI::Paper, SlotW - Pad);
-		AddButton(bTreeOpen ? EButton::TreeClose : EButton::Tree, 0, TX, Y, SlotW, H);
-		Y += H + L.SectionGap;
+		DrawPanel(X, Y, W, TH, bTreeOpen ? YJJUI::Highlight : FMath::Lerp(YJJUI::PanelTint, YJJUI::Soul, Glow), FMath::RoundToInt(L.UiCard));
+		DrawIcon(FMath::RoundToInt(L.UiStar), X + Pad, Y + (TH - L.TreeBarIcon) * Half, L.TreeBarIcon);
+		DrawLabelCentered(YJJLoc::Get(bTreeOpen ? TEXT("UI.TreeClose") : TEXT("UI.Tree")), X + W * Half, Y + TH * Half, L.MidText, YJJUI::Paper, W - Pad * 2.f - L.TreeBarIcon * 2.f);
+		AddButton(bTreeOpen ? EButton::TreeClose : EButton::Tree, 0, X, Y, W, TH);
+		Y += TH + L.SectionGap;
 	}
 
 	// ---- 옵션 (맨 아래, 성능 줄 위) ----

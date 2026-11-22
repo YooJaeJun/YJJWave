@@ -6,6 +6,7 @@
   작은 별(Small)   : 능력치 숫자만 조금씩 (체력 +10% …)
   중간 별(Notable) : 특수 효과 (Special 열). 예) 졸병 체력이 30% 아래로 떨어지면 1회 50% 회복
   쐐기(Keystone)   : 대가가 있는 큰 규칙 변경 (능력치 +와 - 를 함께)
+  주문 별(Spell)   : 스펠 갈래 옆 가지. 여러 번 찍어 주문 Lv을 올린다 (수치·특수 효과는 Spells.csv)
 
 이름(큰 별·쐐기)은 Localization.csv 의 Perk.<이름>, 효과 설명은 Special.<종류>.
 특수 효과 종류와 A·B 값의 뜻은 Source/YJJWave/Sim/YJJWaveTypes.h 의 EYJJSpecial.
@@ -64,11 +65,16 @@ SPOKES = [
 ]
 INNER = [("HP", "", 0.04), ("Damage", "", 0.04)]
 
+# 주문 별: (주문, 스펠 갈래 줄 몇 번째에 붙는지, 반지름 칸, 각도 차이)
+SPELL_SPOKE = "Spells"
+SPELL_NODES = [("Meteor", 1, 3, -20), ("Rally", 1, 3, 20), ("Quake", 3, 5, -14)]
+MIN_GAP = 110   # 별 사이 최소 거리 (성좌 좌표)
+
 
 class Perk:
-    def __init__(self, name, kind, x, y, mods=(), name_key="", special=("", "", 0, 0)):
+    def __init__(self, name, kind, x, y, mods=(), name_key="", special=("", "", 0, 0), spell=""):
         self.name, self.kind, self.x, self.y = name, kind, x, y
-        self.mods, self.name_key, self.special = list(mods), name_key, special
+        self.mods, self.name_key, self.special, self.spell = list(mods), name_key, special, spell
         self.links = set()
 
 
@@ -135,15 +141,28 @@ def main():
         link(p, a)
         link(p, b)
 
+    # 주문 별: 스펠 갈래 옆 가지
+    spoke_index = next(i for i, s in enumerate(SPOKES) if s[0] == SPELL_SPOKE)
+    for spell, step, ring, offset in SPELL_NODES:
+        p = Perk("Spell_%s" % spell, "Spell", *polar(INNER_R + STEP_R * ring, SPOKES[spoke_index][1] + offset),
+                 name_key="Spell." + spell, spell=spell)
+        perks.append(p)
+        link(p, chains[spoke_index][step])
+
+    for i, a in enumerate(perks):
+        for b in perks[i + 1:]:
+            d = math.hypot(a.x - b.x, a.y - b.y)
+            assert d >= MIN_GAP or "Spell" not in (a.kind, b.kind), (a.name, b.name, d)
+
     out = io.StringIO()
     w = csv.writer(out, lineterminator="\n")
     w.writerow(["Name", "Kind", "X", "Y", "Stat", "Target", "Value", "Stat2", "Target2", "Value2",
-                "Special", "SpecialTarget", "SpecialA", "SpecialB", "Links", "NameKey"])
+                "Special", "SpecialTarget", "SpecialA", "SpecialB", "Links", "NameKey", "Spell"])
     for p in perks:
         m1 = p.mods[0] if len(p.mods) > 0 else ("", "", 0)
         m2 = p.mods[1] if len(p.mods) > 1 else ("", "", 0)
         w.writerow([p.name, p.kind, p.x, p.y, m1[0], m1[1], m1[2], m2[0], m2[1], m2[2],
-                    p.special[0], p.special[1], p.special[2], p.special[3], " ".join(sorted(p.links)), p.name_key])
+                    p.special[0], p.special[1], p.special[2], p.special[3], " ".join(sorted(p.links)), p.name_key, p.spell])
     with open(OUT, "w", encoding="utf-8-sig", newline="") as f:
         f.write(out.getvalue())
     print("perks", len(perks), "notables", sum(1 for p in perks if p.kind == "Notable"), "keystones", sum(1 for p in perks if p.kind == "Keystone"))

@@ -50,15 +50,19 @@ WalkStrideScale,0.6,걸음 한 바퀴 거리 = 그림 크기 x 이 비율
 WalkStrideMin,26,걸음 한 바퀴 최소 거리
 WalkStrideMax,60,걸음 한 바퀴 최대 거리 (큰 보스도 다리가 보이게 움직인다)
 DeathFling,140,죽을 때 맞은 방향으로 날아가는 속도
-MeteorDamage,400,유성 피해
-MeteorRadius,140,유성 반경
 MeteorKnockback,1800,유성 밀쳐내기 (질량으로 나눈다)
 MeteorFallTime,0.6,유성이 떨어지는 시간
-MeteorCooldown,12,유성 재사용 대기
-RallyDuration,6,돌격 함성 지속
-RallyMoveSpeed,1.5,함성 중 이동 속도 배율
-RallyAttackSpeed,1.6,함성 중 공격 속도 배율
-RallyCooldown,25,함성 재사용 대기
+RallyMoveSpeed,1.5,함성 중 이동 속도 배율 (공격 속도·지속·대기는 Spells.csv Lv별)
+QuakeDelay,0.15,대지 가르기: 누르고 갈라지기까지
+QuakeSplitDelay,0.12,대지 가르기: 옆 줄이 한 줄마다 늦게 갈라지는 시간
+QuakeHitStep,1.8,대지 가르기 판정 원 간격 (폭의 절반 배율)
+QuakeKnockback,1500,대지 가르기 밀쳐내기 (질량으로 나눈다)
+QuakeEffectTime,0.9,갈라진 땅 연출 시간
+QuakeScarScale,0.5,갈라진 자리 그을음 크기 (폭의 절반 배율)
+BurnTick,0.25,불바다 피해 간격
+ShowerSpread,1.6,유성우: 작은 운석이 떨어지는 범위 (반경 배율)
+ShowerDelay,0.15,유성우: 운석 사이 시간
+ShowerRadiusScale,0.5,유성우: 작은 운석 반경 배율
 MinCooldownScale,0.3,재사용 대기 감소의 바닥
 BlastEffectTime,0.5,유성 폭발 연출 시간
 RallyEffectTime,0.8,함성 고리 연출 시간
@@ -82,6 +86,7 @@ BotCameraFollow,1.5,봇 카메라가 전선을 따라가는 빠르기
 BotCameraZoom,0.85,봇 카메라 확대
 BotMeteorLead,60,봇 유성: 적 앞줄보다 이만큼 뒤
 BotRallyRatio,1.2,적 수가 아군의 이 배를 넘으면 함성
+BotQuakeMinEnemies,8,봇 대지 가르기: 적이 이만큼 있을 때만
 BotBuyGold,500,봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 BotExitDelay,2,끝나고 종료까지 기다리는 실제 시간
 BenchDepth,0.25,벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다

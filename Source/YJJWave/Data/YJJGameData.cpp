@@ -115,6 +115,7 @@ void FYJJGameDatabase::Load()
 	LoadUnits();
 	LoadBuildings();
 	LoadStages();
+	LoadSpells();
 	LoadPerks();
 	LoadCards();
 
@@ -383,6 +384,71 @@ void FYJJGameDatabase::LoadCards()
 	});
 }
 
+void FYJJGameDatabase::LoadSpells()
+{
+	for (TArray<FYJJSpellLevel>& Levels : SpellLevels)
+	{
+		Levels.Reset();
+	}
+	const UDataTable* Table = LoadTable(TEXT("Spells.csv"), FYJJSpellRow::StaticStruct());
+	Table->ForeachRow<FYJJSpellRow>(ContextName, [this](const FName& Name, const FYJJSpellRow& Row)
+	{
+		int32 Spell = INDEX_NONE;
+		if (!ParseSpell(Row.Spell, Spell))
+		{
+			Problem(FString::Printf(TEXT("Spells.csv %s: 모르는 주문 %s"), *Name.ToString(), *Row.Spell));
+			return;
+		}
+		FYJJSpellLevel& Level = SpellLevels[Spell].AddDefaulted_GetRef();
+		Level.Level = Row.Level;
+		Level.Power = Row.Power;
+		Level.Radius = Row.Radius;
+		Level.Cooldown = Row.Cooldown;
+		Level.Duration = Row.Duration;
+		Level.A = Row.A;
+		Level.B = Row.B;
+		if (!Row.Fx.IsEmpty() && !ParseSpellFx(Row.Fx, Level.Fx))
+		{
+			Problem(FString::Printf(TEXT("Spells.csv %s: 모르는 특수 효과 %s"), *Name.ToString(), *Row.Fx));
+		}
+	});
+	for (int32 Spell = 0; Spell < static_cast<int32>(EYJJSpell::Count); ++Spell)
+	{
+		SpellLevels[Spell].Sort([](const FYJJSpellLevel& A, const FYJJSpellLevel& B) { return A.Level < B.Level; });
+		if (SpellLevels[Spell].Num() == 0)
+		{
+			Problem(FString::Printf(TEXT("Spells.csv: %s 줄이 없다"), YJJData::SpellKey(static_cast<EYJJSpell>(Spell))));
+			SpellLevels[Spell].AddDefaulted();
+		}
+	}
+}
+
+bool FYJJGameDatabase::ParseSpell(const FString& Name, int32& Out)
+{
+	for (int32 Index = 0; Index < static_cast<int32>(EYJJSpell::Count); ++Index)
+	{
+		if (Name == YJJData::SpellKey(static_cast<EYJJSpell>(Index)))
+		{
+			Out = Index;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool FYJJGameDatabase::ParseSpellFx(const FString& Name, EYJJSpellFx& Out)
+{
+	for (int32 Index = 1; Index < static_cast<int32>(EYJJSpellFx::Count); ++Index)
+	{
+		if (Name == YJJData::SpellFxKey(static_cast<EYJJSpellFx>(Index)))
+		{
+			Out = static_cast<EYJJSpellFx>(Index);
+			return true;
+		}
+	}
+	return false;
+}
+
 void FYJJGameDatabase::LoadPerks()
 {
 	Perks.Reset();
@@ -395,8 +461,14 @@ void FYJJGameDatabase::LoadPerks()
 		Def.Kind = Row.Kind == TEXT("Start") ? EYJJPerkKind::Start
 			: Row.Kind == TEXT("Notable") ? EYJJPerkKind::Notable
 			: Row.Kind == TEXT("Keystone") ? EYJJPerkKind::Keystone
+			: Row.Kind == TEXT("Spell") ? EYJJPerkKind::Spell
 			: EYJJPerkKind::Small;
 		Def.Pos = FVector2f(Row.X, Row.Y);
+		if (Def.Kind == EYJJPerkKind::Spell && !ParseSpell(Row.Spell, Def.Spell))
+		{
+			Problem(FString::Printf(TEXT("Perks.csv %s: 모르는 주문 %s"), *Name.ToString(), *Row.Spell));
+			Def.Kind = EYJJPerkKind::Small;
+		}
 		ReadEffects(TEXT("Perks.csv"), Name, Row, Def);
 		LinkNames.Add(Row.Links);
 	});
@@ -461,6 +533,65 @@ const TCHAR* YJJData::StatKey(EYJJStat Stat)
 bool YJJData::IsFlatStat(EYJJStat Stat)
 {
 	return Stat == EYJJStat::SpawnCount || Stat == EYJJStat::Multishot;
+}
+
+const TCHAR* YJJData::SpellKey(EYJJSpell Spell)
+{
+	switch (Spell)
+	{
+	case EYJJSpell::Meteor: return TEXT("Meteor");
+	case EYJJSpell::Rally: return TEXT("Rally");
+	case EYJJSpell::Quake: return TEXT("Quake");
+	default: return TEXT("");
+	}
+}
+
+const TCHAR* YJJData::SpellFxKey(EYJJSpellFx Fx)
+{
+	switch (Fx)
+	{
+	case EYJJSpellFx::Burn: return TEXT("Burn");
+	case EYJJSpellFx::Shower: return TEXT("Shower");
+	case EYJJSpellFx::Heal: return TEXT("Heal");
+	case EYJJSpellFx::Reinforce: return TEXT("Reinforce");
+	case EYJJSpellFx::Aftershock: return TEXT("Aftershock");
+	case EYJJSpellFx::Split: return TEXT("Split");
+	default: return TEXT("");
+	}
+}
+
+TConstArrayView<FYJJSpellLevel> YJJData::SpellLevels(EYJJSpell Spell)
+{
+	return FYJJGameDatabase::Get().SpellLevels[static_cast<int32>(Spell)];
+}
+
+int32 YJJData::SpellMaxLevel(EYJJSpell Spell)
+{
+	return SpellLevels(Spell).Num();
+}
+
+FYJJSpellStats YJJData::SpellStats(EYJJSpell Spell, int32 Level)
+{
+	const TConstArrayView<FYJJSpellLevel> Levels = SpellLevels(Spell);
+	const int32 Last = FMath::Clamp(Level, 1, Levels.Num()) - 1;
+	FYJJSpellStats Stats;
+	Stats.Level = Last + 1;
+	Stats.Power = Levels[Last].Power;
+	Stats.Radius = Levels[Last].Radius;
+	Stats.Cooldown = Levels[Last].Cooldown;
+	Stats.Duration = Levels[Last].Duration;
+	for (int32 Index = 0; Index <= Last; ++Index)
+	{
+		const FYJJSpellLevel& Row = Levels[Index];
+		if (Row.Fx != EYJJSpellFx::None)
+		{
+			const int32 Fx = static_cast<int32>(Row.Fx);
+			Stats.bFx[Fx] = true;
+			Stats.FxA[Fx] = Row.A;
+			Stats.FxB[Fx] = Row.B;
+		}
+	}
+	return Stats;
 }
 
 const TCHAR* YJJData::SpecialKey(EYJJSpecial Special)

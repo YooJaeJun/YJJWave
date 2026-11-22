@@ -443,9 +443,10 @@ void AYJJWaveHUD::DrawTree()
 		{
 			Color = YJJUI::PerkTaken;
 		}
-		else if (Current->IsReachable(Perk))
+		if (Current->IsReachable(Perk))
 		{
-			Color = Current->CanAllocate(Perk) ? FMath::Lerp(YJJUI::PerkReach, FLinearColor::White, Pulse) : YJJUI::PerkReach;
+			const FLinearColor Base = Current->IsAllocated(Perk) ? YJJUI::PerkTaken : YJJUI::PerkReach;
+			Color = Current->CanAllocate(Perk) ? FMath::Lerp(Base, FLinearColor::White, Pulse) : Base;
 		}
 		if (Perk == HoverPerk)
 		{
@@ -453,6 +454,15 @@ void AYJJWaveHUD::DrawTree()
 		}
 		const FVector2f Center = PerkToVirtual(Def.Pos);
 		DrawIcon(FMath::RoundToInt(bSmall ? UI().UiStar : UI().UiBigStar), Center.X - Radius, Center.Y - Radius, Radius * 2.f, Color);
+		if (Def.Kind == EYJJPerkKind::Spell)
+		{
+			// 주문 별: 큰 별 위에 주문 그림 + 아래에 Lv
+			const EYJJSpell Spell = static_cast<EYJJSpell>(Def.Spell);
+			const float IconSize = Radius * 2.f * UI().SpellNodeIcon;
+			DrawIcon(SpellIcon(Spell), Center.X - IconSize * Half, Center.Y - IconSize * Half, IconSize);
+			DrawLabelCentered(YJJLoc::Format(TEXT("Spell.LvOf"), { Current->SpellLevel(Spell), YJJData::SpellMaxLevel(Spell) }),
+				Center.X, Center.Y + Radius + UI().SpellNodeLvGap + UI().TinyText * Half, UI().TinyText, YJJUI::Highlight);
+		}
 	}
 
 	// 머리글
@@ -465,25 +475,28 @@ void AYJJWaveHUD::DrawTree()
 	if (HoverPerk != INDEX_NONE)
 	{
 		const FYJJPerkDef& Def = Perks[HoverPerk];
+		const bool bSpell = Def.Kind == EYJJPerkKind::Spell;
 		const FString Title = !Def.NameKey.IsEmpty() ? YJJLoc::Get(Def.NameKey) : YJJLoc::Get(Def.Kind == EYJJPerkKind::Start ? TEXT("Perk.Start") : TEXT("Perk.Small"));
-		const FString KindLine = YJJLoc::Get(Def.Kind == EYJJPerkKind::Notable ? TEXT("Perk.KindNotable") : Def.Kind == EYJJPerkKind::Keystone ? TEXT("Perk.KindKeystone") : TEXT("Perk.KindSmall"));
-		const FString Body = PerkText(HoverPerk);
+		const FString KindLine = YJJLoc::Get(Def.Kind == EYJJPerkKind::Notable ? TEXT("Perk.KindNotable")
+			: Def.Kind == EYJJPerkKind::Keystone ? TEXT("Perk.KindKeystone")
+			: bSpell ? TEXT("Perk.KindSpell") : TEXT("Perk.KindSmall"));
+		const FString Body = bSpell ? SpellText(static_cast<EYJJSpell>(Def.Spell)) : PerkText(HoverPerk);
 		FString Status;
 		FLinearColor StatusColor = YJJUI::Muted;
-		if (Current->IsAllocated(HoverPerk))
+		if (Current->IsReachable(HoverPerk))
 		{
-			Status = YJJLoc::Get(TEXT("Perk.Taken"));
-			StatusColor = YJJUI::PerkTaken;
+			const bool bAfford = Current->Souls >= Current->PerkCost();
+			Status = YJJLoc::Format(bAfford ? (bSpell ? TEXT("Spell.LevelUp") : TEXT("Perk.Cost")) : TEXT("Perk.NeedSouls"), { FormatCount(Current->PerkCost()) });
+			StatusColor = bAfford ? YJJUI::Soul : YJJUI::Bad;
 		}
-		else if (!Current->IsReachable(HoverPerk))
+		else if (Current->IsAllocated(HoverPerk))
 		{
-			Status = YJJLoc::Get(TEXT("Perk.Locked"));
+			Status = YJJLoc::Get(bSpell ? TEXT("Spell.Max") : TEXT("Perk.Taken"));
+			StatusColor = YJJUI::PerkTaken;
 		}
 		else
 		{
-			const bool bAfford = Current->Souls >= Current->PerkCost();
-			Status = YJJLoc::Format(bAfford ? TEXT("Perk.Cost") : TEXT("Perk.NeedSouls"), { FormatCount(Current->PerkCost()) });
-			StatusColor = bAfford ? YJJUI::Soul : YJJUI::Bad;
+			Status = YJJLoc::Get(TEXT("Perk.Locked"));
 		}
 		const TArray<FString> BodyLines = WrapText(Body, UI().SmallText, UI().TipW - Pad * 2.f);
 		const float LineH = UI().TipLineH;
@@ -517,9 +530,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 	const FVector2f Mouse = MouseScreen();
 	if (bRight)
 	{
-		if (bAimingMeteor)
+		if (AimingSpell != INDEX_NONE)
 		{
-			bAimingMeteor = false;
+			AimingSpell = INDEX_NONE;
 			return;
 		}
 		bDragging = true;
@@ -538,14 +551,7 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 			BuyPopupFor = BuyPopupFor == INDEX_NONE ? Button->Index : INDEX_NONE;
 			break;
 		case EButton::Spell:
-			if (static_cast<EYJJSpell>(Button->Index) == EYJJSpell::Meteor)
-			{
-				bAimingMeteor = !bAimingMeteor && Current->CanCast(EYJJSpell::Meteor);
-			}
-			else
-			{
-				Current->Cast(EYJJSpell::Rally, FVector2f::ZeroVector);
-			}
+			PressSpell(static_cast<EYJJSpell>(Button->Index));
 			break;
 		case EButton::Tree:
 			bTreeOpen = true;
@@ -629,10 +635,10 @@ void AYJJWaveHUD::ClickWorld()
 		return;
 	}
 	const FVector2f World = ScreenToWorld(MouseScreen());
-	if (bAimingMeteor)
+	if (AimingSpell != INDEX_NONE)
 	{
-		Current->Cast(EYJJSpell::Meteor, World);
-		bAimingMeteor = false;
+		Current->Cast(static_cast<EYJJSpell>(AimingSpell), World);
+		AimingSpell = INDEX_NONE;
 		return;
 	}
 	const int32 Plot = PlotAt(World);
@@ -684,22 +690,10 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 		return;
 	}
 
-	if (Key == EKeys::Q)
+	const int32 SpellIndex = SpellIndexForKey(Key);
+	if (SpellIndex != INDEX_NONE)
 	{
-		// 커서가 전장 위면 바로 그 자리에, 아니면 조준 상태로
-		if (!IsMouseOverUI())
-		{
-			Current->Cast(EYJJSpell::Meteor, ScreenToWorld(MouseScreen()));
-			bAimingMeteor = false;
-		}
-		else
-		{
-			bAimingMeteor = Current->CanCast(EYJJSpell::Meteor);
-		}
-	}
-	else if (Key == EKeys::E)
-	{
-		Current->Cast(EYJJSpell::Rally, FVector2f::ZeroVector);
+		PressSpell(static_cast<EYJJSpell>(SpellIndex));
 	}
 	else if (Key == EKeys::T || Key == EKeys::Tab)
 	{
@@ -708,9 +702,10 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	else if (Key == EKeys::Escape)
 	{
 		// ESC: 열린 것을 닫고, 아무것도 없으면 옵션을 연다
-		if (bOptionsOpen || bTreeOpen || bAimingMeteor)
+		if (bOptionsOpen || bTreeOpen || AimingSpell != INDEX_NONE)
 		{
-			bOptionsOpen = bTreeOpen = bAimingMeteor = false;
+			bOptionsOpen = bTreeOpen = false;
+			AimingSpell = INDEX_NONE;
 		}
 		else
 		{
@@ -743,6 +738,88 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 		const float Front = Current->Horde.FrontX(EYJJTeam::Enemy);
 		FocusWorld(FVector2f(Front > 0.f ? Front : Current->CampEdgeX, Current->FieldHeight * Half), Zoom);
 	}
+}
+
+int32 AYJJWaveHUD::SpellIndexForKey(const FKey& Key)
+{
+	if (Key == EKeys::F1) { return static_cast<int32>(EYJJSpell::Meteor); }
+	if (Key == EKeys::F2) { return static_cast<int32>(EYJJSpell::Rally); }
+	if (Key == EKeys::F3) { return static_cast<int32>(EYJJSpell::Quake); }
+	return INDEX_NONE;
+}
+
+void AYJJWaveHUD::PressSpell(EYJJSpell Spell)
+{
+	FYJJBattle* Current = EditBattle();
+	const int32 Index = static_cast<int32>(Spell);
+	if (!NeedsAim(Spell))
+	{
+		Current->Cast(Spell, FVector2f::ZeroVector);
+		AimingSpell = INDEX_NONE;
+	}
+	else if (!IsMouseOverUI())
+	{
+		// 커서가 전장 위면 바로 그 자리에
+		Current->Cast(Spell, ScreenToWorld(MouseScreen()));
+		AimingSpell = INDEX_NONE;
+	}
+	else
+	{
+		// 패널 위면 조준 상태로 (같은 주문을 다시 누르면 취소)
+		AimingSpell = AimingSpell == Index || !Current->CanCast(Spell) ? INDEX_NONE : Index;
+	}
+}
+
+int32 AYJJWaveHUD::SpellIcon(EYJJSpell Spell) const
+{
+	switch (Spell)
+	{
+	case EYJJSpell::Rally: return FMath::RoundToInt(UI().UiRally);
+	case EYJJSpell::Quake: return FMath::RoundToInt(UI().UiQuake);
+	default: return FMath::RoundToInt(UI().UiMeteor);
+	}
+}
+
+FString AYJJWaveHUD::SpellStatText(EYJJSpell Spell, const FYJJSpellStats& Stats) const
+{
+	// 서식 자리: {0} 위력, {1} 반경, {2} 재사용 대기, {3} 지속, {4} 폭 (반경 x 2)
+	const FString Key = FString(TEXT("SpellStat.")) + YJJData::SpellKey(Spell);
+	return YJJLoc::Format(*Key, {
+		FString::Printf(TEXT("%g"), Stats.Power),
+		FString::Printf(TEXT("%g"), Stats.Radius),
+		FString::Printf(TEXT("%g"), Stats.Cooldown),
+		FString::Printf(TEXT("%g"), Stats.Duration),
+		FString::Printf(TEXT("%g"), Stats.Radius * 2.f) });
+}
+
+FString AYJJWaveHUD::SpellText(EYJJSpell Spell) const
+{
+	const FYJJBattle* Current = Battle();
+	const int32 Level = Current->SpellLevel(Spell);
+	const int32 MaxLevel = YJJData::SpellMaxLevel(Spell);
+	TArray<FString> Lines;
+	Lines.Add(YJJLoc::Format(TEXT("Spell.LvOf"), { Level, MaxLevel }));
+	Lines.Add(SpellStatText(Spell, YJJData::SpellStats(Spell, Level)));
+	if (Level < MaxLevel)
+	{
+		Lines.Add(YJJLoc::Format(TEXT("Spell.Next"), { Level + 1, SpellStatText(Spell, YJJData::SpellStats(Spell, Level + 1)) }));
+	}
+	// Lv별 특수 효과: 서식 자리 {0} A, {1} B, {2} A%, {3} B%
+	for (const FYJJSpellLevel& Row : YJJData::SpellLevels(Spell))
+	{
+		if (Row.Fx == EYJJSpellFx::None)
+		{
+			continue;
+		}
+		const FString FxKey = FString(TEXT("SpellFx.")) + YJJData::SpellFxKey(Row.Fx);
+		const FString Fx = YJJLoc::Format(*FxKey, {
+			FString::Printf(TEXT("%g"), Row.A),
+			FString::Printf(TEXT("%g"), Row.B),
+			FString::Printf(TEXT("%d"), FMath::RoundToInt(Row.A * Percent)),
+			FString::Printf(TEXT("%d"), FMath::RoundToInt(Row.B * Percent)) });
+		Lines.Add(YJJLoc::Format(Row.Level <= Level ? TEXT("Spell.FxOn") : TEXT("Spell.FxLocked"), { Row.Level, Fx }));
+	}
+	return FString::Join(Lines, TEXT("\n"));
 }
 
 int32 AYJJWaveHUD::BuildingIndexForKey(const FKey& Key)
