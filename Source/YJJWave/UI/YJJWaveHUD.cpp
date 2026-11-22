@@ -232,6 +232,10 @@ void AYJJWaveHUD::DrawHUD()
 	DrawSidePanel();
 	DrawGameOver();
 	DrawDebugLine();
+	if (bOptionsOpen)
+	{
+		DrawOptions();
+	}
 }
 
 // ---------------------------------------------------------------------------------------------

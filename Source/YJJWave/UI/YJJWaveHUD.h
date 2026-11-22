@@ -115,6 +115,8 @@ public:
 	FVector2f CameraCenter() const { return CamCenter; }
 
 	bool IsTreeOpen() const { return bTreeOpen; }
+	bool IsOptionsOpen() const { return bOptionsOpen; }
+	void SetOptionsOpen(bool bOpen) { bOptionsOpen = bOpen; }
 	/** 지난 프레임 DrawUnits 의 CPU 시간 (화면 안 유닛 고르기·정렬·사각형 넣기) */
 	float LastUnitDrawMs() const { return UnitDrawMs; }
 	int32 LastVisibleUnits() const { return Sorted.Num(); }
@@ -134,6 +136,8 @@ private:
 		NextStage,
 		Card,
 		Buy,
+		Option,
+		OpenOptions,
 	};
 
 	/** 기다리지 않는 판 (Horde 밖 필드만). 유닛은 View() */
@@ -208,6 +212,9 @@ private:
 	/** 특성·카드 공통: 능력치 줄 + 특수 효과 줄 */
 	FString EffectText(const FYJJPerkDef& Def) const;
 	void DrawCardPick();
+	void DrawOptions();
+	void HandleOption(int32 Index);
+	static float* OptionVolume(int32 Row);
 	void DrawBanners();
 	void UpdateBanners(float Dt);
 	void AddBanner(const FString& Text, const FLinearColor& Color);
@@ -268,6 +275,7 @@ private:
 	// 상태
 	int32 SelectedBuilding = 0;
 	bool bTreeOpen = false;
+	bool bOptionsOpen = false;
 	bool bAimingMeteor = false;
 	bool bShowDebug = true;
 	int32 HoverPlot = INDEX_NONE;
@@ -304,6 +312,19 @@ private:
 	static constexpr int32 SpriteChunk = 1024;
 	static constexpr int32 BakePasses = 3;   // 피 → 시체 → 큰 시체
 	inline static const FName SoundClick = TEXT("Click");
+
+	// 옵션 버튼 번호
+	static constexpr int32 NumVolumeRows = 3;
+	static constexpr int32 OptionsExtraRows = 2;   // 언어, 해상도
+	static constexpr int32 OptionVolumeDown = 0;
+	static constexpr int32 OptionVolumeUp = 10;
+	static constexpr int32 OptionLanguage = 20;
+	static constexpr int32 OptionResolutionPrev = 30;
+	static constexpr int32 OptionResolutionNext = 31;
+	static constexpr int32 OptionClose = 40;
+	static constexpr int32 NumLanguages = 2;
+	inline static const TCHAR* const LanguageCodes[NumLanguages] = { TEXT("ko"), TEXT("en") };
+	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice") };
 	inline static const FName SoundBanner = TEXT("Banner");
 	static constexpr const TCHAR* BaseFontPath = TEXT("/Engine/EngineFonts/Roboto.Roboto");
 	static constexpr const TCHAR* GameFontFile = TEXT("YJJWave/Fonts/Jua-Regular.ttf");

@@ -176,4 +176,13 @@ void AYJJWaveHUD::DrawSidePanel()
 		AddButton(bTreeOpen ? EButton::TreeClose : EButton::Tree, 0, TX, Y, SlotW, H);
 		Y += H + L.SectionGap;
 	}
+
+	// ---- 옵션 (맨 아래, 성능 줄 위) ----
+	{
+		const float H = L.OptionsOpenH;
+		const float OY = VirtualHeight - Pad - L.TinyText * 2.f - L.DebugLineGap - Pad - H;
+		DrawPanel(X, OY, W, H, bOptionsOpen ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
+		DrawLabelCentered(YJJLoc::Get(TEXT("UI.Options")), X + W * Half, OY + H * Half, L.MidText, YJJUI::Paper);
+		AddButton(EButton::OpenOptions, 0, X, OY, W, H);
+	}
 }

@@ -49,7 +49,7 @@ bool AYJJWaveGameMode::IsRunning() const
 {
 	const APlayerController* Player = GetWorld()->GetFirstPlayerController();
 	const AYJJWaveHUD* HUD = Player ? Cast<AYJJWaveHUD>(Player->GetHUD()) : nullptr;
-	return !bUserPaused && !Battle.bGameOver && !Battle.bCardPending && !(HUD && HUD->IsTreeOpen());
+	return !bUserPaused && !Battle.bGameOver && !Battle.bCardPending && !(HUD && (HUD->IsTreeOpen() || HUD->IsOptionsOpen()));
 }
 
 float AYJJWaveGameMode::GetSpeed() const

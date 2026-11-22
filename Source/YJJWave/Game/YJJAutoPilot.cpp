@@ -29,6 +29,13 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	{
 		// 마지막 스크린샷이 저장될 시간을 준 뒤 종료
 		ExitTimer -= RealDeltaSeconds;
+		if (!bOptionsShot && HUD && ExitTimer < T.BotExitDelay * OptionsShotAt)
+		{
+			bOptionsShot = true;
+			HUD->SetTreeOpen(false);
+			HUD->SetOptionsOpen(true);
+			Mode->TakeShot(FString::Printf(TEXT("%sOptions"), ShotPrefix));
+		}
 		if (!bTreeShot && HUD && ExitTimer < T.BotExitDelay * TreeShotAt)
 		{
 			bTreeShot = true;

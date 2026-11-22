@@ -284,6 +284,14 @@ struct FYJJUILayout
 	UPROPERTY() float ShakeTime = 0.f;   // 화면 흔들림 시간
 	UPROPERTY() float ShakePixels = 0.f;   // 화면 흔들림 세기 (픽셀)
 	UPROPERTY() float DeathRiseFromFling = 0.f;   // 세게 맞아 날아갈수록 더 높이 튄다 (밀쳐진 속도 비율)
+	// ---- 옵션 화면 ----
+	UPROPERTY() float OptionsW = 0.f;   // 옵션 창 너비
+	UPROPERTY() float OptionsRowH = 0.f;   // 옵션 한 줄 높이
+	UPROPERTY() float OptionsLabelW = 0.f;   // 옵션 이름 칸 너비
+	UPROPERTY() float OptionsButtonW = 0.f;   // 옵션 작은 버튼 너비 (- + ◀ ▶)
+	UPROPERTY() float OptionsCloseW = 0.f;   // 닫기 버튼 너비
+	UPROPERTY() float OptionsVolumeStep = 0.f;   // 볼륨 버튼 한 번에 바뀌는 양
+	UPROPERTY() float OptionsOpenH = 0.f;   // 좌측 패널 옵션 버튼 높이
 	// ---- 특성 성좌 화면 ----
 	UPROPERTY() float TreeTitleY = 0.f;   // 성좌 제목 y
 	UPROPERTY() float TreeCenterY = 0.f;   // 성좌 중심 y

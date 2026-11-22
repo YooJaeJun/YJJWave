@@ -533,10 +533,20 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::Buy:
 			Current->Buy(SelectedBuilding, Button->Index);
 			break;
+		case EButton::Option:
+			HandleOption(Button->Index);
+			break;
+		case EButton::OpenOptions:
+			bOptionsOpen = !bOptionsOpen;
+			break;
 		}
 		return;
 	}
 
+	if (bOptionsOpen)
+	{
+		return;
+	}
 	if (bTreeOpen)
 	{
 		const int32 Perk = PerkAt(ToVirtual(Mouse));
@@ -643,8 +653,15 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	}
 	else if (Key == EKeys::Escape)
 	{
-		bTreeOpen = false;
-		bAimingMeteor = false;
+		// ESC: 열린 것을 닫고, 아무것도 없으면 옵션을 연다
+		if (bOptionsOpen || bTreeOpen || bAimingMeteor)
+		{
+			bOptionsOpen = bTreeOpen = bAimingMeteor = false;
+		}
+		else
+		{
+			bOptionsOpen = true;
+		}
 	}
 	else if (Key == EKeys::F)
 	{

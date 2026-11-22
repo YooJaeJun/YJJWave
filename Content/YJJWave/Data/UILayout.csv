@@ -158,6 +158,13 @@ MassacreKills,80,이 시간 안에 이만큼 처치하면 학살 배너
 ShakeTime,0.35,화면 흔들림 시간
 ShakePixels,14,화면 흔들림 세기 (픽셀)
 DeathRiseFromFling,0.6,세게 맞아 날아갈수록 더 높이 튄다 (밀쳐진 속도 비율)
+OptionsW,720,옵션 창 너비
+OptionsRowH,68,옵션 한 줄 높이
+OptionsLabelW,170,옵션 이름 칸 너비
+OptionsButtonW,64,옵션 작은 버튼 너비 (- + ◀ ▶)
+OptionsCloseW,240,닫기 버튼 너비
+OptionsVolumeStep,0.1,볼륨 버튼 한 번에 바뀌는 양
+OptionsOpenH,56,좌측 패널 옵션 버튼 높이
 TreeTitleY,24,성좌 제목 y
 TreeCenterY,570,성좌 중심 y
 TreeScale,0.42,성좌 좌표 → 화면 배율
