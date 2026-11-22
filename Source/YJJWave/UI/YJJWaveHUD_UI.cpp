@@ -728,7 +728,7 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	{
 		Mode->NextStage();
 	}
-	else if (Key == EKeys::F3)
+	else if (Key == EKeys::F4)
 	{
 		bShowDebug = !bShowDebug;
 	}
