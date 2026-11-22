@@ -76,8 +76,7 @@ void AYJJWaveHUD::DrawBar(float X, float Y, float W, float H, float Fraction, co
 void AYJJWaveHUD::DrawBarLabel(const FString& Text, float X, float Y, float W, float H)
 {
 	// 게이지 높이에 맞춘 글자 크기, 세로 가운데. 흰 글자 + 진한 외곽선 (게이지 색과 겹치지 않게)
-	const float Size = H * UI().BarTextScale;
-	DrawLabel(Text, X + W * Half, Y + (H - Size * UI().TextLineRatio) * Half + UI().BarTextLift, Size, YJJUI::Paper, Half, W - UI().PanelPad);
+	DrawLabelCentered(Text, X + W * Half, Y + H * Half, H * UI().BarTextScale, YJJUI::Paper, W - UI().PanelPad);
 }
 
 void AYJJWaveHUD::DrawIcon(int32 Cell, float X, float Y, float Size, const FLinearColor& Color)
@@ -90,30 +89,70 @@ void AYJJWaveHUD::DrawIcon(int32 Cell, float X, float Y, float Size, const FLine
 	AddQuad(Batch, ViewOffset + FVector2f(X, Y) * ViewScale, FVector2f(Size * ViewScale), UiAtlas.UV(Cell), UiAtlas.CellUV, Color, false);
 }
 
-void AYJJWaveHUD::DrawLabel(const FString& Text, float X, float Y, float Size, const FLinearColor& Color, float AlignX, float MaxWidth)
+FSlateFontInfo AYJJWaveHUD::MakeFont(const FString& Text, float Size, float Alpha, float MaxWidth, float& OutWidth)
 {
-	// FCanvasTextItem은 UFont가 있어야 그려진다. 실제 글꼴은 주아체 컴포지트
-	if (!BaseFont || Text.IsEmpty() || Color.A <= 0.f)
-	{
-		return;
-	}
 	const int32 FontSize = FMath::Max(FMath::RoundToInt(Size * ViewScale * UI().FontPointScale), FMath::RoundToInt(UI().MinFontSize));
 	const TSharedPtr<const FCompositeFont> Composite = GetGameFont();
 	FSlateFontInfo Font = Composite.IsValid() ? FSlateFontInfo(Composite, FontSize) : FSlateFontInfo(BaseFont, FontSize);
 	Font.OutlineSettings.OutlineSize = FMath::Max(FMath::RoundToInt(Size * UI().TextOutline * ViewScale), 1);
-	Font.OutlineSettings.OutlineColor = YJJUI::WithAlpha(YJJUI::Ink, Color.A);
+	Font.OutlineSettings.OutlineColor = YJJUI::WithAlpha(YJJUI::Ink, Alpha);
 
 	const TSharedRef<FSlateFontMeasure> Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
-	float Width = Measure->Measure(Text, Font).X / ViewScale;
-	if (MaxWidth > 0.f && Width > MaxWidth)
+	OutWidth = Measure->Measure(Text, Font).X / ViewScale;
+	if (MaxWidth > 0.f && OutWidth > MaxWidth)
 	{
-		Font.Size = FMath::Max(FMath::FloorToFloat(Font.Size * MaxWidth / Width), UI().MinFontSize);
-		Width = Measure->Measure(Text, Font).X / ViewScale;
+		Font.Size = FMath::Max(FMath::FloorToFloat(Font.Size * MaxWidth / OutWidth), UI().MinFontSize);
+		OutWidth = Measure->Measure(Text, Font).X / ViewScale;
 	}
-	FCanvasTextItem Item(FVector2D(ViewOffset.X + (X - Width * AlignX) * ViewScale, ViewOffset.Y + Y * ViewScale), FText::FromString(Text), Font, Color);
+	return Font;
+}
+
+void AYJJWaveHUD::DrawText(const FString& Text, const FSlateFontInfo& Font, float Left, float Top, const FLinearColor& Color)
+{
+	// FCanvasTextItem은 UFont가 있어야 그려진다. 실제 글꼴은 게임 글꼴 컴포지트
+	FCanvasTextItem Item(FVector2D(ViewOffset.X + Left * ViewScale, ViewOffset.Y + Top * ViewScale), FText::FromString(Text), Font, Color);
 	Item.Font = BaseFont;
 	Item.SlateFontInfo = Font;
 	Canvas->DrawItem(Item);
+}
+
+void AYJJWaveHUD::DrawLabel(const FString& Text, float X, float Y, float Size, const FLinearColor& Color, float AlignX, float MaxWidth)
+{
+	if (!BaseFont || Text.IsEmpty() || Color.A <= 0.f)
+	{
+		return;
+	}
+	float Width = 0.f;
+	const FSlateFontInfo Font = MakeFont(Text, Size, Color.A, MaxWidth, Width);
+	DrawText(Text, Font, X - Width * AlignX, Y, Color);
+}
+
+void AYJJWaveHUD::DrawLabelLeftMiddle(const FString& Text, float X, float CenterY, float Size, const FLinearColor& Color, float AlignX)
+{
+	// 가로는 AlignX(0 왼쪽, 1 오른쪽), 세로는 CenterY에 글자 몸통 가운데
+	float Width = 0.f;
+	if (!BaseFont || Text.IsEmpty())
+	{
+		return;
+	}
+	MakeFont(Text, Size, Color.A, 0.f, Width);
+	DrawLabelCentered(Text, X - Width * AlignX + Width * Half, CenterY, Size, Color, 0.f);
+}
+
+void AYJJWaveHUD::DrawLabelCentered(const FString& Text, float CenterX, float CenterY, float Size, const FLinearColor& Color, float MaxWidth)
+{
+	if (!BaseFont || Text.IsEmpty() || Color.A <= 0.f)
+	{
+		return;
+	}
+	float Width = 0.f;
+	const FSlateFontInfo Font = MakeFont(Text, Size, Color.A, MaxWidth, Width);
+	// 줄 상자 위 → 기준선 = 최대 글자 높이 + 기준선(아래로 음수). 글자 몸통 가운데 = 기준선 - 글자 높이 / 2
+	const TSharedRef<FSlateFontMeasure> Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+	const float BaselinePx = static_cast<float>(Measure->GetMaxCharacterHeight(Font) + Measure->GetBaseline(Font));
+	const float GlyphPx = Font.Size * UI().TextCapPerPoint;
+	const float Top = CenterY - (BaselinePx - GlyphPx * Half) / ViewScale;
+	DrawText(Text, Font, CenterX - Width * Half, Top, Color);
 }
 
 void AYJJWaveHUD::DrawLine(const FVector2f& A, const FVector2f& B, const FLinearColor& Color, float Thickness)
@@ -241,7 +280,7 @@ void AYJJWaveHUD::DrawGameOver()
 		const bool bIsNext = bNext && Index == 1;
 		const float BX = X + Pad + Index * (ButtonW + UI().CardGap);
 		DrawPanel(BX, ButtonY, ButtonW, UI().ResultButtonH, bIsNext ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(UI().UiCard));
-		DrawLabel(YJJLoc::Get(bIsNext ? TEXT("UI.NextStage") : TEXT("UI.Restart")), BX + ButtonW * Half, ButtonY + (UI().ResultButtonH - UI().MidText) * Half, UI().MidText, YJJUI::Paper, Half, ButtonW - Pad);
+		DrawLabelCentered(YJJLoc::Get(bIsNext ? TEXT("UI.NextStage") : TEXT("UI.Restart")), BX + ButtonW * Half, ButtonY + UI().ResultButtonH * Half, UI().MidText, YJJUI::Paper, ButtonW - Pad);
 		AddButton(bIsNext ? EButton::NextStage : EButton::Restart, 0, BX, ButtonY, ButtonW, UI().ResultButtonH);
 	}
 }

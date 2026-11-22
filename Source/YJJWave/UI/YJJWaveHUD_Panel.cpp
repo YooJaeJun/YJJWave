@@ -40,10 +40,10 @@ void AYJJWaveHUD::DrawSidePanel()
 		const float Icon = L.IconSize;
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
 		DrawIcon(FMath::RoundToInt(L.UiSword), X + Pad, Y + Pad, Icon);
-		DrawLabel(FormatCount(Units.Num(EYJJTeam::Player)), X + Pad + Icon + L.IconGap, Y + Pad, L.BigText, YJJUI::Ally);
-		DrawLabel(YJJLoc::Get(TEXT("UI.VS")), X + W * Half, Y + Pad + (L.BigText - L.MidText) * Half, L.MidText, YJJUI::Paper, Half);
+		DrawLabelLeftMiddle(FormatCount(Units.Num(EYJJTeam::Player)), X + Pad + Icon + L.IconGap, Y + Pad + Icon * Half, L.BigText, YJJUI::Ally, 0.f);
+		DrawLabelCentered(YJJLoc::Get(TEXT("UI.VS")), X + W * Half, Y + Pad + Icon * Half, L.MidText, YJJUI::Paper);
 		DrawIcon(FMath::RoundToInt(L.UiSkull), X + W - Pad - Icon, Y + Pad, Icon);
-		DrawLabel(FormatCount(Units.Num(EYJJTeam::Enemy)), X + W - Pad - Icon - L.IconGap, Y + Pad, L.BigText, YJJUI::Enemy, 1.f);
+		DrawLabelLeftMiddle(FormatCount(Units.Num(EYJJTeam::Enemy)), X + W - Pad - Icon - L.IconGap, Y + Pad + Icon * Half, L.BigText, YJJUI::Enemy, 1.f);
 
 		// 영웅 체력: 숫자가 들어가는 게이지는 숫자 크기에 맞춰 두껍게
 		const float BarH = L.TextBarH;
@@ -60,7 +60,7 @@ void AYJJWaveHUD::DrawSidePanel()
 	{
 		const float H = L.BossH;
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
-		DrawLabel(YJJLoc::Get(YJJData::Unit(Units.Type[Units.Boss]).NameKey), X + Pad, Y + (H - L.MidText) * Half, L.MidText, YJJUI::BossText, 0.f, W * L.BossBarSplit);
+		DrawLabelCentered(YJJLoc::Get(YJJData::Unit(Units.Type[Units.Boss]).NameKey), X + Pad + (W * L.BossBarSplit) * Half, Y + H * Half, L.MidText, YJJUI::BossText, W * L.BossBarSplit);
 		const float BarX = X + W * L.BossBarSplit + Pad;
 		const float BarY = Y + (H - L.TextBarH) * Half;
 		DrawBar(BarX, BarY, X + W - Pad - BarX, L.TextBarH, Units.BossHP / FMath::Max(Units.BossMaxHP, KINDA_SMALL_NUMBER), YJJUI::BossBar);
@@ -74,15 +74,15 @@ void AYJJWaveHUD::DrawSidePanel()
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
 		const float RowH = (H - Pad * 2.f) * Half;
 		DrawIcon(FMath::RoundToInt(L.UiCoin), X + Pad, Y + Pad, RowH);
-		DrawLabel(FormatCount(Current->Gold), X + Pad + RowH + L.IconGap, Y + Pad + (RowH - L.SmallText) * Half, L.SmallText, YJJUI::Gold);
+		DrawLabelLeftMiddle(FormatCount(Current->Gold), X + Pad + RowH + L.IconGap, Y + Pad + RowH * Half, L.SmallText, YJJUI::Gold, 0.f);
 		DrawIcon(FMath::RoundToInt(L.UiSoul), X + Pad, Y + Pad + RowH, RowH);
-		DrawLabel(FormatCount(Current->Souls), X + Pad + RowH + L.IconGap, Y + Pad + RowH + (RowH - L.SmallText) * Half, L.SmallText, YJJUI::Soul);
+		DrawLabelLeftMiddle(FormatCount(Current->Souls), X + Pad + RowH + L.IconGap, Y + Pad + RowH * 1.5f, L.SmallText, YJJUI::Soul, 0.f);
 
 		const FString Speed = Mode && Mode->IsPaused() ? YJJLoc::Get(TEXT("UI.Paused")) : YJJLoc::Format(TEXT("UI.Speed"), { Mode ? FMath::RoundToInt(Mode->GetSpeed()) : 1 });
 		const float SpeedW = L.SpeedButtonW;
 		const float SpeedX = X + W - Pad - SpeedW;
 		DrawPanel(SpeedX, Y + Pad, SpeedW, H - Pad * 2.f, YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
-		DrawLabel(Speed, SpeedX + SpeedW * Half, Y + (H - L.MidText) * Half, L.MidText, YJJUI::Paper, Half, SpeedW - Pad);
+		DrawLabelCentered(Speed, SpeedX + SpeedW * Half, Y + H * Half, L.MidText, YJJUI::Paper, SpeedW - Pad);
 		AddButton(EButton::Speed, 0, SpeedX, Y + Pad, SpeedW, H - Pad * 2.f);
 		Y += H + L.SectionGap;
 	}
@@ -136,7 +136,7 @@ void AYJJWaveHUD::DrawSidePanel()
 			{
 				const float Fraction = Current->CooldownLeft(Spell) / FMath::Max(Current->CooldownMax(Spell), KINDA_SMALL_NUMBER);
 				DrawBox(SX + Pad, Y + Pad + L.CardIcon * (1.f - Fraction), SlotW - Pad * 2.f, L.CardIcon * Fraction, YJJUI::Shade);
-				DrawLabel(FString::FromInt(FMath::CeilToInt(Current->CooldownLeft(Spell))), SX + SlotW * Half, Y + Pad + (L.CardIcon - L.MidText) * Half, L.MidText, YJJUI::Paper, Half);
+				DrawLabelCentered(FString::FromInt(FMath::CeilToInt(Current->CooldownLeft(Spell))), SX + SlotW * Half, Y + Pad + L.CardIcon * Half, L.MidText, YJJUI::Paper);
 			}
 			AddButton(EButton::Spell, Index, SX, Y, SlotW, H);
 		}

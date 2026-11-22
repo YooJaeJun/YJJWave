@@ -217,6 +217,7 @@ struct FYJJUILayout
 	UPROPERTY() float FontPointScale = 0.f;   // 글자 크기 → 폰트 포인트
 	UPROPERTY() float MinFontSize = 0.f;   // 최소 폰트 포인트
 	UPROPERTY() float TextOutline = 0.f;   // 글자 외곽선 (글자 크기 비율)
+	UPROPERTY() float TextCapPerPoint = 0.f;   // 글자 몸통 높이(픽셀) = 폰트 포인트 x 이 값 (세로 가운데 맞춤)
 	UPROPERTY() float TitleText = 0.f;   // 제목 글자
 	UPROPERTY() float BigText = 0.f;   // 큰 글자
 	UPROPERTY() float MidText = 0.f;   // 중간 글자
@@ -238,10 +239,8 @@ struct FYJJUILayout
 	UPROPERTY() float BarBorder = 0.f;   // 막대 테두리
 	UPROPERTY() float BarShineHeight = 0.f;   // 막대 반짝 띠 높이 비율
 	UPROPERTY() float BarShineAlpha = 0.f;   // 막대 반짝 띠 진하기
-	UPROPERTY() float BarTextLift = 0.f;   // 게이지 안 글자 y 보정
 	UPROPERTY() float TextBarH = 0.f;   // 숫자가 들어가는 게이지 높이 (영웅·보스)
 	UPROPERTY() float BarTextScale = 0.f;   // 게이지 안 글자 크기 = 게이지 높이 x 이 비율
-	UPROPERTY() float TextLineRatio = 0.f;   // 글자 크기 대비 실제 줄 높이 (세로 가운데 맞춤)
 	UPROPERTY() float SpeedButtonW = 0.f;   // 배속 버튼 너비
 	UPROPERTY() float BossBarSplit = 0.f;   // 보스 이름 / 막대 나누는 비율
 	UPROPERTY() float CardH = 0.f;   // 카드 높이

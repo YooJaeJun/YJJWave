@@ -670,8 +670,6 @@ def ui_icon(i):
         p = Pen(C, C, lw=0)
         p.rect(4, 4, C - 4, C - 4, INK, radius=22, line=False)
         p.rect(10, 10, C - 10, C - 10, fill, radius=17, line=False)
-        hl = shade(fill, 1.35)
-        p.rect(14, 14, C - 14, 26, (hl[0], hl[1], hl[2], 140), radius=6, line=False)
         return p.done(C, C)
     return p.done(C, C)
 

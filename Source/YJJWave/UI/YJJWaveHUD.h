@@ -187,6 +187,12 @@ private:
 	void DrawBarLabel(const FString& Text, float X, float Y, float W, float H);
 	void DrawIcon(int32 Cell, float X, float Y, float Size, const FLinearColor& Color = FLinearColor::White);
 	void DrawLabel(const FString& Text, float X, float Y, float Size, const FLinearColor& Color, float AlignX = 0.f, float MaxWidth = 0.f);
+	/** 글자 몸통의 가운데를 (CenterX, CenterY)에 (버튼·게이지 안 글자) */
+	void DrawLabelCentered(const FString& Text, float CenterX, float CenterY, float Size, const FLinearColor& Color, float MaxWidth = 0.f);
+	/** 세로만 가운데: 아이콘 옆 숫자 */
+	void DrawLabelLeftMiddle(const FString& Text, float X, float CenterY, float Size, const FLinearColor& Color, float AlignX);
+	FSlateFontInfo MakeFont(const FString& Text, float Size, float Alpha, float MaxWidth, float& OutWidth);
+	void DrawText(const FString& Text, const FSlateFontInfo& Font, float Left, float Top, const FLinearColor& Color);
 	void DrawLine(const FVector2f& A, const FVector2f& B, const FLinearColor& Color, float Thickness);
 	void AddButton(EButton Kind, int32 Index, float X, float Y, float W, float H);
 	const FYJJButton* ButtonAt(const FVector2f& Virtual) const;

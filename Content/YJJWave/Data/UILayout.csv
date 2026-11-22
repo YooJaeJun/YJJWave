@@ -97,6 +97,7 @@ FrameMsSmoothing,0.05,프레임 시간 표시 부드럽게
 FontPointScale,0.75,글자 크기 → 폰트 포인트
 MinFontSize,9,최소 폰트 포인트
 TextOutline,0.08,글자 외곽선 (글자 크기 비율)
+TextCapPerPoint,0.98,글자 몸통 높이(픽셀) = 폰트 포인트 x 이 값 (세로 가운데 맞춤)
 TitleText,54,제목 글자
 BigText,34,큰 글자
 MidText,26,중간 글자
@@ -118,10 +119,8 @@ BarH,16,숫자 없는 게이지 높이 (웨이브 시간)
 BarBorder,3,막대 테두리
 BarShineHeight,0.35,막대 반짝 띠 높이 비율
 BarShineAlpha,0.25,막대 반짝 띠 진하기
-BarTextLift,0,게이지 안 글자 y 보정
 TextBarH,28,숫자가 들어가는 게이지 높이 (영웅·보스)
 BarTextScale,0.8,게이지 안 글자 크기 = 게이지 높이 x 이 비율
-TextLineRatio,1.5,글자 크기 대비 실제 줄 높이 (세로 가운데 맞춤)
 SpeedButtonW,110,배속 버튼 너비
 BossBarSplit,0.35,보스 이름 / 막대 나누는 비율
 CardH,136,카드 높이
