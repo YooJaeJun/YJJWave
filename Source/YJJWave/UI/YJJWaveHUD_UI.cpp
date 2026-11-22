@@ -117,6 +117,39 @@ void AYJJWaveHUD::DrawText(const FString& Text, const FSlateFontInfo& Font, floa
 	Canvas->DrawItem(Item);
 }
 
+TArray<FString> AYJJWaveHUD::WrapText(const FString& Text, float Size, float MaxWidth)
+{
+	TArray<FString> Out;
+	TArray<FString> Paragraphs;
+	Text.ParseIntoArrayLines(Paragraphs);
+	for (const FString& Paragraph : Paragraphs)
+	{
+		TArray<FString> Words;
+		Paragraph.ParseIntoArrayWS(Words);
+		FString Line;
+		for (const FString& Word : Words)
+		{
+			const FString Candidate = Line.IsEmpty() ? Word : Line + TEXT(" ") + Word;
+			float Width = 0.f;
+			MakeFont(Candidate, Size, 1.f, 0.f, Width);
+			if (Width > MaxWidth && !Line.IsEmpty())
+			{
+				Out.Add(Line);
+				Line = Word;
+			}
+			else
+			{
+				Line = Candidate;
+			}
+		}
+		if (!Line.IsEmpty())
+		{
+			Out.Add(Line);
+		}
+	}
+	return Out;
+}
+
 void AYJJWaveHUD::DrawLabel(const FString& Text, float X, float Y, float Size, const FLinearColor& Color, float AlignX, float MaxWidth)
 {
 	if (!BaseFont || Text.IsEmpty() || Color.A <= 0.f)
@@ -451,8 +484,7 @@ void AYJJWaveHUD::DrawTree()
 			Status = YJJLoc::Format(bAfford ? TEXT("Perk.Cost") : TEXT("Perk.NeedSouls"), { FormatCount(Current->PerkCost()) });
 			StatusColor = bAfford ? YJJUI::Soul : YJJUI::Bad;
 		}
-		TArray<FString> BodyLines;
-		Body.ParseIntoArrayLines(BodyLines);
+		const TArray<FString> BodyLines = WrapText(Body, UI().SmallText, UI().TipW - Pad * 2.f);
 		const float LineH = UI().TipLineH;
 		const float W = UI().TipW;
 		const float H = Pad * 2.f + LineH * (BodyLines.Num() + 2);
@@ -741,8 +773,7 @@ void AYJJWaveHUD::DrawCardPick()
 		DrawPanel(X, Y, L.CardW, L.CardPickH, YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
 		DrawLabel(FString::FromInt(Index + 1), X + Pad, Y + Pad, L.MidText, YJJUI::Highlight);
 		DrawLabel(YJJLoc::Get(Def.NameKey), X + L.CardW * Half, Y + Pad, L.MidText, YJJUI::Paper, Half, L.CardW - Pad * 4.f);
-		TArray<FString> Lines;
-		EffectText(Def).ParseIntoArrayLines(Lines);
+		const TArray<FString> Lines = WrapText(EffectText(Def), L.SmallText, L.CardW - Pad * 2.f);
 		for (int32 Line = 0; Line < Lines.Num(); ++Line)
 		{
 			DrawLabel(Lines[Line], X + Pad, Y + Pad * 2.f + L.MidText + Line * L.TipLineH, L.SmallText, YJJUI::Paper, 0.f, L.CardW - Pad * 2.f);

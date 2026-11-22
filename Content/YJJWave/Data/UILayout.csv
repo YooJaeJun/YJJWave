@@ -142,7 +142,7 @@ GlowSpeed,5,반짝임 속도
 NumberMan,10000,이 이상은 만 단위로
 NumberEok,100000000,이 이상은 억 단위로
 CardW,300,카드 너비
-CardPickH,170,카드 높이
+CardPickH,210,카드 높이
 CardPickGap,30,카드 사이
 CardTitleY,220,카드 고르기 제목 y
 BannerY,150,물량 배너 y

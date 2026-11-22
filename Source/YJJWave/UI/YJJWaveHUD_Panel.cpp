@@ -105,10 +105,11 @@ void AYJJWaveHUD::DrawSidePanel()
 			{
 				DrawLabel(YJJLoc::Format(TEXT("UI.Owned"), { Owned }), CX + CardW - Pad, CY + Pad * Half, L.SmallText, YJJUI::Highlight, 1.f);
 			}
-			DrawLabel(YJJLoc::Get(Def.NameKey), CX + CardW * Half, CY + Pad + L.CardIcon, L.SmallText, YJJUI::Paper, Half, CardW - Pad);
-			const float CostY = CY + L.CardH - Pad - L.SmallText;
-			DrawIcon(FMath::RoundToInt(L.UiCoin), CX + Pad, CostY, L.SmallText);
-			DrawLabel(FormatCount(Cost), CX + CardW - Pad, CostY, L.SmallText, Current->Gold >= Cost ? YJJUI::Gold : YJJUI::Bad, 1.f);
+			DrawLabelCentered(YJJLoc::Get(Def.NameKey), CX + CardW * Half, CY + Pad + L.CardIcon + L.SmallText * Half, L.SmallText, YJJUI::Paper, CardW - Pad);
+			// 금화 아이콘과 비용 숫자를 같은 높이 가운데로
+			const float CostCY = CY + L.CardH - Pad - L.SmallText * Half;
+			DrawIcon(FMath::RoundToInt(L.UiCoin), CX + Pad, CostCY - L.SmallText * Half, L.SmallText);
+			DrawLabelLeftMiddle(FormatCount(Cost), CX + CardW - Pad, CostCY, L.SmallText, Current->Gold >= Cost ? YJJUI::Gold : YJJUI::Bad, 1.f);
 			AddButton(EButton::BuildCard, Index, CX, CY, CardW, L.CardH);
 		}
 		const int32 Rows = FMath::DivideAndRoundUp(Defs.Num(), 2);
@@ -155,7 +156,7 @@ void AYJJWaveHUD::DrawSidePanel()
 			const int32 IconCell = FMath::RoundToInt(Spell == EYJJSpell::Meteor ? L.UiMeteor : L.UiRally);
 			DrawIcon(IconCell, SX + (SlotW - L.CardIcon) * Half, Y + Pad, L.CardIcon, bReady ? FLinearColor::White : YJJUI::Muted);
 			DrawLabel(YJJLoc::Get(Spell == EYJJSpell::Meteor ? TEXT("Key.Meteor") : TEXT("Key.Rally")), SX + Pad, Y + Pad * Half, L.SmallText, YJJUI::Paper);
-			DrawLabel(YJJLoc::Get(Spell == EYJJSpell::Meteor ? TEXT("Spell.Meteor") : TEXT("Spell.Rally")), SX + SlotW * Half, Y + Pad + L.CardIcon, L.SmallText, YJJUI::Paper, Half, SlotW - Pad);
+			DrawLabelCentered(YJJLoc::Get(Spell == EYJJSpell::Meteor ? TEXT("Spell.Meteor") : TEXT("Spell.Rally")), SX + SlotW * Half, Y + Pad + L.CardIcon + L.SmallText * Half, L.SmallText, YJJUI::Paper, SlotW - Pad);
 			if (!bReady && !Current->bGameOver)
 			{
 				const float Fraction = Current->CooldownLeft(Spell) / FMath::Max(Current->CooldownMax(Spell), KINDA_SMALL_NUMBER);
@@ -172,7 +173,7 @@ void AYJJWaveHUD::DrawSidePanel()
 		DrawPanel(TX, Y, SlotW, H, bTreeOpen ? YJJUI::Highlight : FMath::Lerp(YJJUI::PanelTint, YJJUI::Soul, Glow), FMath::RoundToInt(L.UiCard));
 		DrawIcon(FMath::RoundToInt(L.UiStar), TX + (SlotW - L.CardIcon) * Half, Y + Pad, L.CardIcon);
 		DrawLabel(YJJLoc::Get(TEXT("Key.Tree")), TX + Pad, Y + Pad * Half, L.SmallText, YJJUI::Paper);
-		DrawLabel(YJJLoc::Get(bTreeOpen ? TEXT("UI.TreeClose") : TEXT("UI.Tree")), TX + SlotW * Half, Y + Pad + L.CardIcon, L.SmallText, YJJUI::Paper, Half, SlotW - Pad);
+		DrawLabelCentered(YJJLoc::Get(bTreeOpen ? TEXT("UI.TreeClose") : TEXT("UI.Tree")), TX + SlotW * Half, Y + Pad + L.CardIcon + L.SmallText * Half, L.SmallText, YJJUI::Paper, SlotW - Pad);
 		AddButton(bTreeOpen ? EButton::TreeClose : EButton::Tree, 0, TX, Y, SlotW, H);
 		Y += H + L.SectionGap;
 	}

@@ -18,4 +18,4 @@
 
 4만 마리에서 드로우 콜 58개, GPU 1.2ms (병목은 게임 스레드). 자세한 표: [DevLog/devlog.md](DevLog/devlog.md)
 
-글꼴: 배민 주아체 (SIL OFL, `Content/YJJWave/Fonts/OFL.txt`).
+글꼴: 배민 도현체 / Do Hyeon (SIL OFL, `Content/YJJWave/Fonts/OFL-DoHyeon.txt`, Google Fonts).

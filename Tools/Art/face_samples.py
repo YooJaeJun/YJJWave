@@ -16,7 +16,7 @@ import generate_art as art  # noqa: E402
 CONCEPT_OUT = os.path.join(os.path.dirname(__file__), "Samples", "concept_frames.png")
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-FONT = os.path.join(ROOT, "Content", "YJJWave", "Fonts", "Jua-Regular.ttf")
+FONT = os.path.join(ROOT, "Content", "YJJWave", "Fonts", "DoHyeon-Regular.ttf")
 OUT = os.path.join(os.path.dirname(__file__), "Samples", "grunt_faces.png")
 
 STYLES = [

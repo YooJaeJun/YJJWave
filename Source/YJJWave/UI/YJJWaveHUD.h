@@ -198,6 +198,8 @@ private:
 	void DrawLabelLeftMiddle(const FString& Text, float X, float CenterY, float Size, const FLinearColor& Color, float AlignX);
 	FSlateFontInfo MakeFont(const FString& Text, float Size, float Alpha, float MaxWidth, float& OutWidth);
 	void DrawText(const FString& Text, const FSlateFontInfo& Font, float Left, float Top, const FLinearColor& Color);
+	/** 칸 너비에 맞춰 띄어쓰기 단위로 줄을 나눈다 (글자를 줄이지 않고) */
+	TArray<FString> WrapText(const FString& Text, float Size, float MaxWidth);
 	void DrawLine(const FVector2f& A, const FVector2f& B, const FLinearColor& Color, float Thickness);
 	void AddButton(EButton Kind, int32 Index, float X, float Y, float W, float H);
 	const FYJJButton* ButtonAt(const FVector2f& Virtual) const;
@@ -329,6 +331,6 @@ private:
 	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice") };
 	inline static const FName SoundBanner = TEXT("Banner");
 	static constexpr const TCHAR* BaseFontPath = TEXT("/Engine/EngineFonts/Roboto.Roboto");
-	static constexpr const TCHAR* GameFontFile = TEXT("YJJWave/Fonts/Jua-Regular.ttf");
+	static constexpr const TCHAR* GameFontFile = TEXT("YJJWave/Fonts/DoHyeon-Regular.ttf");
 	static constexpr const TCHAR* GameFontFace = TEXT("Regular");
 };
