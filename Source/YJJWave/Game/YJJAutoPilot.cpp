@@ -96,6 +96,19 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	{
 		HUD->SetTreeOpen(false);
 		FollowFront(Battle, HUD, RealDeltaSeconds);
+		// 냄비: 봇이 열 단계가 되면 냄비를 비추고 한 장 (뚜껑은 그다음 판단에서 연다)
+		if (!bPotShot && Battle.PotStage() >= YJJData::Tune().BotPotStage)
+		{
+			bPotShot = true;
+			HUD->FocusWorld(Battle.PotPos() - FVector2f(0.f, YJJData::Layout().PotDrawSize * Half), YJJData::Tune().BotPotZoom);
+			Mode->TakeShot(FString::Printf(TEXT("%sPot"), ShotPrefix));
+		}
+		// 말풍선 대화: 처음 것이 조금 나온 뒤 한 장
+		if (!bTalkShot && HUD->TalkAge() >= TalkShotAt)
+		{
+			bTalkShot = true;
+			Mode->TakeShot(FString::Printf(TEXT("%sTalk"), ShotPrefix));
+		}
 	}
 
 	// 주문 연출 확인용: 갈라진 땅·불바다가 처음 보이면 한 장씩
@@ -106,6 +119,12 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		{
 			bQuakeShot = true;
 			Mode->TakeShot(FString::Printf(TEXT("%sQuake"), ShotPrefix));
+		}
+		if (!bPromoteShot && HUD && Effect.Kind == EYJJEffectKind::Promote && Effect.Age >= Effect.Life * PromoteShotAt)
+		{
+			bPromoteShot = true;
+			HUD->FocusWorld(Effect.Pos, PromoteShotZoom);
+			Mode->TakeShot(FString::Printf(TEXT("%sPromote"), ShotPrefix));
 		}
 		if (!bBurnShot && bShowing && Effect.Kind == EYJJEffectKind::Burn)
 		{
@@ -216,6 +235,10 @@ void FYJJAutoPilot::Think(FYJJBattle& Battle)
 	SpendSouls(Battle);
 	SpendGold(Battle);
 	CastSpells(Battle);
+	if (bPotShot && Battle.PotStage() >= YJJData::Tune().BotPotStage)
+	{
+		Battle.OpenPot();
+	}
 }
 
 int32 FYJJAutoPilot::PickBuilding(const FYJJBattle& Battle) const

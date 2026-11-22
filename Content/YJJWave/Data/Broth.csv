@@ -1,0 +1,4 @@
+﻿Name,NameKey,Bones,HP,Damage,Heal,Color,Note
+Thin,Broth.Thin,15,0.04,0.04,0.15,E8D9A8,묽은 국: 빨리 열면 조금
+Rich,Broth.Rich,45,0.1,0.1,0.3,D9A75A,진국
+Gomtang,Broth.Gomtang,100,0.25,0.25,0.6,FFF6E8,"곰탕: 크게, 대신 PotOverflowTime 안에 안 열면 끓어 넘친다"

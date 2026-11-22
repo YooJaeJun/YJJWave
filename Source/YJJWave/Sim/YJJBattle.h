@@ -27,6 +27,9 @@ enum class EYJJEffectKind : uint8
 	QuakeHit,     // 대지 가르기가 곧 갈라질 줄 (끝나면 피해)
 	Quake,        // 갈라진 땅
 	Burn,         // 불바다 (살아 있는 동안 BurnTick마다 피해)
+	Promote,      // 진급 빛줄기
+	BoneFly,      // 쓰러진 적의 뼈가 냄비로 날아간다 (Pos = 출발)
+	PotSteam,     // 냄비 김 (뚜껑 열기·끓어 넘침)
 };
 
 /** 화면 연출 + 늦게 터지는 주문 (MeteorFall·QuakeHit 끝, Burn 동안의 피해) */
@@ -112,6 +115,27 @@ public:
 	/** 특성이 올린 비율 합 (Building = INDEX_NONE 이면 모든 병영 공통분만) */
 	float Bonus(EYJJStat Stat, int32 Building) const;
 
+	// ---- 왕국의 마지막 냄비 (적의 뼈를 고아 군대를 먹인다, 이번 판 한정) ----
+	FVector2f PotPos() const;
+	/** 지금 국물 단계 (Broth.csv 번호, 뼈가 모자라면 INDEX_NONE) */
+	int32 PotStage() const;
+	float PotBones() const { return BonesInPot; }
+	/** 다음 단계까지 필요한 뼈 (마지막 단계면 0) */
+	float PotNextBones() const;
+	/** 마지막 단계에서 끓어 넘치기까지 남은 시간 (마지막 단계가 아니면 음수) */
+	float PotOverflowLeft() const;
+	bool CanOpenPot() const { return !bGameOver && PotStage() != INDEX_NONE; }
+	/** 뚜껑을 연다: 지금 단계 국물로 이번 판 내내 아군 체력·공격력 +, 지금 아군 회복. 냄비는 비운다 */
+	bool OpenPot();
+	/** 뚜껑을 연 지 (HUD 뚜껑 들썩 연출, 음수면 연 적 없음) */
+	float PotLidAge() const { return LidAge; }
+	int32 BrothServed() const { return Served; }
+	float BrothHP() const { return ServedHP; }
+	float BrothDamage() const { return ServedDamage; }
+
+	/** 말풍선 대화가 듣는 사건 (HUD가 가져가고 비운다) */
+	TArray<FYJJBattleEvent> Events;
+
 	// ---- 카드 (웨이브가 바뀔 때 3장 중 1장, 이번 판 한정) ----
 	bool bCardPending = false;
 	TArray<int32> CardOffer;
@@ -162,6 +186,8 @@ private:
 	int32 SpawnEnemyAt(int32 Unit, const FVector2f& Pos);
 	void OfferCards();
 	void TickNecro(float Dt);
+	void TickPot(float Dt);
+	void AddEvent(EYJJTalkTrigger Trigger, int32 Unit = INDEX_NONE);
 	void ApplySpecialDef(const FYJJPerkDef& Def, TArray<FYJJUnitSpecial>& Specials);
 	void SpawnHero();
 	FYJJSpawnStats PlayerStats(int32 Building, int32 BuildingLevel) const;
@@ -201,6 +227,16 @@ private:
 	float MeteorTwiceDelay = 0.f;
 	float RallyHealFraction = 0.f;
 
+	// 냄비
+	float BonesInPot = 0.f;
+	float OverflowTime = 0.f;
+	float LidAge = -1.f;
+	float BoneFlyBudget = 0.f;
+	int32 Served = 0;
+	float ServedHP = 0.f;
+	float ServedDamage = 0.f;
+	bool bHeroLowSaid = false;
+
 	// 강령술: 쓰러진 자리 (오래된 것부터 덮어쓴다)
 	TArray<FVector2f> Corpses;
 	int32 CorpseCursor = 0;
@@ -230,4 +266,7 @@ private:
 	inline static const FName SoundBuild = TEXT("Build");
 	inline static const FName SoundUpgrade = TEXT("Upgrade");
 	inline static const FName SoundBuy = TEXT("Buy");
+	inline static const FName SoundPromote = TEXT("Promote");
+	inline static const FName SoundPotOpen = TEXT("PotOpen");
+	inline static const FName SoundPotOverflow = TEXT("PotOverflow");
 };

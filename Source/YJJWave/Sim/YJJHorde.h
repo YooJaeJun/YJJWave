@@ -69,6 +69,13 @@ struct FYJJDeath
 	bool bFaceLeft = false;
 };
 
+/** 이번 틱에 진급한 유닛 (소비하는 쪽이 비운다) */
+struct FYJJPromotion
+{
+	FVector2f Pos = FVector2f::ZeroVector;
+	int32 Type = 0;   // 진급한 뒤 유닛
+};
+
 /** Step 구간 (성능 측정용) */
 enum class EYJJHordePhase : uint8
 {
@@ -198,6 +205,8 @@ public:
 	TArray<FYJJProjectile> Projectiles;
 	/** 이번 틱 최후의 저항·부활이 일어난 자리 (FYJJBattle이 연출로 바꾸고 비운다) */
 	TArray<FVector2f> Rescued;
+	/** 적을 잡아 진급한 유닛 (FYJJBattle이 연출로 바꾸고 비운다) */
+	TArray<FYJJPromotion> Promoted;
 	/** 소리용: 이번 틱들 동안 타격·화살 수 (FYJJBattle이 가져가 0으로) */
 	int32 HitCount = 0;
 	int32 ShotCount = 0;
@@ -218,6 +227,8 @@ private:
 	/** 피해. Attacker(때린 유닛)가 있으면 흡혈, 근접이면 가시 반사도 */
 	void Hit(int32 Victim, float Damage, const FVector2f& From, int32 Attacker = INDEX_NONE, bool bMelee = false);
 	const FYJJUnitSpecial& SpecialOf(int32 Slot) const;
+	/** 진급: 다음 유닛 종류로 바뀌고 능력치는 같은 비율만큼 오른다, 체력은 가득 */
+	void Promote(int32 Slot);
 	/** 분노까지 더한 이번 공격 피해 */
 	float AttackDamage(int32 Slot) const;
 	/** 공격 동작을 시작한다 (길이는 공격 간격에 비례) */
@@ -249,6 +260,8 @@ private:
 	TArray<uint8> Flags;
 	/** 유닛마다 고정된 난수 (행군 흔들림 박자). 슬롯 번호를 쓰면 재배치 뒤 이웃끼리 박자가 같아져 줄무늬가 생긴다 */
 	TArray<float> Seed;
+	/** 이 유닛이 쓰러뜨린 적 수 (진급) */
+	TArray<uint16> Kills;
 
 	TArray<int32> FreeSlots;
 	TArray<int32> BigUnits;   // 반지름이 큰 유닛(보스): 모두가 따로 밀어내기 검사

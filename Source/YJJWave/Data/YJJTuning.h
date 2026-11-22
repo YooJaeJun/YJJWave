@@ -97,6 +97,22 @@ struct FYJJTuning
 	UPROPERTY() float NecroRaiseRadius = 0.f;   // 강령술사 둘레 이 안의 시체만
 	UPROPERTY() float RaiseEffectTime = 0.f;   // 되살아나는 연기 연출 시간
 	UPROPERTY() float RaiseEffectSize = 0.f;   // 되살아나는 연기 크기
+	// ---- 진급 (졸병 → 베테랑 → 장군 → 영웅, 처치 수는 Units.csv PromoteKills) ----
+	UPROPERTY() float PromoteEffectTime = 0.f;   // 진급 빛줄기 연출 시간
+	UPROPERTY() float PromoteEffectScale = 0.f;   // 진급 빛줄기 크기 (진급한 유닛 DrawSize 배율)
+	// ---- 왕국의 마지막 냄비 (국물 단계는 Broth.csv, 적이 주는 뼈는 Units.csv Bones) ----
+	UPROPERTY() float PotX = 0.f;   // 냄비 자리 x (진지 오른쪽 아래)
+	UPROPERTY() float PotY = 0.f;   // 냄비 자리 y
+	UPROPERTY() float PotOverflowTime = 0.f;   // 마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다
+	UPROPERTY() float BoneFlyTime = 0.f;   // 뼈가 냄비까지 날아가는 시간
+	UPROPERTY() float BoneFlyPerSecond = 0.f;   // 날아가는 뼈 그림은 초당 이만큼까지 (뼈 자체는 다 들어간다)
+	UPROPERTY() float PotSteamTime = 0.f;   // 뚜껑 열 때 김 연출 시간
+	UPROPERTY() float PotSteamSize = 0.f;   // 뚜껑 열 때 김 크기
+	UPROPERTY() float PotOverflowSteamScale = 0.f;   // 끓어 넘칠 때 김 크기 배율
+	UPROPERTY() float PotServeRing = 0.f;   // 국을 나눠 줄 때 퍼지는 고리 크기
+	// ---- 말풍선 대화 (Dialogues.csv) ----
+	UPROPERTY() float HeroLowShare = 0.f;   // 영웅 체력이 이 비율 아래면 HeroLow 대화
+	UPROPERTY() int32 MaxPendingEvents = 0;   // HUD가 가져가지 않은 판 사건은 이만큼까지만 쌓는다
 	// ---- 소리 ----
 	UPROPERTY() int32 VoicesPerSecond = 0;   // 보이스는 전체 합쳐 초당 이만큼까지 (수천 마리가 한꺼번에 떠들지 않게)
 	UPROPERTY() float MusicFade = 0.f;   // 배경음을 바꿀 때 서서히 줄이고 키우는 시간
@@ -111,6 +127,8 @@ struct FYJJTuning
 	UPROPERTY() float BotRallyRatio = 0.f;   // 적 수가 아군의 이 배를 넘으면 함성
 	UPROPERTY() float BotQuakeMinEnemies = 0.f;   // 봇 대지 가르기: 적이 이만큼 있을 때만
 	UPROPERTY() float BotBuyGold = 0.f;   // 봇: 금화가 이보다 많으면 병사 x10 즉시 구매
+	UPROPERTY() int32 BotPotStage = 0;   // 봇: 냄비가 이 단계(0부터) 이상이면 뚜껑을 연다
+	UPROPERTY() float BotPotZoom = 0.f;   // 봇: 냄비 스크린샷 확대
 	UPROPERTY() float BotExitDelay = 0.f;   // 끝나고 종료까지 기다리는 실제 시간
 	UPROPERTY() float BenchDepth = 0.f;   // 벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
 	UPROPERTY() float BenchCameraZoom = 0.f;   // 벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)
@@ -125,6 +143,51 @@ struct FYJJUILayout
 {
 	GENERATED_BODY()
 
+	// ---- 냄비 (Buildings.png 6 솥, 7 뚜껑 / Fx.png 12 국물 면, 13 뼈, 14 김, 15 진급 빛) ----
+	UPROPERTY() float PotCell = 0.f;   // Buildings 칸: 솥과 장작불
+	UPROPERTY() float PotLidCell = 0.f;   // Buildings 칸: 뚜껑
+	UPROPERTY() float FxBroth = 0.f;   // Fx 칸: 흰 타원 (국물 면·거품)
+	UPROPERTY() float FxBone = 0.f;   // Fx 칸: 뼈
+	UPROPERTY() float FxSteam = 0.f;   // Fx 칸: 김
+	UPROPERTY() float FxPromote = 0.f;   // Fx 칸: 진급 빛줄기
+	UPROPERTY() float UiBadge = 0.f;   // UI 칸: 중간·주문 별 바탕 원
+	UPROPERTY() float UiBone = 0.f;   // UI 칸: 뼈
+	UPROPERTY() float UiPot = 0.f;   // UI 칸: 냄비
+	UPROPERTY() float PotDrawSize = 0.f;   // 냄비 그릴 크기 (월드)
+	UPROPERTY() float PotAnchorY = 0.f;   // 냄비 그림에서 바닥 자리 (칸 높이 비율)
+	UPROPERTY() float PotRimY = 0.f;   // 솥 아가리 가운데 높이 (칸 비율, generate_art POT_RIM_Y/256)
+	UPROPERTY() float PotRimW = 0.f;   // 솥 아가리 너비 (칸 비율)
+	UPROPERTY() float PotRimH = 0.f;   // 솥 아가리 높이 (칸 비율)
+	UPROPERTY() float PotFillMin = 0.f;   // 국물이 막 생겼을 때 아가리를 채운 비율
+	UPROPERTY() float PotBubbles = 0.f;   // 끓는 거품 수 (단계가 오를수록 다 보인다)
+	UPROPERTY() float PotBubbleSize = 0.f;   // 거품 크기 (아가리 너비 비율)
+	UPROPERTY() float PotBubbleSpeed = 0.f;   // 거품 박자
+	UPROPERTY() float PotSteamPuffs = 0.f;   // 늘 피어오르는 김 수
+	UPROPERTY() float PotSteamRise = 0.f;   // 김이 올라가는 높이 (월드)
+	UPROPERTY() float PotSteamPuffSize = 0.f;   // 김 하나 크기 (월드)
+	UPROPERTY() float PotSteamAlpha = 0.f;   // 김 진하기
+	UPROPERTY() float PotLidLift = 0.f;   // 뚜껑 열 때 들리는 높이 (월드)
+	UPROPERTY() float PotLidTime = 0.f;   // 뚜껑이 들렸다 내려오는 시간
+	UPROPERTY() float PotRattle = 0.f;   // 넘치기 직전 뚜껑 덜컹 크기 (월드)
+	UPROPERTY() float PotRattleSpeed = 0.f;   // 뚜껑 덜컹 빠르기
+	UPROPERTY() float PotLabelGap = 0.f;   // 냄비 위 글자 간격
+	UPROPERTY() float PotHoverScale = 0.f;   // 냄비에 마우스를 올리면 커지는 배율
+	UPROPERTY() float BoneDrawSize = 0.f;   // 날아가는 뼈 크기 (월드)
+	UPROPERTY() float BoneArc = 0.f;   // 뼈가 날아가는 포물선 높이 (월드)
+	UPROPERTY() float BoneSpin = 0.f;   // 뼈 회전 빠르기
+	UPROPERTY() float PromoteRise = 0.f;   // 진급 빛이 떠오르는 높이 (월드)
+	UPROPERTY() float PromoteBannerTier = 0.f;   // 이 진급 단계 이상이면 화면 배너 (2 = 장군)
+	// ---- 말풍선 (Dialogues.csv) ----
+	UPROPERTY() float BubbleMaxW = 0.f;   // 말풍선 최대 너비 (화면)
+	UPROPERTY() float BubblePad = 0.f;   // 말풍선 안쪽 여백
+	UPROPERTY() float BubbleGap = 0.f;   // 머리 위 말풍선까지 간격 (화면)
+	UPROPERTY() float BubbleTail = 0.f;   // 말풍선 꼬리 크기
+	UPROPERTY() float BubbleFade = 0.f;   // 말풍선이 나타나고 사라지는 시간
+	UPROPERTY() float BubbleTypeSpeed = 0.f;   // 말풍선 글자가 나오는 빠르기 (초당 글자)
+	UPROPERTY() float BubbleScreenMargin = 0.f;   // 말풍선이 화면 밖으로 나가지 않게 띄우는 여백
+	UPROPERTY() float BubbleHeadShare = 0.f;   // 말풍선 꼬리 끝: 유닛 발에서 그림 크기의 이 비율만큼 위
+	UPROPERTY() float PerkIconScale = 0.f;   // 중간·주문 별 효과 그림 크기 (바탕 원 지름 배율)
+	UPROPERTY() float PerkIconDim = 0.f;   // 아직 못 찍는 별 효과 그림 밝기
 	// ---- 아틀라스 (Tools/Art/generate_art.py 와 같아야 한다) ----
 	UPROPERTY() float UnitCell = 0.f;   // Units.png 칸 크기
 	UPROPERTY() float BigUnitCell = 0.f;   // BigUnits.png 칸 크기 (보스·영웅)
@@ -342,7 +405,6 @@ struct FYJJUILayout
 	UPROPERTY() float PerkKeystone = 0.f;   // 쐐기 반지름
 	UPROPERTY() float TipKindW = 0.f;   // 설명창 오른쪽 위 별 종류 글자 너비
 	UPROPERTY() float PerkHoverScale = 0.f;   // 마우스 올린 별 확대
-	UPROPERTY() float SpellNodeIcon = 0.f;   // 주문 별 위 주문 그림 크기 (별 지름 배율)
 	UPROPERTY() float SpellNodeLvGap = 0.f;   // 주문 별 아래 Lv 글자 간격
 	UPROPERTY() float LinkWidth = 0.f;   // 선 굵기
 	UPROPERTY() float LinkTakenWidth = 0.f;   // 찍은 선 굵기

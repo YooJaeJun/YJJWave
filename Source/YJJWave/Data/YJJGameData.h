@@ -16,6 +16,7 @@ class UScriptStruct;
  *   Units.csv      병사·몬스터                    Buildings.csv  병영
  *   Stages.csv     스테이지                       Waves.csv      스테이지·웨이브별 몬스터
  *   Perks.csv      특성 성좌 (Tools/Data/gen_perks.py)  Spells.csv     주문 Lv별 수치·특수 효과
+ *   Broth.csv      냄비 국물 단계                 Dialogues.csv  게임 중 말풍선 대화
  * 글자는 Localization.csv (YJJLoc).
  */
 class YJJWAVE_API FYJJGameDatabase
@@ -35,6 +36,10 @@ public:
 	TArray<FYJJPerkDef> Cards;
 	/** 주문별 Lv 줄 (Lv 순서, 0번 = Lv 1) */
 	TArray<FYJJSpellLevel> SpellLevels[static_cast<int32>(EYJJSpell::Count)];
+	/** Broth.csv: 냄비 국물 단계 (Bones 오름차순) */
+	TArray<FYJJBrothStage> Broth;
+	/** Dialogues.csv: 말풍선 대화 */
+	TArray<FYJJTalk> Talks;
 
 	/** 읽으면서 생긴 문제 (빠진 이름, 모르는 유닛…) */
 	TArray<FString> Problems;
@@ -54,6 +59,11 @@ private:
 	void LoadPerks();
 	void LoadCards();
 	void LoadSpells();
+	void LoadBroth();
+	void LoadDialogues();
+	bool ParseTrigger(const FString& Name, EYJJTalkTrigger& Out);
+	/** Voice 열: 비우면 Voice_<Speaker> */
+	static FName VoiceFor(const FString& Voice, const FString& Speaker);
 	bool ParseSpell(const FString& Name, int32& Out);
 	bool ParseSpellFx(const FString& Name, EYJJSpellFx& Out);
 	/** 능력치 2개 + 특수 효과를 Def에 읽는다 (Perks·Cards 공통) */
@@ -88,6 +98,10 @@ namespace YJJData
 	YJJWAVE_API int32 HeroUnit();
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Perks();
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Cards();
+	YJJWAVE_API TConstArrayView<FYJJBrothStage> Broth();
+	YJJWAVE_API TConstArrayView<FYJJTalk> Talks();
+	/** Dialogues.csv Trigger 열 이름 */
+	YJJWAVE_API const TCHAR* TriggerKey(EYJJTalkTrigger Trigger);
 
 	/** Perks.csv Stat 열·Localization Stat.<이름> 에 쓰는 이름 */
 	YJJWAVE_API const TCHAR* StatKey(EYJJStat Stat);

@@ -30,3 +30,36 @@ Voice_BoneArcher,VO_Skeleton_0,0.3,Voice,0.6,1.05,1.25,해골 궁수
 Voice_Necro,VO_Necro_0,0.5,Voice,1,0.95,1.05,강령술사
 Voice_BoneKing,VO_BoneKing_0,0.85,Voice,1,1,1,해골 왕
 Voice_Title,VO_Narrator_0,0.6,Voice,0,1,1,컷씬 해설
+Promote,SFX_Upgrade,0.45,Sfx,0.2,1.2,1.4,졸병 진급
+PotOpen,SFX_Card,0.6,Sfx,0,0.8,0.85,냄비 뚜껑 열기
+PotOverflow,SFX_MeteorBoom,0.5,Sfx,0,0.6,0.7,국이 끓어 넘침
+Voice_Veteran,VO_Grunt_1,0.5,Voice,0.5,0.75,0.85,베테랑
+Voice_General,VO_Brute_0,0.55,Voice,0.8,0.9,1.0,장군
+Voice_GruntHero,VO_Hero_0,0.65,Voice,1,0.85,0.9,영웅 (진급)
+Line_M1,VO_Line_M1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_M2,VO_Line_M2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_M3,VO_Line_M3,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_M4,VO_Line_M4,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_M5,VO_Line_M5,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_M6,VO_Line_M6,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_S1,VO_Line_S1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_S2,VO_Line_S2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_S3,VO_Line_S3,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_S4,VO_Line_S4,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_S5,VO_Line_S5,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_S6,VO_Line_S6,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Start1,VO_Line_Start1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Start2,VO_Line_Start2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Start3,VO_Line_Start3,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_FirstPot1,VO_Line_FirstPot1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_FirstPot2,VO_Line_FirstPot2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Overflow1,VO_Line_Overflow1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Overflow2,VO_Line_Overflow2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Veteran1,VO_Line_Veteran1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_General1,VO_Line_General1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_GruntHero1,VO_Line_GruntHero1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Boss1,VO_Line_Boss1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Boss2,VO_Line_Boss2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Deep1,VO_Line_Deep1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_Deep2,VO_Line_Deep2,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)
+Line_HeroLow1,VO_Line_HeroLow1,0.9,Voice,0,1,1,대사 목소리 (generate_voice.py)

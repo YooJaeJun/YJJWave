@@ -40,6 +40,8 @@ public:
 	/** 옵션 볼륨이 바뀌었을 때 지금 배경음에 반영 */
 	static void RefreshMusicVolume();
 	static void Reload();
+	/** Sounds.csv에 있는 키인가 (대사 목소리가 없으면 웅얼웅얼로 바꿀 때) */
+	static bool Has(FName Key) { return Find(Key) != nullptr; }
 
 private:
 	static const FYJJSoundDef* Find(FName Key);

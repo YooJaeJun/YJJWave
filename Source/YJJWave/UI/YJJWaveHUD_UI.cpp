@@ -453,13 +453,28 @@ void AYJJWaveHUD::DrawTree()
 			Radius *= UI().PerkHoverScale;
 		}
 		const FVector2f Center = PerkToVirtual(Def.Pos);
-		DrawIcon(FMath::RoundToInt(bSmall ? UI().UiStar : UI().UiBigStar), Center.X - Radius, Center.Y - Radius, Radius * 2.f, Color);
-		if (Def.Kind == EYJJPerkKind::Spell)
+		const bool bSpellNode = Def.Kind == EYJJPerkKind::Spell;
+		if (Def.Kind == EYJJPerkKind::Notable || bSpellNode)
 		{
-			// 주문 별: 큰 별 위에 주문 그림 + 아래에 Lv
+			// 중간·주문 별: 상태 색 바탕 원 + 효과 그림 (못 찍는 별은 어둡게)
+			DrawIcon(FMath::RoundToInt(UI().UiBadge), Center.X - Radius, Center.Y - Radius, Radius * 2.f, Color);
+			const int32 Icon = bSpellNode ? SpellIcon(static_cast<EYJJSpell>(Def.Spell)) : Def.Icon;
+			if (Icon != INDEX_NONE)
+			{
+				const bool bLit = Current->IsAllocated(Perk) || Current->IsReachable(Perk);
+				const float Dim = bLit ? 1.f : UI().PerkIconDim;
+				const float IconSize = Radius * 2.f * UI().PerkIconScale;
+				DrawIcon(Icon, Center.X - IconSize * Half, Center.Y - IconSize * Half, IconSize, FLinearColor(Dim, Dim, Dim, 1.f));
+			}
+		}
+		else
+		{
+			DrawIcon(FMath::RoundToInt(bSmall ? UI().UiStar : UI().UiBigStar), Center.X - Radius, Center.Y - Radius, Radius * 2.f, Color);
+		}
+		if (bSpellNode)
+		{
+			// 주문 별: 아래에 Lv
 			const EYJJSpell Spell = static_cast<EYJJSpell>(Def.Spell);
-			const float IconSize = Radius * 2.f * UI().SpellNodeIcon;
-			DrawIcon(SpellIcon(Spell), Center.X - IconSize * Half, Center.Y - IconSize * Half, IconSize);
 			DrawLabelCentered(YJJLoc::Format(TEXT("Spell.LvOf"), { Current->SpellLevel(Spell), YJJData::SpellMaxLevel(Spell) }),
 				Center.X, Center.Y + Radius + UI().SpellNodeLvGap + UI().TinyText * Half, UI().TinyText, YJJUI::Highlight);
 		}
@@ -645,6 +660,10 @@ void AYJJWaveHUD::ClickWorld()
 	BuyPopupFor = INDEX_NONE;
 	if (Plot == INDEX_NONE)
 	{
+		if (IsOverPot(World))
+		{
+			OpenPot();
+		}
 		return;
 	}
 	if (Current->Plots[Plot].Building == INDEX_NONE)
@@ -698,6 +717,10 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	else if (Key == EKeys::T || Key == EKeys::Tab)
 	{
 		bTreeOpen = !bTreeOpen;
+	}
+	else if (Key == EKeys::Q)
+	{
+		OpenPot();
 	}
 	else if (Key == EKeys::Escape)
 	{

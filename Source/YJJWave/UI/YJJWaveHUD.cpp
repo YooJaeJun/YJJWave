@@ -106,6 +106,10 @@ void AYJJWaveHUD::ResetBattleView()
 	Dying.Reset();
 	Stamps.Reset();
 	Banners.Reset();
+	TalkQueue.Reset();
+	TalkUsed.Reset();
+	TalkUsed.AddZeroed(YJJData::Talks().Num());
+	TalkNow = FYJJTalkPlay();
 	NextMilestone = UI().MilestoneFirst;
 	KillWindow = 0.f;
 	KillsAtWindow = 0;
@@ -193,6 +197,8 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	UpdateDying(Mode && Mode->IsRunning() ? DeltaSeconds * Mode->GetSpeed() : 0.f);
 	UpdateBanners(DeltaSeconds);
+	TakeEvents();
+	UpdateTalks(DeltaSeconds);
 	BakeStamps();
 }
 
@@ -216,6 +222,7 @@ void AYJJWaveHUD::DrawHUD()
 		? FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * UI().ShakePixels * ViewScale * (ShakeLeft / FMath::Max(UI().ShakeTime, KINDA_SMALL_NUMBER))
 		: FVector2f::ZeroVector;
 	DrawWorld();
+	DrawTalks();
 	DrawBanners();
 	if (Battle()->bCardPending && !Battle()->bGameOver)
 	{
@@ -229,6 +236,7 @@ void AYJJWaveHUD::DrawHUD()
 	else
 	{
 		DrawPlotTooltip();
+		DrawPotTooltip();
 	}
 	DrawSidePanel();
 	DrawCutscene();

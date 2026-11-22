@@ -118,6 +118,8 @@ void FYJJGameDatabase::Load()
 	LoadSpells();
 	LoadPerks();
 	LoadCards();
+	LoadBroth();
+	LoadDialogues();
 
 	UE_LOG(LogYJJWave, Display, TEXT("[Data] 유닛 %d, 병영 %d, 스테이지 %d, 특성 %d, 문제 %d"), Units.Num(), Buildings.Num(), Stages.Num(), Perks.Num(), Problems.Num());
 }
@@ -146,8 +148,9 @@ void FYJJGameDatabase::LoadUnits()
 {
 	Units.Reset();
 	TArray<FString> RaiseNames;
+	TArray<FString> PromoteNames;
 	const UDataTable* Table = LoadTable(TEXT("Units.csv"), FYJJUnitRow::StaticStruct());
-	Table->ForeachRow<FYJJUnitRow>(ContextName, [this, &RaiseNames](const FName& Name, const FYJJUnitRow& Row)
+	Table->ForeachRow<FYJJUnitRow>(ContextName, [this, &RaiseNames, &PromoteNames](const FName& Name, const FYJJUnitRow& Row)
 	{
 		FYJJUnitDef& Def = Units.AddDefaulted_GetRef();
 		Def.Id = Name;
@@ -173,7 +176,10 @@ void FYJJGameDatabase::LoadUnits()
 		Def.bHero = Row.Hero != 0;
 		Def.BigRow = Row.BigRow;
 		Def.VoiceKey = FName(*(FString(TEXT("Voice_")) + Name.ToString()));
+		Def.Bones = Row.Bones;
+		Def.PromoteKills = Row.PromoteKills;
 		RaiseNames.Add(Row.RaiseUnit);
+		PromoteNames.Add(Row.PromoteTo);
 		if (Row.HP <= 0.f || Row.Radius <= 0.f || Row.Mass <= 0.f || Row.AttackInterval <= 0.f)
 		{
 			Problem(FString::Printf(TEXT("Units.csv %s: 체력·반지름·질량·공격 간격은 0보다 커야 한다"), *Name.ToString()));
@@ -182,6 +188,120 @@ void FYJJGameDatabase::LoadUnits()
 	for (int32 Unit = 0; Unit < Units.Num(); ++Unit)
 	{
 		Units[Unit].RaiseUnit = RaiseNames[Unit].IsEmpty() ? INDEX_NONE : FindUnit(RaiseNames[Unit], TEXT("Units.csv RaiseUnit"));
+		Units[Unit].PromoteTo = PromoteNames[Unit].IsEmpty() ? INDEX_NONE : FindUnit(PromoteNames[Unit], TEXT("Units.csv PromoteTo"));
+		Units[Unit].PromoteRoot = Unit;
+		if (Units[Unit].PromoteTo != INDEX_NONE && Units[Unit].PromoteKills <= 0)
+		{
+			Problem(FString::Printf(TEXT("Units.csv %s: 진급하려면 PromoteKills가 0보다 커야 한다"), *Units[Unit].Id.ToString()));
+			Units[Unit].PromoteTo = INDEX_NONE;
+		}
+	}
+	// 진급 줄: 아무도 진급해 오지 않는 유닛에서 시작해 끝까지 따라가며 단계와 맨 처음 유닛을 적는다
+	TArray<bool> IsTarget;
+	IsTarget.Init(false, Units.Num());
+	for (const FYJJUnitDef& Def : Units)
+	{
+		if (Def.PromoteTo != INDEX_NONE)
+		{
+			IsTarget[Def.PromoteTo] = true;
+		}
+	}
+	for (int32 Unit = 0; Unit < Units.Num(); ++Unit)
+	{
+		if (IsTarget[Unit] || Units[Unit].PromoteTo == INDEX_NONE)
+		{
+			continue;
+		}
+		int32 Next = Units[Unit].PromoteTo;
+		for (int32 Tier = 1; Next != INDEX_NONE && Tier < Units.Num(); ++Tier)
+		{
+			Units[Next].PromoteRoot = Unit;
+			Units[Next].Tier = Tier;
+			Next = Units[Next].PromoteTo;
+		}
+	}
+}
+
+FName FYJJGameDatabase::VoiceFor(const FString& Voice, const FString& Speaker)
+{
+	return FName(*(Voice.IsEmpty() ? FString(TEXT("Voice_")) + Speaker : Voice));
+}
+
+void FYJJGameDatabase::LoadBroth()
+{
+	Broth.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Broth.csv"), FYJJBrothRow::StaticStruct());
+	Table->ForeachRow<FYJJBrothRow>(ContextName, [this](const FName& Name, const FYJJBrothRow& Row)
+	{
+		FYJJBrothStage& Stage = Broth.AddDefaulted_GetRef();
+		Stage.Id = Name;
+		Stage.NameKey = Row.NameKey;
+		Stage.Bones = Row.Bones;
+		Stage.HP = Row.HP;
+		Stage.Damage = Row.Damage;
+		Stage.Heal = Row.Heal;
+		Stage.Color = FLinearColor::FromSRGBColor(FColor::FromHex(Row.Color));
+	});
+	Broth.StableSort([](const FYJJBrothStage& A, const FYJJBrothStage& B) { return A.Bones < B.Bones; });
+	if (Broth.Num() == 0)
+	{
+		Problem(TEXT("Broth.csv: 국물 단계가 없다"));
+	}
+}
+
+bool FYJJGameDatabase::ParseTrigger(const FString& Name, EYJJTalkTrigger& Out)
+{
+	for (int32 Index = 0; Index < static_cast<int32>(EYJJTalkTrigger::Count); ++Index)
+	{
+		if (Name == YJJData::TriggerKey(static_cast<EYJJTalkTrigger>(Index)))
+		{
+			Out = static_cast<EYJJTalkTrigger>(Index);
+			return true;
+		}
+	}
+	return false;
+}
+
+void FYJJGameDatabase::LoadDialogues()
+{
+	Talks.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Dialogues.csv"), FYJJDialogueRow::StaticStruct());
+	TArray<TPair<int32, const FYJJDialogueRow*>> Rows;
+	Table->ForeachRow<FYJJDialogueRow>(ContextName, [&Rows](const FName& Name, const FYJJDialogueRow& Row)
+	{
+		Rows.Emplace(Row.Order, &Row);
+	});
+	Rows.StableSort([](const auto& A, const auto& B) { return A.Key < B.Key; });
+	for (const auto& Entry : Rows)
+	{
+		const FYJJDialogueRow& Row = *Entry.Value;
+		const FName TalkId(*Row.Talk);
+		FYJJTalk* Talk = Talks.FindByPredicate([&TalkId](const FYJJTalk& Other) { return Other.Id == TalkId; });
+		if (!Talk)
+		{
+			// 첫 줄(Order가 가장 작은 줄)이 조건을 정한다
+			Talk = &Talks.AddDefaulted_GetRef();
+			Talk->Id = TalkId;
+			Talk->Stage = Row.Stage.IsEmpty() ? INDEX_NONE : Stages.IndexOfByPredicate([&Row](const FYJJStageDef& Def) { return Def.Id == FName(*Row.Stage); });
+			if (!Row.Stage.IsEmpty() && Talk->Stage == INDEX_NONE)
+			{
+				Problem(FString::Printf(TEXT("Dialogues.csv %s: 모르는 스테이지 %s"), *Row.Talk, *Row.Stage));
+			}
+			if (!ParseTrigger(Row.Trigger, Talk->Trigger))
+			{
+				Problem(FString::Printf(TEXT("Dialogues.csv %s: 모르는 Trigger %s"), *Row.Talk, *Row.Trigger));
+			}
+			Talk->Wave = Row.Wave;
+			Talk->MinWave = Row.MinWave;
+			Talk->Param = Row.Param.IsEmpty() ? INDEX_NONE : FindUnit(Row.Param, TEXT("Dialogues.csv Param"));
+			Talk->Chance = Row.Chance;
+		}
+		FYJJTalkLine& Line = Talk->Lines.AddDefaulted_GetRef();
+		Line.Speaker = FindUnit(Row.Speaker, TEXT("Dialogues.csv Speaker"));
+		Line.TextKey = Row.TextKey;
+		Line.VoiceKey = VoiceFor(Row.Voice, Row.Speaker);
+		Line.Duration = Row.Duration;
+		Line.Delay = Row.Delay;
 	}
 }
 
@@ -281,7 +401,7 @@ void FYJJGameDatabase::LoadStages()
 		FYJJCutLine Line;
 		Line.bTitle = Row.Speaker == TitleName;
 		Line.Speaker = Line.bTitle ? INDEX_NONE : FindUnit(Row.Speaker, TEXT("Cutscenes.csv"));
-		Line.VoiceKey = FName(*(FString(TEXT("Voice_")) + Row.Speaker));
+		Line.VoiceKey = VoiceFor(Row.Voice, Row.Speaker);
 		Line.TextKey = Row.TextKey;
 		Line.Duration = Row.Duration;
 		Line.Camera = FVector2f(Row.CamX, Row.CamY);
@@ -470,6 +590,7 @@ void FYJJGameDatabase::LoadPerks()
 			Def.Kind = EYJJPerkKind::Small;
 		}
 		ReadEffects(TEXT("Perks.csv"), Name, Row, Def);
+		Def.Icon = Row.Icon;
 		LinkNames.Add(Row.Links);
 	});
 
@@ -508,6 +629,23 @@ int32 YJJData::HeroUnit()
 }
 TConstArrayView<FYJJPerkDef> YJJData::Perks() { return FYJJGameDatabase::Get().Perks; }
 TConstArrayView<FYJJPerkDef> YJJData::Cards() { return FYJJGameDatabase::Get().Cards; }
+TConstArrayView<FYJJBrothStage> YJJData::Broth() { return FYJJGameDatabase::Get().Broth; }
+TConstArrayView<FYJJTalk> YJJData::Talks() { return FYJJGameDatabase::Get().Talks; }
+
+const TCHAR* YJJData::TriggerKey(EYJJTalkTrigger Trigger)
+{
+	switch (Trigger)
+	{
+	case EYJJTalkTrigger::StageStart: return TEXT("StageStart");
+	case EYJJTalkTrigger::WaveStart: return TEXT("WaveStart");
+	case EYJJTalkTrigger::BossAppear: return TEXT("BossAppear");
+	case EYJJTalkTrigger::Promote: return TEXT("Promote");
+	case EYJJTalkTrigger::PotOpen: return TEXT("PotOpen");
+	case EYJJTalkTrigger::PotOverflow: return TEXT("PotOverflow");
+	case EYJJTalkTrigger::HeroLow: return TEXT("HeroLow");
+	default: return TEXT("");
+	}
+}
 
 const TCHAR* YJJData::StatKey(EYJJStat Stat)
 {

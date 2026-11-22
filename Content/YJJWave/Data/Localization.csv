@@ -171,3 +171,36 @@ Cut.S3,천 년을 푹 고아진 뼈다.,Simmered for a thousand years.,
 Cut.S4,뼈는 기억한다. 몇 시간 끓였는지.,Bones remember. Every hour in the pot.,
 Cut.S5,국물 값을 받으러 왔다.,We have come to collect for the broth.,
 Cut.S6,"전군, 뚜껑 닫아라. 돌격!","All troops, lids on. Charge!",
+Unit.Veteran,베테랑,Veteran,졸병 진급 1단계
+Unit.General,장군,General,진급 2단계
+Unit.GruntHero,영웅,Hero,진급 3단계 (내 영웅 '대장 졸병'과 다름)
+Broth.Thin,묽은 국,Thin Broth,냄비 단계
+Broth.Rich,진국,Hearty Stock,
+Broth.Gomtang,곰탕,Bone-Deep Broth,
+Pot.Title,왕국의 마지막 냄비,The Kingdom's Last Pot,
+Pot.Empty,뼈 {0}/{1},Bones {0}/{1},냄비 위: 아직 국이 안 됨
+Pot.Stage,{0}  뼈 {1}/{2},{0}  Bones {1}/{2},냄비 위: 지금 단계
+Pot.Full,{0}  넘치기까지 {1}초!,{0}  Boils over in {1}s!,
+Pot.Hint,클릭 또는 Q: 뚜껑 열기,Click or Q: lift the lid,
+Pot.Desc,적을 쓰러뜨리면 뼈가 냄비로 간다. 오래 끓일수록 진해지지만 곰탕은 넘치기 전에 열어야 한다.,"Fallen enemies' bones go into the pot. The longer it boils the stronger it gets, but open the Bone-Deep Broth before it boils over.",
+Pot.Effect,"열면: 이번 판 아군 체력 +{0}%, 공격력 +{1}%, 지금 아군 {2}% 회복","Open: allies HP +{0}%, damage +{1}% this run, heal {2}% now",
+Pot.Served,"먹인 국 {0}그릇: 체력 +{1}%, 공격력 +{2}%","Bowls served {0}: HP +{1}%, damage +{2}%",
+Pot.OpenBanner,{0}(을)를 나눠 먹였다!,Served the {0}!,배너
+Pot.OverflowBanner,국이 끓어 넘쳤다!,The broth boiled over!,배너
+Promote.Banner,{0} 탄생!,A {0} is born!,배너 (장군 이상)
+Key.Q,Q,Q,
+Talk.Start1,불 지펴라. 오늘 냄비는 비지 않는다.,Light the fire. The pot will not stay empty today.,말풍선 (Dialogues.csv Start)
+Talk.Start2,뭘로 채웁니까?,Fill it with what?,
+Talk.Start3,저기 걸어오고 있다.,It's walking toward us.,
+Talk.FirstPot1,…뼈 맛이 진합니다.,...It tastes of bone.,말풍선 (Dialogues.csv FirstPot)
+Talk.FirstPot2,천 년 묵은 맛이다.,A thousand years of flavor.,
+Talk.Overflow1,"대장님, 국이…!","Captain, the broth...!",말풍선 (Dialogues.csv Overflow)
+Talk.Overflow2,…다시 끓인다.,...We boil again.,
+Talk.Veteran1,국자를 받았다. 이제 물러서지 않는다.,I've been given the ladle. No more retreating.,말풍선 (Dialogues.csv Veteran)
+Talk.General1,솥을 입은 자는 끓지 않는다.,One who wears the cauldron does not boil.,말풍선 (Dialogues.csv General)
+Talk.GruntHero1,어제는 졸병. 오늘은 전설.,"Yesterday, a grunt. Today, a legend.",말풍선 (Dialogues.csv GruntHero)
+Talk.Boss1,내 뼈로는 국 못 끓인다.,My bones will make no broth.,말풍선 (Dialogues.csv Boss)
+Talk.Boss2,끓여 보면 안다.,We'll find out.,
+Talk.Deep1,끝이 안 보입니다.,There's no end to them.,말풍선 (Dialogues.csv Deep)
+Talk.Deep2,냄비 바닥도 안 보인다. 계속 넣어라.,Nor to the pot. Keep them coming.,
+Talk.HeroLow1,아직 간도 안 봤다.,I haven't even tasted it yet.,말풍선 (Dialogues.csv HeroLow)

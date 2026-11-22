@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Data/YJJTuning.h"
@@ -69,6 +69,16 @@ struct FYJJBanner
 	float Age = 0.f;
 };
 
+/** 지금 주고받는 말풍선 대화 (Dialogues.csv) */
+struct FYJJTalkPlay
+{
+	int32 Talk = INDEX_NONE;
+	int32 Line = 0;
+	/** 이 줄이 뜬 지 (음수면 앞 줄 끝나고 기다리는 중) */
+	float Age = 0.f;
+	bool bVoiced = false;
+};
+
 /** 화면 버튼 영역 (마우스 판정) */
 struct FYJJButton
 {
@@ -124,6 +134,8 @@ public:
 	void SetTreeOpen(bool bOpen) { bTreeOpen = bOpen; }
 	/** 오토파일럿 스크린샷용: 마우스 대신 이 별의 설명창을 띄운다 (INDEX_NONE이면 마우스) */
 	void SetForcedHoverPerk(int32 Perk) { ForcedHoverPerk = Perk; }
+	/** 지금 말풍선이 뜬 지 (없으면 음수, 오토파일럿 스크린샷용) */
+	float TalkAge() const { return TalkNow.Talk != INDEX_NONE ? TalkNow.Age : -1.f; }
 
 private:
 	enum class EButton : int32
@@ -174,6 +186,19 @@ private:
 	void DrawEffects();
 	/** 조준 중인 주문: 유성은 고리, 대지 가르기는 세로 줄 */
 	void DrawSpellAim();
+	// 왕국의 마지막 냄비 (솥 → 국물 면·거품·김 → 뚜껑 → 글자)
+	void DrawPot();
+	void DrawPotTooltip();
+	bool IsOverPot(const FVector2f& World) const;
+	/** 냄비 뚜껑 열기 (클릭·Q) */
+	void OpenPot();
+	// 말풍선 대화 (Dialogues.csv): 판 사건을 듣고 조건이 맞는 대화를 한 판에 한 번
+	void TakeEvents();
+	bool TalkMatches(const FYJJTalk& Talk, const FYJJBattleEvent& Event) const;
+	void UpdateTalks(float Dt);
+	void DrawTalks();
+	/** 그 유닛이 전장에 있으면 화면 가운데에 가장 가까운 슬롯 (없으면 INDEX_NONE) */
+	int32 FindSpeaker(int32 Unit) const;
 	/** 대지 가르기 갈라진 줄 (월드 x, 폭의 절반) */
 	void AddQuakeLine(const FYJJQuadBatch& Batch, float WorldX, float HalfWidth, const FLinearColor& Color) const;
 
@@ -304,6 +329,11 @@ private:
 	/** 조준 중인 주문 (EYJJSpell 번호, 없으면 INDEX_NONE) */
 	int32 AimingSpell = INDEX_NONE;
 	bool bShowDebug = true;
+	bool bPotHover = false;
+	// 말풍선 대화
+	TArray<int32> TalkQueue;
+	TArray<uint8> TalkUsed;
+	FYJJTalkPlay TalkNow;
 	int32 HoverPlot = INDEX_NONE;
 	int32 HoverPerk = INDEX_NONE;
 	int32 ForcedHoverPerk = INDEX_NONE;
@@ -351,6 +381,16 @@ private:
 	static constexpr int32 NumLanguages = 2;
 	/** 연출 하나가 그리는 사각형 수 어림 (대지 가르기 줄·불꽃이 여러 개) */
 	static constexpr int32 EffectQuadsGuess = 12;
+	// 냄비 거품·김·뚜껑 모양 (자리를 번호로 흩는 씨앗과 퍼지는 비율)
+	static constexpr float PotBubbleSeedX = 2.1f;
+	static constexpr float PotBubbleSeedY = 1.7f;
+	static constexpr float PotBubbleSpreadX = 0.35f;
+	static constexpr float PotBubbleSpreadY = 0.25f;
+	static constexpr float PotBubbleTempo = 0.25f;
+	static constexpr float PotSteamSpread = 0.25f;
+	static constexpr float PotLidAjarTilt = -0.6f;
+	static constexpr float PotLidAjarX = 0.4f;
+	static constexpr float PotLidAjarY = 0.14f;
 	static constexpr int32 BuyCountKeys[] = { 0, 1, 2 };   // 팝업 버튼 3개 (마리 수는 UILayout BuyCountA·B·C)
 	inline static const TCHAR* const LanguageCodes[NumLanguages] = { TEXT("ko"), TEXT("en") };
 	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice") };

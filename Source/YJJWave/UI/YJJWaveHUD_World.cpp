@@ -19,9 +19,11 @@ void AYJJWaveHUD::DrawWorld()
 	Canvas->DrawItem(Back);
 
 	HoverPlot = (!bTreeOpen && !IsMouseOverUI()) ? PlotAt(ScreenToWorld(MouseScreen())) : INDEX_NONE;
+	bPotHover = !bTreeOpen && !IsMouseOverUI() && HoverPlot == INDEX_NONE && IsOverPot(ScreenToWorld(MouseScreen()));
 
 	DrawGround();
 	DrawCamp();
+	DrawPot();
 	DrawUnits();
 	DrawDying();
 	DrawProjectiles();
@@ -385,6 +387,30 @@ void AYJJWaveHUD::DrawEffects()
 				const float Size = Effect.Radius * UI().BurnFlameScale * Flicker * Zoom;
 				AddQuad(Batch, WorldToScreen(Pos) - FVector2f(Size * Half, Size), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxFlame)), FxAtlas.CellUV, FLinearColor(1.f, 1.f, 1.f, Fade), (Index % 2) != 0);
 			}
+			break;
+		}
+		case EYJJEffectKind::Promote:
+		{
+			// 금빛 빛줄기가 돌며 떠올랐다 사라진다
+			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, 1.f, T);
+			const FVector2f Center = WorldToScreen(Effect.Pos - FVector2f(0.f, UI().PromoteRise * T));
+			AddQuadRotated(Batch, Center, FVector2f(Size), T * UI().BoneSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxPromote)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::Highlight, 1.f - T * T), false);
+			break;
+		}
+		case EYJJEffectKind::BoneFly:
+		{
+			// 쓰러진 자리에서 냄비까지 포물선
+			const FVector2f To = Current->PotPos() - FVector2f(0.f, UI().PotDrawSize * (UI().PotAnchorY - UI().PotRimY));
+			const FVector2f Along = FMath::Lerp(Effect.Pos, To, T) - FVector2f(0.f, UI().BoneArc * 4.f * T * (1.f - T));
+			const float Size = UI().BoneDrawSize * Zoom;
+			AddQuadRotated(Batch, WorldToScreen(Along), FVector2f(Size), T * UI().BoneSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxBone)), FxAtlas.CellUV, FLinearColor::White, false);
+			break;
+		}
+		case EYJJEffectKind::PotSteam:
+		{
+			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);
+			const FVector2f Center = WorldToScreen(Effect.Pos - FVector2f(0.f, UI().PotDrawSize * UI().PotAnchorY + UI().PotSteamRise * T));
+			AddQuad(Batch, Center - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxSteam)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
 			break;
 		}
 		case EYJJEffectKind::Build:

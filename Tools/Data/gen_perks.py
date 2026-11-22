@@ -70,12 +70,20 @@ SPELL_SPOKE = "Spells"
 SPELL_NODES = [("Meteor", 1, 3, -20), ("Rally", 1, 3, 20), ("Quake", 3, 5, -14)]
 MIN_GAP = 110   # 별 사이 최소 거리 (성좌 좌표)
 
+# 중간 별 효과 그림: UI.png 칸 (Tools/Art/generate_art.py ui_icon 18~32). 주문 별은 HUD가 주문 그림을 쓴다
+NOTABLE_ICONS = {
+    "FirstAid": 18, "StubbornGrunts": 19, "HeroBreath": 20, "FuriousCaptain": 21, "BurstArrows": 22, "DoubleShot": 23,
+    "GoldenSkull": 24, "SoulBurst": 25, "Shockwave": 26, "SmithGrit": 27, "MeteorChain": 28, "HealingCry": 29,
+    "ThornShield": 30, "IronWill": 31, "BloodArmy": 32, "Frenzy": 21,
+}
+
 
 class Perk:
     def __init__(self, name, kind, x, y, mods=(), name_key="", special=("", "", 0, 0), spell=""):
         self.name, self.kind, self.x, self.y = name, kind, x, y
         self.mods, self.name_key, self.special, self.spell = list(mods), name_key, special, spell
         self.links = set()
+        self.icon = NOTABLE_ICONS[name_key[5:]] if kind == "Notable" else -1
 
 
 def link(a, b):
@@ -157,12 +165,12 @@ def main():
     out = io.StringIO()
     w = csv.writer(out, lineterminator="\n")
     w.writerow(["Name", "Kind", "X", "Y", "Stat", "Target", "Value", "Stat2", "Target2", "Value2",
-                "Special", "SpecialTarget", "SpecialA", "SpecialB", "Links", "NameKey", "Spell"])
+                "Special", "SpecialTarget", "SpecialA", "SpecialB", "Links", "NameKey", "Spell", "Icon"])
     for p in perks:
         m1 = p.mods[0] if len(p.mods) > 0 else ("", "", 0)
         m2 = p.mods[1] if len(p.mods) > 1 else ("", "", 0)
         w.writerow([p.name, p.kind, p.x, p.y, m1[0], m1[1], m1[2], m2[0], m2[1], m2[2],
-                    p.special[0], p.special[1], p.special[2], p.special[3], " ".join(sorted(p.links)), p.name_key, p.spell])
+                    p.special[0], p.special[1], p.special[2], p.special[3], " ".join(sorted(p.links)), p.name_key, p.spell, p.icon])
     with open(OUT, "w", encoding="utf-8-sig", newline="") as f:
         f.write(out.getvalue())
     print("perks", len(perks), "notables", sum(1 for p in perks if p.kind == "Notable"), "keystones", sum(1 for p in perks if p.kind == "Keystone"))

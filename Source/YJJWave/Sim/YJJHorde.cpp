@@ -63,7 +63,7 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Resize(Alive); Resize(Team); Resize(Type); Resize(Pos); Resize(Vel); Resize(HP); Resize(MaxHP);
 	Resize(Flash); Resize(AttackAnim); Resize(AttackLen); Resize(WalkPhase); Resize(FaceLeft);
 	Resize(Gen); Resize(Target); Resize(TargetGen); Resize(Cooldown); Resize(Damage); Resize(AttackInterval);
-	Resize(Speed); Resize(Splash); Resize(Multishot); Resize(Impulse); Resize(PosNext); Resize(LastHitDir); Resize(Pending); Resize(Flags); Resize(Seed);
+	Resize(Speed); Resize(Splash); Resize(Multishot); Resize(Impulse); Resize(PosNext); Resize(LastHitDir); Resize(Pending); Resize(Flags); Resize(Seed); Resize(Kills);
 	HeroSlot = INDEX_NONE;
 
 	FreeSlots.Reset();
@@ -71,6 +71,7 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Deaths.Reset();
 	Projectiles.Reset();
 	Rescued.Reset();
+	Promoted.Reset();
 	Specials.Reset();
 	HighWaterMark = 0;
 	TeamCount[0] = TeamCount[1] = 0;
@@ -121,6 +122,7 @@ int32 FYJJHorde::Spawn(int32 InType, EYJJTeam InTeam, const FVector2f& InPos, co
 	WalkPhase[Slot] = Random.FRand();
 	Seed[Slot] = Random.FRand() * FullTurn;
 	Flags[Slot] = 0;
+	Kills[Slot] = 0;
 	FaceLeft[Slot] = InTeam == EYJJTeam::Enemy ? 1 : 0;
 	Target[Slot] = INDEX_NONE;
 	TargetGen[Slot] = 0;
@@ -219,7 +221,7 @@ void FYJJHorde::Reorder()
 	Permute(Alive); Permute(Team); Permute(Type); Permute(Pos); Permute(Vel); Permute(HP); Permute(MaxHP);
 	Permute(Flash); Permute(AttackAnim); Permute(AttackLen); Permute(WalkPhase); Permute(FaceLeft); Permute(Gen); Permute(Target);
 	Permute(TargetGen); Permute(Cooldown); Permute(Damage); Permute(AttackInterval); Permute(Speed); Permute(Splash);
-	Permute(Multishot); Permute(Impulse); Permute(PosNext); Permute(LastHitDir); Permute(Flags); Permute(Seed);
+	Permute(Multishot); Permute(Impulse); Permute(PosNext); Permute(LastHitDir); Permute(Flags); Permute(Seed); Permute(Kills);
 	for (int32 Slot = Count; Slot < HighWaterMark; ++Slot)
 	{
 		Alive[Slot] = 0;
@@ -530,6 +532,7 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 
 void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From, int32 Attacker, bool bMelee)
 {
+	const bool bWasStanding = HP[Victim] > 0.f;
 	HP[Victim] -= Amount;
 	Flash[Victim] = Config.HitFlashTime;
 	++HitCount;
@@ -548,6 +551,16 @@ void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From, int32 Att
 	{
 		return;
 	}
+	// 마지막 한 방이면 처치 수 (진급)
+	if (bWasStanding && HP[Victim] <= 0.f && Team[Attacker] != Team[Victim])
+	{
+		Kills[Attacker] = static_cast<uint16>(FMath::Min<int32>(Kills[Attacker] + 1, MAX_uint16));
+		const FYJJUnitDef& Def = YJJData::Unit(Type[Attacker]);
+		if (Def.PromoteTo != INDEX_NONE && Kills[Attacker] >= Def.PromoteKills && HP[Attacker] > 0.f)
+		{
+			Promote(Attacker);
+		}
+	}
 	const FYJJUnitSpecial& Theirs = SpecialOf(Attacker);
 	if (Theirs.Lifesteal > 0.f)
 	{
@@ -558,6 +571,28 @@ void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From, int32 Att
 		HP[Attacker] -= Amount * Mine.Thorns;
 		Flash[Attacker] = Config.HitFlashTime;
 	}
+}
+
+void FYJJHorde::Promote(int32 Slot)
+{
+	const FYJJUnitDef& Old = YJJData::Unit(Type[Slot]);
+	const int32 NewType = Old.PromoteTo;
+	const FYJJUnitDef& New = YJJData::Unit(NewType);
+	// 특성·병영 레벨로 오른 배율은 그대로 가져간다
+	MaxHP[Slot] *= New.HP / FMath::Max(Old.HP, NearZero);
+	HP[Slot] = MaxHP[Slot];
+	Damage[Slot] *= New.Damage / FMath::Max(Old.Damage, NearZero);
+	AttackInterval[Slot] *= New.AttackInterval / FMath::Max(Old.AttackInterval, NearZero);
+	Speed[Slot] *= New.Speed / FMath::Max(Old.Speed, NearZero);
+	Splash[Slot] = Old.Splash > 0.f ? Splash[Slot] * New.Splash / Old.Splash : New.Splash;
+	Type[Slot] = static_cast<uint16>(NewType);
+	Kills[Slot] = 0;
+	Flags[Slot] = 0;
+	if (New.Radius >= Config.BigUnitRadius && Old.Radius < Config.BigUnitRadius)
+	{
+		BigUnits.Add(Slot);
+	}
+	Promoted.Add({ Pos[Slot], NewType });
 }
 
 const FYJJUnitSpecial& FYJJHorde::SpecialOf(int32 Slot) const

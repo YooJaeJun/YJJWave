@@ -52,6 +52,15 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	NecroTimer = 0.f;
 	RallyTime = 0.f;
 	RallyAttack = 1.f;
+	BonesInPot = 0.f;
+	OverflowTime = 0.f;
+	LidAge = -1.f;
+	BoneFlyBudget = 0.f;
+	Served = 0;
+	ServedHP = ServedDamage = 0.f;
+	bHeroLowSaid = false;
+	Events.Reset();
+	AddEvent(EYJJTalkTrigger::StageStart);
 	for (float& Cooldown : Cooldowns)
 	{
 		Cooldown = 0.f;
@@ -121,6 +130,109 @@ void FYJJBattle::PreStep(float Dt)
 	}
 	TickPlots(Dt);
 	TickEnemies(Dt);
+	TickPot(Dt);
+
+	// 영웅이 위태로우면 한 번 말한다
+	if (!bHeroLowSaid && Horde.Hero() != INDEX_NONE && Horde.HP[Horde.Hero()] < Horde.MaxHP[Horde.Hero()] * T.HeroLowShare)
+	{
+		bHeroLowSaid = true;
+		AddEvent(EYJJTalkTrigger::HeroLow, YJJData::HeroUnit());
+	}
+}
+
+void FYJJBattle::AddEvent(EYJJTalkTrigger Trigger, int32 Unit)
+{
+	Events.Add({ Trigger, Unit, Level });
+	// HUD가 오래 안 가져가면 쌓이지 않게
+	if (Events.Num() > YJJData::Tune().MaxPendingEvents)
+	{
+		Events.RemoveAt(0, Events.Num() - YJJData::Tune().MaxPendingEvents, EAllowShrinking::No);
+	}
+}
+
+FVector2f FYJJBattle::PotPos() const
+{
+	return FVector2f(YJJData::Tune().PotX, YJJData::Tune().PotY);
+}
+
+int32 FYJJBattle::PotStage() const
+{
+	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
+	int32 Found = INDEX_NONE;
+	for (int32 Index = 0; Index < Broth.Num(); ++Index)
+	{
+		if (BonesInPot >= Broth[Index].Bones)
+		{
+			Found = Index;
+		}
+	}
+	return Found;
+}
+
+float FYJJBattle::PotNextBones() const
+{
+	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
+	const int32 Next = PotStage() + 1;
+	return Broth.IsValidIndex(Next) ? Broth[Next].Bones : 0.f;
+}
+
+float FYJJBattle::PotOverflowLeft() const
+{
+	const bool bLast = YJJData::Broth().Num() > 0 && PotStage() == YJJData::Broth().Num() - 1;
+	return bLast ? YJJData::Tune().PotOverflowTime - OverflowTime : -1.f;
+}
+
+void FYJJBattle::TickPot(float Dt)
+{
+	const FYJJTuning& T = YJJData::Tune();
+	BoneFlyBudget = FMath::Min(BoneFlyBudget + T.BoneFlyPerSecond * Dt, T.BoneFlyPerSecond);
+	if (LidAge >= 0.f)
+	{
+		LidAge += Dt;
+	}
+	// 마지막 단계(곰탕)에서 오래 두면 끓어 넘쳐 다 잃는다: 언제 열지가 판단
+	if (PotOverflowLeft() < 0.f)
+	{
+		OverflowTime = 0.f;
+		return;
+	}
+	OverflowTime += Dt;
+	if (OverflowTime >= T.PotOverflowTime)
+	{
+		BonesInPot = 0.f;
+		OverflowTime = 0.f;
+		AddEffect(EYJJEffectKind::PotSteam, PotPos(), T.PotSteamTime, T.PotSteamSize * T.PotOverflowSteamScale);
+		Sounds.Add(SoundPotOverflow);
+		AddEvent(EYJJTalkTrigger::PotOverflow);
+		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 냄비가 끓어 넘쳤다"));
+	}
+}
+
+bool FYJJBattle::OpenPot()
+{
+	const int32 BrothStage = PotStage();
+	if (bGameOver || BrothStage == INDEX_NONE)
+	{
+		return false;
+	}
+	const FYJJTuning& T = YJJData::Tune();
+	const FYJJBrothStage& Broth = YJJData::Broth()[BrothStage];
+	// 국물은 이번 판 내내: 앞으로 나올 병사 능력치 + 지금 있는 병사 회복
+	Mods[ModIndex(EYJJStat::HP, 0)] += Broth.HP;
+	Mods[ModIndex(EYJJStat::Damage, 0)] += Broth.Damage;
+	Horde.HealTeam(EYJJTeam::Player, Broth.Heal);
+	ServedHP += Broth.HP;
+	ServedDamage += Broth.Damage;
+	++Served;
+	BonesInPot = 0.f;
+	OverflowTime = 0.f;
+	LidAge = 0.f;
+	AddEffect(EYJJEffectKind::PotSteam, PotPos(), T.PotSteamTime, T.PotSteamSize);
+	AddEffect(EYJJEffectKind::Rally, PotPos(), T.RallyEffectTime, T.PotServeRing);
+	Sounds.Add(SoundPotOpen);
+	AddEvent(EYJJTalkTrigger::PotOpen, BrothStage);
+	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 냄비: %s (체력 +%.0f%%, 공격력 +%.0f%%)"), *Broth.Id.ToString(), Broth.HP * 100.f, Broth.Damage * 100.f);
+	return true;
 }
 
 void FYJJBattle::Tick(float Dt)
@@ -167,6 +279,15 @@ void FYJJBattle::PostStep(float Dt)
 		AddEffect(EYJJEffectKind::Rescue, Where, YJJData::Tune().RescueEffectTime, YJJData::Tune().RescueEffectSize);
 	}
 	Horde.Rescued.Reset();
+	// 진급: 빛줄기 + 소리, 말풍선 대화가 듣는다
+	for (const FYJJPromotion& Promotion : Horde.Promoted)
+	{
+		const FYJJUnitDef& Def = YJJData::Unit(Promotion.Type);
+		AddEffect(EYJJEffectKind::Promote, Promotion.Pos, T.PromoteEffectTime, Def.DrawSize * T.PromoteEffectScale);
+		Sounds.Add(SoundPromote);
+		AddEvent(EYJJTalkTrigger::Promote, Promotion.Type);
+	}
+	Horde.Promoted.Reset();
 	CheckVictory();
 }
 
@@ -231,6 +352,7 @@ void FYJJBattle::StartLevel(int32 NewLevel)
 	{
 		OfferCards();
 	}
+	AddEvent(EYJJTalkTrigger::WaveStart);
 	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 스테이지 %d 웨이브 %d/%d 시작 (아군 %d, 적 %d, 금화 %.0f)"), Stage + 1, Level, NumWaves(), Horde.Num(EYJJTeam::Player), Horde.Num(EYJJTeam::Enemy), Gold);
 }
 
@@ -279,6 +401,7 @@ int32 FYJJBattle::SpawnEnemyAt(int32 Unit, const FVector2f& Pos)
 	{
 		AddEffect(EYJJEffectKind::Build, Pos, T.BuildEffectTime, YJJData::Unit(Unit).DrawSize * BossEffectRadiusScale);
 		Sounds.Add(SoundBossAppear);
+		AddEvent(EYJJTalkTrigger::BossAppear, Unit);
 		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 보스 등장: %s (웨이브 %d)"), *YJJData::Unit(Unit).Id.ToString(), Level);
 	}
 	return Slot;
@@ -464,6 +587,16 @@ void FYJJBattle::CollectRewards()
 			const float GoldMult = Random.FRand() < GoldBurstChance ? GoldBurstMult : 1.f;
 			const float SoulMult = Random.FRand() < SoulBurstChance ? SoulBurstMult : 1.f;
 			Gold += Def.Bounty * GoldScale * GoldMult;
+			// 뼈는 냄비로 (마지막 단계에서는 더 들어가지 않는다). 날아가는 뼈 그림은 초당 몇 개만
+			if (Def.Bones > 0.f && YJJData::Broth().Num() > 0)
+			{
+				BonesInPot = FMath::Min(BonesInPot + Def.Bones, YJJData::Broth().Last().Bones);
+				if (BoneFlyBudget >= 1.f)
+				{
+					BoneFlyBudget -= 1.f;
+					AddEffect(EYJJEffectKind::BoneFly, Death.Pos, YJJData::Tune().BoneFlyTime, 0.f);
+				}
+			}
 			Souls += Def.Souls * SoulScale * SoulMult;
 			SoulsEarned += Def.Souls * SoulScale * SoulMult;
 			++Kills;
@@ -966,7 +1099,7 @@ void FYJJBattle::ApplySpecialDef(const FYJJPerkDef& Def, TArray<FYJJUnitSpecial>
 		const bool bPlayer = Units[Unit].Team == EYJJTeam::Player;
 		const bool bMatch = Special.Target == INDEX_NONE ? bPlayer
 			: Special.Target == FYJJPerkDef::HeroTarget ? Units[Unit].bHero
-			: YJJData::Building(Special.Target).Unit == Unit;
+			: YJJData::Building(Special.Target).Unit == Units[Unit].PromoteRoot;
 		if (bMatch)
 		{
 			Targets.Add(Unit);

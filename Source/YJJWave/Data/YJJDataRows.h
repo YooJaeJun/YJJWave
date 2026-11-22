@@ -47,6 +47,9 @@ struct FYJJUnitRow : public FTableRowBase
 	UPROPERTY() int32 Hero = 0;
 	UPROPERTY() FString RaiseUnit;
 	UPROPERTY() int32 BigRow = -1;
+	UPROPERTY() FString PromoteTo;
+	UPROPERTY() int32 PromoteKills = 0;
+	UPROPERTY() float Bones = 0.f;
 };
 
 /** Buildings.csv */
@@ -100,6 +103,8 @@ struct FYJJCutsceneRow : public FTableRowBase
 	UPROPERTY() float CamX = 0.f;
 	UPROPERTY() float CamY = 0.f;
 	UPROPERTY() float Zoom = 0.f;
+	/** Sounds.csv 이름 (비우면 Voice_<Speaker> 웅얼웅얼) */
+	UPROPERTY() FString Voice;
 };
 
 /** Waves.csv (행 이름은 아무거나 겹치지 않게: M1_Skeleton …) */
@@ -147,6 +152,44 @@ struct FYJJPerkRow : public FYJJEffectRow
 	UPROPERTY() FString Links;
 	/** 주문 별(Kind=Spell)이 올리는 주문 이름 */
 	UPROPERTY() FString Spell;
+	/** 중간 별 효과 그림 (UI.png 칸, -1 없음) */
+	UPROPERTY() int32 Icon = -1;
+};
+
+/** Broth.csv: 냄비 국물 단계 */
+USTRUCT()
+struct FYJJBrothRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString NameKey;
+	UPROPERTY() float Bones = 0.f;
+	UPROPERTY() float HP = 0.f;
+	UPROPERTY() float Damage = 0.f;
+	UPROPERTY() float Heal = 0.f;
+	UPROPERTY() FString Color;
+	UPROPERTY() FString Note;
+};
+
+/** Dialogues.csv: 말풍선 한 줄. 같은 Talk 끼리 Order 순서로 주고받고, 조건은 Order가 가장 작은 줄의 것 */
+USTRUCT()
+struct FYJJDialogueRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString Talk;
+	UPROPERTY() int32 Order = 0;
+	UPROPERTY() FString Stage;
+	UPROPERTY() FString Trigger;
+	UPROPERTY() int32 Wave = 0;
+	UPROPERTY() int32 MinWave = 0;
+	UPROPERTY() FString Param;
+	UPROPERTY() float Chance = 1.f;
+	UPROPERTY() FString Speaker;
+	UPROPERTY() FString TextKey;
+	UPROPERTY() FString Voice;
+	UPROPERTY() float Duration = 0.f;
+	UPROPERTY() float Delay = 0.f;
 };
 
 /** Spells.csv: 주문 하나의 한 Lv */

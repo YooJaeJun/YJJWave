@@ -77,6 +77,19 @@ NecroRaiseCount,4,한 번에 일으키는 시체 수
 NecroRaiseRadius,220,강령술사 둘레 이 안의 시체만
 RaiseEffectTime,0.7,되살아나는 연기 연출 시간
 RaiseEffectSize,60,되살아나는 연기 크기
+PromoteEffectTime,1,진급 빛줄기 연출 시간
+PromoteEffectScale,1.6,진급 빛줄기 크기 (진급한 유닛 DrawSize 배율)
+PotX,600,냄비 자리 x (진지 오른쪽 아래)
+PotY,1150,냄비 자리 y
+PotOverflowTime,12,마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다
+BoneFlyTime,0.7,뼈가 냄비까지 날아가는 시간
+BoneFlyPerSecond,10,날아가는 뼈 그림은 초당 이만큼까지 (뼈 자체는 다 들어간다)
+PotSteamTime,1.2,뚜껑 열 때 김 연출 시간
+PotSteamSize,160,뚜껑 열 때 김 크기
+PotOverflowSteamScale,2,끓어 넘칠 때 김 크기 배율
+PotServeRing,900,국을 나눠 줄 때 퍼지는 고리 크기
+HeroLowShare,0.35,영웅 체력이 이 비율 아래면 HeroLow 대화
+MaxPendingEvents,32,HUD가 가져가지 않은 판 사건은 이만큼까지만 쌓는다
 VoicesPerSecond,4,보이스는 전체 합쳐 초당 이만큼까지 (수천 마리가 한꺼번에 떠들지 않게)
 MusicFade,1.2,배경음을 바꿀 때 서서히 줄이고 키우는 시간
 PerkCostBase,15,첫 별 영혼 비용
@@ -88,6 +101,8 @@ BotMeteorLead,60,봇 유성: 적 앞줄보다 이만큼 뒤
 BotRallyRatio,1.2,적 수가 아군의 이 배를 넘으면 함성
 BotQuakeMinEnemies,8,봇 대지 가르기: 적이 이만큼 있을 때만
 BotBuyGold,500,봇: 금화가 이보다 많으면 병사 x10 즉시 구매
+BotPotStage,1,봇: 냄비가 이 단계(0부터) 이상이면 뚜껑을 연다
+BotPotZoom,1.1,봇: 냄비 스크린샷 확대
 BotExitDelay,2,끝나고 종료까지 기다리는 실제 시간
 BenchDepth,0.25,벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
 BenchCameraZoom,0.85,벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)

@@ -1,72 +1,72 @@
-﻿Name,Kind,X,Y,Stat,Target,Value,Stat2,Target2,Value2,Special,SpecialTarget,SpecialA,SpecialB,Links,NameKey,Spell
-Start,Start,0,0,,,0,,,0,,,0,0,Inner0 Inner1 Inner2 Inner3 Inner4 Inner5 Inner6 Inner7,,
-Inner0,Small,-180.0,0.0,HP,,0.04,,,0,,,0,0,Barracks0 Inner1 Inner7 Start,,
-Inner1,Small,-127.3,-127.3,Damage,,0.04,,,0,,,0,0,Hero0 Inner0 Inner2 Start,,
-Inner2,Small,-0.0,-180.0,HP,,0.04,,,0,,,0,0,Archer0 Inner1 Inner3 Start,,
-Inner3,Small,127.3,-127.3,Damage,,0.04,,,0,,,0,0,Inner2 Inner4 Start Treasury0,,
-Inner4,Small,180.0,0.0,HP,,0.04,,,0,,,0,0,Forge0 Inner3 Inner5 Start,,
-Inner5,Small,127.3,127.3,Damage,,0.04,,,0,,,0,0,Inner4 Inner6 Spells0 Start,,
-Inner6,Small,0.0,180.0,HP,,0.04,,,0,,,0,0,Inner5 Inner7 Shield0 Start,,
-Inner7,Small,-127.3,127.3,Damage,,0.04,,,0,,,0,0,Army0 Inner0 Inner6 Start,,
-Barracks0,Small,-300.0,0.0,HP,Barracks,0.1,,,0,,,0,0,Barracks1 Inner0,,
-Barracks1,Small,-417.9,-42.3,Damage,Barracks,0.1,,,0,,,0,0,Barracks0 Barracks_FirstAid Bridge0 Bridge7,,
-Barracks_FirstAid,Notable,-539.2,-29.1,,,0,,,0,LastStand,Barracks,0.3,0.5,Barracks1 Barracks3,Perk.FirstAid,
-Barracks3,Small,-658.3,47.5,SpawnRate,Barracks,0.08,,,0,,,0,0,Barracks4 Barracks_FirstAid,,
-Barracks4,Small,-776.7,72.1,HP,Barracks,0.1,,,0,,,0,0,Barracks3 Barracks_StubbornGrunts,,
-Barracks_StubbornGrunts,Notable,-899.8,-20.3,,,0,,,0,Revive,Barracks,0.5,0,Barracks4 Barracks_GruntParadise,Perk.StubbornGrunts,
-Barracks_GruntParadise,Keystone,-1020.0,0.0,SpawnCount,Barracks,4,Damage,Barracks,-0.35,,,0,0,Barracks_StubbornGrunts,Perk.GruntParadise,
-Hero0,Small,-192.6,-230.0,HeroHP,,0.15,,,0,,,0,0,Hero1 Inner1,,
-Hero1,Small,-272.9,-319.2,HeroHP,,0.15,,,0,,,0,0,Bridge0 Bridge1 Hero0 Hero_HeroBreath,,
-Hero_HeroBreath,Notable,-399.1,-363.7,,,0,,,0,HeroRegen,Hero,40,0,Hero1 Hero3,Perk.HeroBreath,
-Hero3,Small,-512.2,-416.3,HeroHP,,0.15,,,0,,,0,0,Hero4 Hero_HeroBreath,,
-Hero4,Small,-556.3,-546.7,HeroHP,,0.15,,,0,,,0,0,Hero3 Hero_FuriousCaptain,,
-Hero_FuriousCaptain,Notable,-570.9,-695.7,,,0,,,0,Fury,Hero,0.5,1.0,Hero4 Hero_LoneHero,Perk.FuriousCaptain,
-Hero_LoneHero,Keystone,-721.2,-721.2,HeroHP,,2.0,SpawnRate,,-0.25,,,0,0,Hero_FuriousCaptain,Perk.LoneHero,
-Archer0,Small,28.5,-298.6,Damage,ArcherPost,0.1,,,0,,,0,0,Archer1 Inner2,,
-Archer1,Small,-6.9,-419.9,AttackSpeed,ArcherPost,0.08,,,0,,,0,0,Archer0 Archer_BurstArrows Bridge1 Bridge2,,
-Archer_BurstArrows,Notable,-56.1,-537.1,,,0,,,0,ArrowBurst,ArcherPost,30,0,Archer1 Archer3,Perk.BurstArrows,
-Archer3,Small,-25.8,-659.5,Damage,ArcherPost,0.1,,,0,,,0,0,Archer4 Archer_BurstArrows,,
-Archer4,Small,64.8,-777.3,AttackSpeed,ArcherPost,0.08,,,0,,,0,0,Archer3 Archer_DoubleShot,,
-Archer_DoubleShot,Notable,75.2,-896.9,,,0,,,0,ExtraShot,ArcherPost,1,0,Archer4,Perk.DoubleShot,
-Treasury0,Small,215.2,-209.0,Gold,,0.08,,,0,,,0,0,Inner3 Treasury1,,
-Treasury1,Small,267.2,-324.1,Souls,,0.06,,,0,,,0,0,Bridge2 Bridge3 Treasury0 Treasury_GoldenSkull,,
-Treasury_GoldenSkull,Notable,355.8,-406.2,,,0,,,0,GoldBurst,,0.05,10,Treasury1 Treasury3,Perk.GoldenSkull,
-Treasury3,Small,494.1,-437.6,Gold,,0.08,,,0,,,0,0,Treasury4 Treasury_GoldenSkull,,
-Treasury4,Small,603.1,-494.6,Souls,,0.06,,,0,,,0,0,Treasury3 Treasury_SoulBurst,,
-Treasury_SoulBurst,Notable,631.4,-641.4,,,0,,,0,SoulBurst,,0.05,10,Treasury4,Perk.SoulBurst,
-Forge0,Small,299.1,-23.8,Splash,Forge,0.15,,,0,,,0,0,Forge1 Inner4,,
-Forge1,Small,418.4,-36.6,Damage,Forge,0.1,,,0,,,0,0,Bridge3 Bridge4 Forge0 Forge_Shockwave,,
-Forge_Shockwave,Notable,539.7,17.6,,,0,,,0,Shockwave,Forge,2.5,0,Forge1 Forge3,Perk.Shockwave,
-Forge3,Small,656.4,68.9,Splash,Forge,0.15,,,0,,,0,0,Forge4 Forge_Shockwave,,
-Forge4,Small,779.8,18.2,Damage,Forge,0.1,,,0,,,0,0,Forge3 Forge_SmithGrit,,
-Forge_SmithGrit,Notable,896.2,-82.8,,,0,,,0,LastStand,Forge,0.3,0.6,Forge4,Perk.SmithGrit,
-Spells0,Small,232.3,189.8,SpellPower,,0.1,,,0,,,0,0,Inner5 Spells1,,
-Spells1,Small,296.5,297.5,SpellCooldown,,0.05,,,0,,,0,0,Bridge4 Bridge5 Spell_Meteor Spell_Rally Spells0 Spells_MeteorChain,,
-Spells_MeteorChain,Notable,341.2,418.5,,,0,,,0,MeteorTwice,,0.35,0,Spells1 Spells3,Perk.MeteorChain,
-Spells3,Small,441.6,490.5,SpellPower,,0.1,,,0,,,0,0,Spell_Quake Spells4 Spells_MeteorChain,,
-Spells4,Small,590.4,509.7,SpellCooldown,,0.05,,,0,,,0,0,Spells3 Spells_HealingCry,,
-Spells_HealingCry,Notable,692.0,575.5,,,0,,,0,RallyHeal,,0.3,0,Spells4,Perk.HealingCry,
-Shield0,Small,8.8,299.9,HP,ShieldHall,0.15,,,0,,,0,0,Inner6 Shield1,,
-Shield1,Small,-37.4,418.3,HP,ShieldHall,0.15,,,0,,,0,0,Bridge5 Bridge6 Shield0 Shield_ThornShield,,
-Shield_ThornShield,Notable,-41.5,538.4,,,0,,,0,Thorns,ShieldHall,0.5,0,Shield1 Shield3,Perk.ThornShield,
-Shield3,Small,31.6,659.2,HP,ShieldHall,0.15,,,0,,,0,0,Shield4 Shield_ThornShield,,
-Shield4,Small,79.8,775.9,HP,ShieldHall,0.15,,,0,,,0,0,Shield3 Shield_IronWill,,
-Shield_IronWill,Notable,6.3,900.0,,,0,,,0,LastStand,ShieldHall,0.4,0.8,Shield4,Perk.IronWill,
-Army0,Small,-226.2,197.0,HP,,0.05,,,0,,,0,0,Army1 Inner7,,
-Army1,Small,-323.7,267.6,Damage,,0.05,,,0,,,0,0,Army0 Army_BloodArmy Bridge6 Bridge7,,
-Army_BloodArmy,Notable,-374.8,388.7,,,0,,,0,Lifesteal,,0.1,0,Army1 Army3,Perk.BloodArmy,
-Army3,Small,-415.6,512.7,MoveSpeed,,0.05,,,0,,,0,0,Army4 Army_BloodArmy,,
-Army4,Small,-530.5,571.8,AttackSpeed,,0.05,,,0,,,0,0,Army3 Army_Frenzy,,
-Army_Frenzy,Notable,-687.6,580.6,,,0,,,0,Fury,,0.3,0.5,Army4 Army_HumanWave,Perk.Frenzy,
-Army_HumanWave,Keystone,-721.2,721.2,HP,,-0.4,SpawnCount,,2,,,0,0,Army_Frenzy,Perk.HumanWave,
-Bridge0,Small,-388.0,-160.7,Damage,,0.04,,,0,,,0,0,Barracks1 Hero1,,
-Bridge1,Small,-160.7,-388.0,HP,,0.04,,,0,,,0,0,Archer1 Hero1,,
-Bridge2,Small,160.7,-388.0,Damage,,0.04,,,0,,,0,0,Archer1 Treasury1,,
-Bridge3,Small,388.0,-160.7,HP,,0.04,,,0,,,0,0,Forge1 Treasury1,,
-Bridge4,Small,388.0,160.7,Damage,,0.04,,,0,,,0,0,Forge1 Spells1,,
-Bridge5,Small,160.7,388.0,HP,,0.04,,,0,,,0,0,Shield1 Spells1,,
-Bridge6,Small,-160.7,388.0,Damage,,0.04,,,0,,,0,0,Army1 Shield1,,
-Bridge7,Small,-388.0,160.7,HP,,0.04,,,0,,,0,0,Army1 Barracks1,,
-Spell_Meteor,Spell,489.4,228.2,,,0,,,0,,,0,0,Spells1,Spell.Meteor,Meteor
-Spell_Rally,Spell,228.2,489.4,,,0,,,0,,,0,0,Spells1,Spell.Rally,Rally
-Spell_Quake,Spell,668.6,401.7,,,0,,,0,,,0,0,Spells3,Spell.Quake,Quake
+﻿Name,Kind,X,Y,Stat,Target,Value,Stat2,Target2,Value2,Special,SpecialTarget,SpecialA,SpecialB,Links,NameKey,Spell,Icon
+Start,Start,0,0,,,0,,,0,,,0,0,Inner0 Inner1 Inner2 Inner3 Inner4 Inner5 Inner6 Inner7,,,-1
+Inner0,Small,-180.0,0.0,HP,,0.04,,,0,,,0,0,Barracks0 Inner1 Inner7 Start,,,-1
+Inner1,Small,-127.3,-127.3,Damage,,0.04,,,0,,,0,0,Hero0 Inner0 Inner2 Start,,,-1
+Inner2,Small,-0.0,-180.0,HP,,0.04,,,0,,,0,0,Archer0 Inner1 Inner3 Start,,,-1
+Inner3,Small,127.3,-127.3,Damage,,0.04,,,0,,,0,0,Inner2 Inner4 Start Treasury0,,,-1
+Inner4,Small,180.0,0.0,HP,,0.04,,,0,,,0,0,Forge0 Inner3 Inner5 Start,,,-1
+Inner5,Small,127.3,127.3,Damage,,0.04,,,0,,,0,0,Inner4 Inner6 Spells0 Start,,,-1
+Inner6,Small,0.0,180.0,HP,,0.04,,,0,,,0,0,Inner5 Inner7 Shield0 Start,,,-1
+Inner7,Small,-127.3,127.3,Damage,,0.04,,,0,,,0,0,Army0 Inner0 Inner6 Start,,,-1
+Barracks0,Small,-300.0,0.0,HP,Barracks,0.1,,,0,,,0,0,Barracks1 Inner0,,,-1
+Barracks1,Small,-417.9,-42.3,Damage,Barracks,0.1,,,0,,,0,0,Barracks0 Barracks_FirstAid Bridge0 Bridge7,,,-1
+Barracks_FirstAid,Notable,-539.2,-29.1,,,0,,,0,LastStand,Barracks,0.3,0.5,Barracks1 Barracks3,Perk.FirstAid,,18
+Barracks3,Small,-658.3,47.5,SpawnRate,Barracks,0.08,,,0,,,0,0,Barracks4 Barracks_FirstAid,,,-1
+Barracks4,Small,-776.7,72.1,HP,Barracks,0.1,,,0,,,0,0,Barracks3 Barracks_StubbornGrunts,,,-1
+Barracks_StubbornGrunts,Notable,-899.8,-20.3,,,0,,,0,Revive,Barracks,0.5,0,Barracks4 Barracks_GruntParadise,Perk.StubbornGrunts,,19
+Barracks_GruntParadise,Keystone,-1020.0,0.0,SpawnCount,Barracks,4,Damage,Barracks,-0.35,,,0,0,Barracks_StubbornGrunts,Perk.GruntParadise,,-1
+Hero0,Small,-192.6,-230.0,HeroHP,,0.15,,,0,,,0,0,Hero1 Inner1,,,-1
+Hero1,Small,-272.9,-319.2,HeroHP,,0.15,,,0,,,0,0,Bridge0 Bridge1 Hero0 Hero_HeroBreath,,,-1
+Hero_HeroBreath,Notable,-399.1,-363.7,,,0,,,0,HeroRegen,Hero,40,0,Hero1 Hero3,Perk.HeroBreath,,20
+Hero3,Small,-512.2,-416.3,HeroHP,,0.15,,,0,,,0,0,Hero4 Hero_HeroBreath,,,-1
+Hero4,Small,-556.3,-546.7,HeroHP,,0.15,,,0,,,0,0,Hero3 Hero_FuriousCaptain,,,-1
+Hero_FuriousCaptain,Notable,-570.9,-695.7,,,0,,,0,Fury,Hero,0.5,1.0,Hero4 Hero_LoneHero,Perk.FuriousCaptain,,21
+Hero_LoneHero,Keystone,-721.2,-721.2,HeroHP,,2.0,SpawnRate,,-0.25,,,0,0,Hero_FuriousCaptain,Perk.LoneHero,,-1
+Archer0,Small,28.5,-298.6,Damage,ArcherPost,0.1,,,0,,,0,0,Archer1 Inner2,,,-1
+Archer1,Small,-6.9,-419.9,AttackSpeed,ArcherPost,0.08,,,0,,,0,0,Archer0 Archer_BurstArrows Bridge1 Bridge2,,,-1
+Archer_BurstArrows,Notable,-56.1,-537.1,,,0,,,0,ArrowBurst,ArcherPost,30,0,Archer1 Archer3,Perk.BurstArrows,,22
+Archer3,Small,-25.8,-659.5,Damage,ArcherPost,0.1,,,0,,,0,0,Archer4 Archer_BurstArrows,,,-1
+Archer4,Small,64.8,-777.3,AttackSpeed,ArcherPost,0.08,,,0,,,0,0,Archer3 Archer_DoubleShot,,,-1
+Archer_DoubleShot,Notable,75.2,-896.9,,,0,,,0,ExtraShot,ArcherPost,1,0,Archer4,Perk.DoubleShot,,23
+Treasury0,Small,215.2,-209.0,Gold,,0.08,,,0,,,0,0,Inner3 Treasury1,,,-1
+Treasury1,Small,267.2,-324.1,Souls,,0.06,,,0,,,0,0,Bridge2 Bridge3 Treasury0 Treasury_GoldenSkull,,,-1
+Treasury_GoldenSkull,Notable,355.8,-406.2,,,0,,,0,GoldBurst,,0.05,10,Treasury1 Treasury3,Perk.GoldenSkull,,24
+Treasury3,Small,494.1,-437.6,Gold,,0.08,,,0,,,0,0,Treasury4 Treasury_GoldenSkull,,,-1
+Treasury4,Small,603.1,-494.6,Souls,,0.06,,,0,,,0,0,Treasury3 Treasury_SoulBurst,,,-1
+Treasury_SoulBurst,Notable,631.4,-641.4,,,0,,,0,SoulBurst,,0.05,10,Treasury4,Perk.SoulBurst,,25
+Forge0,Small,299.1,-23.8,Splash,Forge,0.15,,,0,,,0,0,Forge1 Inner4,,,-1
+Forge1,Small,418.4,-36.6,Damage,Forge,0.1,,,0,,,0,0,Bridge3 Bridge4 Forge0 Forge_Shockwave,,,-1
+Forge_Shockwave,Notable,539.7,17.6,,,0,,,0,Shockwave,Forge,2.5,0,Forge1 Forge3,Perk.Shockwave,,26
+Forge3,Small,656.4,68.9,Splash,Forge,0.15,,,0,,,0,0,Forge4 Forge_Shockwave,,,-1
+Forge4,Small,779.8,18.2,Damage,Forge,0.1,,,0,,,0,0,Forge3 Forge_SmithGrit,,,-1
+Forge_SmithGrit,Notable,896.2,-82.8,,,0,,,0,LastStand,Forge,0.3,0.6,Forge4,Perk.SmithGrit,,27
+Spells0,Small,232.3,189.8,SpellPower,,0.1,,,0,,,0,0,Inner5 Spells1,,,-1
+Spells1,Small,296.5,297.5,SpellCooldown,,0.05,,,0,,,0,0,Bridge4 Bridge5 Spell_Meteor Spell_Rally Spells0 Spells_MeteorChain,,,-1
+Spells_MeteorChain,Notable,341.2,418.5,,,0,,,0,MeteorTwice,,0.35,0,Spells1 Spells3,Perk.MeteorChain,,28
+Spells3,Small,441.6,490.5,SpellPower,,0.1,,,0,,,0,0,Spell_Quake Spells4 Spells_MeteorChain,,,-1
+Spells4,Small,590.4,509.7,SpellCooldown,,0.05,,,0,,,0,0,Spells3 Spells_HealingCry,,,-1
+Spells_HealingCry,Notable,692.0,575.5,,,0,,,0,RallyHeal,,0.3,0,Spells4,Perk.HealingCry,,29
+Shield0,Small,8.8,299.9,HP,ShieldHall,0.15,,,0,,,0,0,Inner6 Shield1,,,-1
+Shield1,Small,-37.4,418.3,HP,ShieldHall,0.15,,,0,,,0,0,Bridge5 Bridge6 Shield0 Shield_ThornShield,,,-1
+Shield_ThornShield,Notable,-41.5,538.4,,,0,,,0,Thorns,ShieldHall,0.5,0,Shield1 Shield3,Perk.ThornShield,,30
+Shield3,Small,31.6,659.2,HP,ShieldHall,0.15,,,0,,,0,0,Shield4 Shield_ThornShield,,,-1
+Shield4,Small,79.8,775.9,HP,ShieldHall,0.15,,,0,,,0,0,Shield3 Shield_IronWill,,,-1
+Shield_IronWill,Notable,6.3,900.0,,,0,,,0,LastStand,ShieldHall,0.4,0.8,Shield4,Perk.IronWill,,31
+Army0,Small,-226.2,197.0,HP,,0.05,,,0,,,0,0,Army1 Inner7,,,-1
+Army1,Small,-323.7,267.6,Damage,,0.05,,,0,,,0,0,Army0 Army_BloodArmy Bridge6 Bridge7,,,-1
+Army_BloodArmy,Notable,-374.8,388.7,,,0,,,0,Lifesteal,,0.1,0,Army1 Army3,Perk.BloodArmy,,32
+Army3,Small,-415.6,512.7,MoveSpeed,,0.05,,,0,,,0,0,Army4 Army_BloodArmy,,,-1
+Army4,Small,-530.5,571.8,AttackSpeed,,0.05,,,0,,,0,0,Army3 Army_Frenzy,,,-1
+Army_Frenzy,Notable,-687.6,580.6,,,0,,,0,Fury,,0.3,0.5,Army4 Army_HumanWave,Perk.Frenzy,,21
+Army_HumanWave,Keystone,-721.2,721.2,HP,,-0.4,SpawnCount,,2,,,0,0,Army_Frenzy,Perk.HumanWave,,-1
+Bridge0,Small,-388.0,-160.7,Damage,,0.04,,,0,,,0,0,Barracks1 Hero1,,,-1
+Bridge1,Small,-160.7,-388.0,HP,,0.04,,,0,,,0,0,Archer1 Hero1,,,-1
+Bridge2,Small,160.7,-388.0,Damage,,0.04,,,0,,,0,0,Archer1 Treasury1,,,-1
+Bridge3,Small,388.0,-160.7,HP,,0.04,,,0,,,0,0,Forge1 Treasury1,,,-1
+Bridge4,Small,388.0,160.7,Damage,,0.04,,,0,,,0,0,Forge1 Spells1,,,-1
+Bridge5,Small,160.7,388.0,HP,,0.04,,,0,,,0,0,Shield1 Spells1,,,-1
+Bridge6,Small,-160.7,388.0,Damage,,0.04,,,0,,,0,0,Army1 Shield1,,,-1
+Bridge7,Small,-388.0,160.7,HP,,0.04,,,0,,,0,0,Army1 Barracks1,,,-1
+Spell_Meteor,Spell,489.4,228.2,,,0,,,0,,,0,0,Spells1,Spell.Meteor,Meteor,-1
+Spell_Rally,Spell,228.2,489.4,,,0,,,0,,,0,0,Spells1,Spell.Rally,Rally,-1
+Spell_Quake,Spell,668.6,401.7,,,0,,,0,,,0,0,Spells3,Spell.Quake,Quake,-1

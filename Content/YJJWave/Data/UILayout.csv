@@ -1,4 +1,47 @@
 ﻿Name,Value,Note
+PotCell,6,Buildings 칸: 솥과 장작불
+PotLidCell,7,Buildings 칸: 뚜껑
+FxBroth,12,Fx 칸: 흰 타원 (국물 면·거품)
+FxBone,13,Fx 칸: 뼈
+FxSteam,14,Fx 칸: 김
+FxPromote,15,Fx 칸: 진급 빛줄기
+UiBadge,17,UI 칸: 중간·주문 별 바탕 원
+UiBone,33,UI 칸: 뼈
+UiPot,34,UI 칸: 냄비
+PotDrawSize,210,냄비 그릴 크기 (월드)
+PotAnchorY,0.94,냄비 그림에서 바닥 자리 (칸 높이 비율)
+PotRimY,0.39,"솥 아가리 가운데 높이 (칸 비율, generate_art POT_RIM_Y/256)"
+PotRimW,0.67,솥 아가리 너비 (칸 비율)
+PotRimH,0.19,솥 아가리 높이 (칸 비율)
+PotFillMin,0.35,국물이 막 생겼을 때 아가리를 채운 비율
+PotBubbles,6,끓는 거품 수 (단계가 오를수록 다 보인다)
+PotBubbleSize,0.12,거품 크기 (아가리 너비 비율)
+PotBubbleSpeed,2.4,거품 박자
+PotSteamPuffs,3,늘 피어오르는 김 수
+PotSteamRise,120,김이 올라가는 높이 (월드)
+PotSteamPuffSize,70,김 하나 크기 (월드)
+PotSteamAlpha,0.55,김 진하기
+PotLidLift,90,뚜껑 열 때 들리는 높이 (월드)
+PotLidTime,0.9,뚜껑이 들렸다 내려오는 시간
+PotRattle,4,넘치기 직전 뚜껑 덜컹 크기 (월드)
+PotRattleSpeed,30,뚜껑 덜컹 빠르기
+PotLabelGap,8,냄비 위 글자 간격
+PotHoverScale,1.06,냄비에 마우스를 올리면 커지는 배율
+BoneDrawSize,30,날아가는 뼈 크기 (월드)
+BoneArc,260,뼈가 날아가는 포물선 높이 (월드)
+BoneSpin,9,뼈 회전 빠르기
+PromoteRise,40,진급 빛이 떠오르는 높이 (월드)
+PromoteBannerTier,2,이 진급 단계 이상이면 화면 배너 (2 = 장군)
+BubbleMaxW,340,말풍선 최대 너비 (화면)
+BubblePad,14,말풍선 안쪽 여백
+BubbleGap,10,머리 위 말풍선까지 간격 (화면)
+BubbleTail,12,말풍선 꼬리 크기
+BubbleFade,0.25,말풍선이 나타나고 사라지는 시간
+BubbleTypeSpeed,26,말풍선 글자가 나오는 빠르기 (초당 글자)
+BubbleScreenMargin,20,말풍선이 화면 밖으로 나가지 않게 띄우는 여백
+BubbleHeadShare,0.85,말풍선 꼬리 끝: 유닛 발에서 그림 크기의 이 비율만큼 위
+PerkIconScale,0.72,중간·주문 별 효과 그림 크기 (바탕 원 지름 배율)
+PerkIconDim,0.45,아직 못 찍는 별 효과 그림 밝기
 UnitCell,128,Units.png 칸 크기
 BigUnitCell,256,BigUnits.png 칸 크기 (보스·영웅)
 FxCell,128,Fx.png 칸 크기
@@ -208,7 +251,6 @@ PerkBig,22,중간 별 반지름
 PerkKeystone,30,쐐기 반지름
 TipKindW,110,설명창 오른쪽 위 별 종류 글자 너비
 PerkHoverScale,1.3,마우스 올린 별 확대
-SpellNodeIcon,0.8,주문 별 위 주문 그림 크기 (별 지름 배율)
 SpellNodeLvGap,4,주문 별 아래 Lv 글자 간격
 LinkWidth,2,선 굵기
 LinkTakenWidth,4,찍은 선 굵기

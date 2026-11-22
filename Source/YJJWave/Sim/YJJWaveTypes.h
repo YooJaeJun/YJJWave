@@ -181,6 +181,15 @@ struct FYJJUnitDef
 	bool bHero = false;         // 내 영웅 (중심, 쓰러지면 패배)
 	int32 RaiseUnit = INDEX_NONE; // 강령술사: 시체를 이 유닛으로 일으킨다
 	int32 BigRow = INDEX_NONE;
+	/** 진급: 적을 PromoteKills 마리 잡으면 PromoteTo 가 된다 (졸병 → 베테랑 → 장군 → 영웅) */
+	int32 PromoteTo = INDEX_NONE;
+	int32 PromoteKills = 0;
+	/** 진급 줄의 맨 처음 유닛 (특성·카드 효과는 이 유닛 기준으로 받는다). 진급하지 않는 유닛은 자기 자신 */
+	int32 PromoteRoot = INDEX_NONE;
+	/** 진급 단계 (0 = 처음) */
+	int32 Tier = 0;
+	/** 쓰러뜨리면 냄비로 가는 뼈 */
+	float Bones = 0.f;
 	FName VoiceKey;              // Sounds.csv Voice_<Id>   // 크게 그려지는 유닛: BigUnits.png 줄 (흐릿하지 않게 256px 칸)
 };
 
@@ -270,4 +279,63 @@ struct FYJJPerkDef
 	int32 Spell = INDEX_NONE;
 	TArray<int32> Links;
 	FString NameKey;   // 큰 별 이름 (작은 별은 비움)
+	/** 중간 별 효과 그림 (UI.png 칸, 없으면 INDEX_NONE) */
+	int32 Icon = INDEX_NONE;
+};
+
+/** Broth.csv 한 줄: 왕국의 마지막 냄비 국물 단계 (뼈가 Bones 만큼 모이면 이 단계) */
+struct FYJJBrothStage
+{
+	FName Id;
+	FString NameKey;
+	float Bones = 0.f;
+	/** 뚜껑을 열면 이번 판 내내 아군 체력·공격력 + 비율, 지금 아군 체력 회복 비율 */
+	float HP = 0.f;
+	float Damage = 0.f;
+	float Heal = 0.f;
+	FLinearColor Color = FLinearColor::White;
+};
+
+/** 말풍선 대화가 시작되는 때 (Dialogues.csv Trigger 열 이름과 같다) */
+enum class EYJJTalkTrigger : uint8
+{
+	StageStart,   // 컷씬이 끝나고 판이 시작될 때
+	WaveStart,    // 웨이브 시작 (Wave·MinWave로 고른다)
+	BossAppear,   // 보스 등장
+	Promote,      // 졸병 진급 (Param = 진급한 유닛)
+	PotOpen,      // 냄비 뚜껑을 열었다
+	PotOverflow,  // 국이 끓어 넘쳤다
+	HeroLow,      // 영웅 체력이 낮다
+	Count
+};
+
+/** 말풍선 한 줄 */
+struct FYJJTalkLine
+{
+	int32 Speaker = INDEX_NONE;   // 그 유닛 머리 위에 뜬다
+	FString TextKey;
+	FName VoiceKey;
+	float Duration = 0.f;
+	float Delay = 0.f;            // 앞 줄이 끝나고 기다리는 시간
+};
+
+/** Dialogues.csv 같은 Talk 줄들: 조건이 맞으면 한 판에 한 번 말풍선으로 주고받는다 */
+struct FYJJTalk
+{
+	FName Id;
+	int32 Stage = INDEX_NONE;     // INDEX_NONE이면 모든 스테이지
+	EYJJTalkTrigger Trigger = EYJJTalkTrigger::StageStart;
+	int32 Wave = 0;               // 0이 아니면 그 웨이브에서만
+	int32 MinWave = 0;            // 0이 아니면 그 웨이브 이후에만
+	int32 Param = INDEX_NONE;     // Promote: 이 유닛으로 진급했을 때만
+	float Chance = 1.f;
+	TArray<FYJJTalkLine> Lines;
+};
+
+/** 판에서 일어난 일 (HUD 말풍선 대화가 듣고 비운다) */
+struct FYJJBattleEvent
+{
+	EYJJTalkTrigger Trigger = EYJJTalkTrigger::StageStart;
+	int32 Unit = INDEX_NONE;
+	int32 Wave = 0;
 };

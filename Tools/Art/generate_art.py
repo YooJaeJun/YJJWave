@@ -120,6 +120,17 @@ UNITS = [
 HERO_ROW = 9
 # 10: 강령술사 (적). 보라 두건 + 해골 지팡이
 UNITS.append(dict(name="Necro", body="#6B3FA0", head="#E9E4D4", hat="necro", weapon="staff", scale=1.0))
+# 11~13: 졸병 진급 (졸병 → 베테랑 → 장군 → 영웅). 갈수록 웅장하고 황당하게
+#   베테랑: 찌그러진 냄비 투구 + 반창고, 안대, 콧수염, 빨간 목도리, 큰 국자
+#   장군: 몸이 통째로 가마솥, 솥뚜껑 투구 + 붉은 깃털, 흰 수염, 금 견장, 냄비 문장 군기
+#   영웅: 머리는 졸병 그대로인데 몸은 근육 산, 불타는 냄비 왕관, 뒤로 금빛 후광, 쇠사슬에 매단 가마솥
+UNITS.append(dict(name="Veteran", body="#FFFFFF", head="#FFFFFF", hat="dentpot", weapon="ladle", scale=1.05, faces=HOTBLOOD_FACES,
+                  extras=("eyepatch", "mustache", "scarf")))
+UNITS.append(dict(name="General", body="#5E636E", head="#FFFFFF", hat="lidhelm", weapon="banner", scale=1.0, faces=HOTBLOOD_FACES,
+                  build="cauldron", cape="#8E2A22", extras=("longbeard", "epaulets")))
+UNITS.append(dict(name="GruntHero", body="#FFFFFF", head="#FFFFFF", hat="flamecrown", weapon="potflail", scale=1.0, faces=HOTBLOOD_FACES,
+                  build="muscle", cape="#F2C230", extras=("halo",)))
+BIG_UNITS += ["General", "GruntHero"]
 
 
 # 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다). kind는 표정 고르기에 쓴다 (UNITS faces)
@@ -172,6 +183,12 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
     bw = (13 if not fat else 24) * k
     bh = 20 * k
     leg = 14 * k
+    build = u.get("build", "")
+    if build == "cauldron":     # 장군: 가마솥 몸통
+        hr, bw, bh, leg = 21 * k, 30 * k, 26 * k, 12 * k
+    elif build == "muscle":     # 영웅: 작은 머리 + 근육 산
+        hr, bw, bh, leg = 15 * k, 40 * k, 34 * k, 15 * k
+    extras = u.get("extras", ())
     bob = pose.get("bob", 0)
     hip_y = foot - leg - bob
     body_cy = hip_y - bh * 0.45
@@ -179,6 +196,14 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
 
     step = pose["step"]
     lean = pose["lean"]
+
+    if "halo" in extras and not dead:   # 뒤로 퍼지는 금빛 후광
+        hcx, hcy = cx + lean * 0.8, head_cy + hr * 0.4
+        for i in range(12):
+            a = math.radians(i * 30 + pose.get("bob", 0) * 4)
+            a2 = a + math.radians(9)
+            p.poly([(hcx, hcy), (hcx + math.cos(a) * 58, hcy + math.sin(a) * 58), (hcx + math.cos(a2) * 58, hcy + math.sin(a2) * 58)], rgba("#FFE27A", 110), line=False)
+        p.d.ellipse([p.s(hcx - 30), p.s(hcy - 30), p.s(hcx + 30), p.s(hcy + 30)], outline=rgba("#FFD23A", 200), width=int(p.s(3)))
 
     if u.get("cape"):
         p.poly([(cx - 4 + lean, body_cy - bh * 0.4), (cx - 26 * k, foot - 2), (cx + 6, foot - 4)], rgba(u["cape"]))
@@ -201,7 +226,25 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
             p.ellipse(ex, ey, head_r, head_r, rgba(color))
 
     # 몸
-    if fat:
+    if build == "cauldron":
+        p.ellipse(cx - bw * 0.95 + lean, body_cy - bh * 0.15, 5 * k, 6 * k, rgba("#4A4E57"))   # 솥 손잡이
+        p.ellipse(cx + bw * 0.95 + lean, body_cy - bh * 0.15, 5 * k, 6 * k, rgba("#4A4E57"))
+        p.ellipse(cx + lean, body_cy + bh * 0.08, bw, bh * 0.62, body)
+        p.rect(cx - bw * 0.92 + lean, body_cy - bh * 0.5, cx + bw * 0.92 + lean, body_cy - bh * 0.3, rgba("#7A808C"), radius=3)   # 솥 테
+        p.ellipse(cx + lean - bw * 0.35, body_cy + bh * 0.05, bw * 0.18, bh * 0.2, rgba("#8A909C"), line=False)   # 쇠 광택
+        p.stick(cx + lean - bw * 0.1, body_cy + bh * 0.1, cx + lean + bw * 0.25, body_cy + bh * 0.3, 1.6)            # 찌그러진 자국
+    elif build == "muscle":
+        sy = body_cy - bh * 0.5
+        p.stick(cx - bw * 0.4 + lean, sy + 4, cx - bw * 0.55 + lean - 6, body_cy + bh * 0.3, 8 * k, body)   # 뒤팔
+        p.poly([(cx - bw * 0.5 + lean, sy), (cx + bw * 0.5 + lean, sy), (cx + bw * 0.22 + lean, body_cy + bh * 0.5),
+                (cx - bw * 0.22 + lean, body_cy + bh * 0.5)], body)
+        for ox in (-1, 1):   # 가슴
+            p.d.arc([p.s(cx + lean + ox * bw * 0.22 - bw * 0.2), p.s(sy + 2), p.s(cx + lean + ox * bw * 0.22 + bw * 0.2), p.s(sy + bh * 0.4)], 20, 160, fill=INK, width=int(p.s(1.8)))
+        for row in range(3):   # 복근
+            y = body_cy + row * bh * 0.14
+            p.stick(cx + lean - bw * 0.12, y, cx + lean - bw * 0.03, y, 1.5)
+            p.stick(cx + lean + bw * 0.03, y, cx + lean + bw * 0.12, y, 1.5)
+    elif fat:
         p.ellipse(cx + lean, body_cy, bw, bh * 0.85, body)
         p.stick(cx + lean - 8, body_cy - 4, cx + lean - 2, body_cy + 2, 1.5)   # 꿰맨 자국
         p.stick(cx + lean - 2, body_cy - 4, cx + lean - 8, body_cy + 2, 1.5)
@@ -214,6 +257,39 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
 
     if weapon == "club":
         club("#B07A45", 24 * k, 6 * k, 7 * k)
+    elif weapon == "ladle":   # 큰 국자
+        ang = math.radians(-100 + 85 * swing)
+        ex, ey = wx + math.cos(ang) * 30 * k, wy + math.sin(ang) * 30 * k
+        p.stick(wx, wy, ex, ey, 4 * k, rgba("#8B5A2B"))
+        p.ellipse(ex + math.cos(ang) * 6, ey + math.sin(ang) * 6, 10 * k, 8 * k, rgba("#AEB5C0"))
+        p.ellipse(ex + math.cos(ang) * 6, ey + math.sin(ang) * 6 - 2, 6 * k, 4 * k, rgba("#7E8590"), line=False)
+    elif weapon == "banner":   # 냄비 문장 군기 + 금빛 창날
+        ang = math.radians(-92 + 55 * swing)
+        bx, by = wx - 2, wy + 12
+        tx, ty = bx + math.cos(ang) * 64, by + math.sin(ang) * 64
+        ux, uy = math.cos(ang), math.sin(ang)
+        nx, ny = -uy, ux
+        fx0, fy0 = bx + ux * 36, by + uy * 36
+        flag = [(fx0, fy0), (tx - ux * 4, ty - uy * 4), (tx - ux * 4 - nx * 30, ty - uy * 4 - ny * 30),
+                (fx0 - nx * 24 + ux * 6, fy0 - ny * 24 + uy * 6), (fx0 - nx * 30, fy0 - ny * 30)]
+        p.poly(flag, rgba("#C0392B"))
+        mx, my2 = (fx0 + tx) * 0.5 - nx * 14, (fy0 + ty) * 0.5 - ny * 14
+        p.ellipse(mx, my2 + 2, 7, 5, rgba("#AEB5C0"))   # 냄비 문장
+        p.rect(mx - 9, my2 - 3, mx + 9, my2 - 1, rgba("#AEB5C0"), radius=1)
+        p.stick(bx, by, tx, ty, 3.6, rgba("#5B3A1E"))
+        p.poly([(tx + nx * 4, ty + ny * 4), (tx + ux * 12, ty + uy * 12), (tx - nx * 4, ty - ny * 4)], rgba("#F2C230"))
+    elif weapon == "potflail":   # 쇠사슬 끝 가마솥
+        hx0, hy0 = cx + bw * 0.42 + lean, body_cy - bh * 0.32
+        ang = math.radians(-125 + 115 * swing)
+        ex, ey = hx0 + math.cos(ang) * 28, hy0 + math.sin(ang) * 28
+        for i in range(1, 6):
+            t = i / 6
+            p.ellipse(hx0 + (ex - hx0) * t, hy0 + (ey - hy0) * t, 2.2, 2.2, rgba("#8A8F99"))
+        p.ellipse(ex, ey + 2, 13, 11, rgba("#3A3D44"))
+        p.rect(ex - 13, ey - 9, ex + 13, ey - 5, rgba("#5E636E"), radius=2)
+        p.ellipse(ex - 4, ey + 1, 3, 3, rgba("#5E636E"), line=False)
+        p.stick(cx + bw * 0.3 + lean, body_cy - bh * 0.42, hx0, hy0, 8 * k, body)   # 앞팔 (주먹 = 사슬 손잡이)
+        p.ellipse(hx0, hy0, 6, 6, body)
     elif weapon == "bone":
         club("#F1ECDC", 22 * k, 5 * k, 5 * k)
     elif weapon == "hammer":
@@ -287,6 +363,30 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
                 (hx + hr * 0.9, head_cy - hr * 0.8), (hx + hr, head_cy - hr * 0.05)], rgba("#F2C230"))
         p.rect(hx - hr * 0.12, head_cy - hr * 1.1, hx + hr * 0.12, head_cy - hr * 0.3, rgba("#D9A93A"), radius=2)
         p.poly([(hx - hr * 0.1, head_cy - hr * 1.1), (hx - hr * 0.9, head_cy - hr * 1.7), (hx + hr * 0.2, head_cy - hr * 1.35)], rgba("#E04A3A"))
+    elif hat == "dentpot":   # 찌그러진 냄비 + 반창고
+        p.poly([(hx - hr * 0.95, head_cy - hr * 0.25), (hx + hr * 0.95, head_cy - hr * 0.25), (hx + hr * 0.8, head_cy - hr * 0.95),
+                (hx + hr * 0.15, head_cy - hr * 0.95), (hx - hr * 0.05, head_cy - hr * 0.72), (hx - hr * 0.3, head_cy - hr * 0.95),
+                (hx - hr * 0.8, head_cy - hr * 0.95)], rgba("#8C939E"))
+        p.stick(hx + hr * 0.9, head_cy - hr * 0.55, hx + hr * 1.35, head_cy - hr * 0.6, 3, rgba("#6E7681"))
+        p.rect(hx + hr * 0.3, head_cy - hr * 0.82, hx + hr * 0.7, head_cy - hr * 0.62, rgba("#F3D7B0"), radius=2)
+        p.rect(hx + hr * 0.42, head_cy - hr * 0.94, hx + hr * 0.58, head_cy - hr * 0.5, rgba("#F3D7B0"), radius=2)
+    elif hat == "lidhelm":   # 솥뚜껑 투구 + 붉은 깃털 셋
+        for i, (dx, tip) in enumerate(((-0.25, -2.1), (0.05, -2.35), (0.35, -2.05))):
+            p.poly([(hx + hr * dx - 3, head_cy - hr * 1.0), (hx + hr * (dx - 0.5), head_cy + hr * (tip - 0.1)),
+                    (hx + hr * (dx + 0.15), head_cy + hr * (tip + 0.25)), (hx + hr * dx + 3, head_cy - hr * 1.0)], rgba("#E04A3A" if i != 1 else "#FF6A4A"))
+        p.ellipse(hx, head_cy - hr * 0.66, hr * 1.3, hr * 0.42, rgba("#9AA2AE"))
+        p.rect(hx - hr * 1.3, head_cy - hr * 0.66, hx + hr * 1.3, head_cy - hr * 0.5, rgba("#D9A93A"), radius=3)
+        p.ellipse(hx, head_cy - hr * 1.06, hr * 0.2, hr * 0.14, rgba("#F2C230"))
+    elif hat == "flamecrown":   # 불타는 냄비 왕관
+        flick = pose.get("bob", 0) * 0.08 + pose.get("swing", 0) * 0.05
+        for i, (dx, h) in enumerate(((-0.6, 1.5), (-0.15, 2.1 + flick), (0.35, 1.8 - flick), (0.75, 1.3))):
+            p.poly([(hx + hr * (dx - 0.32), head_cy - hr * 0.8), (hx + hr * (dx - 0.1), head_cy - hr * (0.8 + h * 0.6)),
+                    (hx + hr * dx, head_cy - hr * (0.8 + h)), (hx + hr * (dx + 0.32), head_cy - hr * 0.8)], rgba("#FF7A2A"))
+            p.poly([(hx + hr * (dx - 0.15), head_cy - hr * 0.8), (hx + hr * dx, head_cy - hr * (0.8 + h * 0.6)),
+                    (hx + hr * (dx + 0.15), head_cy - hr * 0.8)], rgba("#FFE46A"), line=False)
+        p.rect(hx - hr * 1.0, head_cy - hr * 0.95, hx + hr * 1.0, head_cy - hr * 0.4, rgba("#F2C230"), radius=3)
+        for i in range(3):
+            p.ellipse(hx - hr * 0.55 + i * hr * 0.55, head_cy - hr * 0.68, hr * 0.12, hr * 0.12, rgba("#E04A3A"))
     elif hat == "crown":
         pts = [(hx - hr * 0.8, head_cy - hr * 0.55)]
         for i in range(5):
@@ -327,6 +427,31 @@ def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
             p.ellipse(ex, ey + hr * 0.42, 3.5, 3, rgba("#7A2A20"), line=False)   # 기합 입
         else:
             p.stick(ex - 3, ey + hr * 0.42, ex + 3, ey + hr * 0.42, 1.6)
+
+    # 덧붙이는 것 (얼굴 위)
+    fx = hx + hr * 0.18
+    fy = head_cy + hr * 0.18
+    gap = hr * 0.46
+    if "eyepatch" in extras and not dead:
+        p.stick(fx + gap, fy, hx - hr * 0.9, head_cy - hr * 0.35, 1.8)
+        p.ellipse(fx + gap, fy, hr * 0.2, hr * 0.17, INK, line=False)
+    if "mustache" in extras:
+        for d in (-1, 1):
+            p.poly([(fx, fy + hr * 0.2), (fx + d * hr * 0.36, fy + hr * 0.13), (fx + d * hr * 0.56, fy - hr * 0.02),
+                    (fx + d * hr * 0.5, fy + hr * 0.2), (fx + d * hr * 0.14, fy + hr * 0.28)], rgba("#4A2E1E"))
+    if "longbeard" in extras:
+        p.poly([(fx - hr * 0.5, head_cy + hr * 0.86), (fx + hr * 0.55, head_cy + hr * 0.84), (fx + hr * 0.2, head_cy + hr * 1.9),
+                (fx, head_cy + hr * 1.6), (fx - hr * 0.2, head_cy + hr * 1.95)], rgba("#F4F1E8"))
+        for d in (-1, 1):   # 팔자 콧수염 (입 위)
+            p.poly([(fx, fy + hr * 0.26), (fx + d * hr * 0.55, fy + hr * 0.2), (fx + d * hr * 0.78, fy + hr * 0.04),
+                    (fx + d * hr * 0.6, fy + hr * 0.34), (fx + d * hr * 0.2, fy + hr * 0.36)], rgba("#F4F1E8"))
+    if "epaulets" in extras:
+        for d in (-1, 1):
+            p.ellipse(cx + lean + d * bw * 0.72, body_cy - bh * 0.45, 7 * k, 4.5 * k, rgba("#F2C230"))
+    if "scarf" in extras:
+        ny = body_cy - bh * 0.45
+        p.poly([(cx - bw * 0.55 + lean, ny - 2), (cx + bw * 0.55 + lean, ny - 2), (cx + bw * 0.5 + lean, ny + 4), (cx - bw * 0.5 + lean, ny + 4)], rgba("#D9453A"))
+        p.poly([(cx - bw * 0.4 + lean, ny + 2), (cx - bw * 1.6 + lean - pose.get("bob", 0), ny + 6), (cx - bw * 1.3 + lean, ny + 12), (cx - bw * 0.2 + lean, ny + 6)], rgba("#D9453A"))
 
     return p.done(out, out)
 
@@ -615,6 +740,37 @@ def fx_atlas():
     p.poly([(64, 6), (88, 44), (100, 82), (92, 112), (64, 124), (36, 112), (28, 82), (44, 56), (52, 70), (56, 36)], rgba("#FF7A2A"))
     p.poly([(64, 46), (80, 78), (84, 104), (64, 116), (44, 104), (48, 80), (58, 90)], rgba("#FFE46A"), line=False)
     put(11, p.done(C, C))
+
+    # 12 흰 타원 (칠해 쓰는 국물 면·거품)
+    b = Image.new("RGBA", (C * SS, C * SS), (0, 0, 0, 0))
+    ImageDraw.Draw(b).ellipse([3 * SS, 3 * SS, (C - 3) * SS, (C - 3) * SS], fill=(255, 255, 255, 255))
+    put(12, b.resize((C, C), Image.LANCZOS))
+
+    # 13 뼈 (가로)
+    p = Pen(C, C, lw=3)
+    p.stick(34, 64, 94, 64, 12, rgba("#F1ECDC"))
+    for x in (30, 98):
+        p.ellipse(x, 56, 11, 10, rgba("#F1ECDC"))
+        p.ellipse(x, 72, 11, 10, rgba("#F1ECDC"))
+    put(13, p.done(C, C))
+
+    # 14 김 (흰 뭉게, 칠해 쓴다)
+    b = Image.new("RGBA", (C * SS, C * SS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(b)
+    for x, y, r in ((50, 76, 30), (80, 70, 28), (64, 48, 30), (40, 54, 18), (90, 46, 18)):
+        d.ellipse([(x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS], fill=(255, 255, 255, 170))
+    put(14, b.resize((C, C), Image.LANCZOS).filter(ImageFilter.GaussianBlur(2)))
+
+    # 15 진급 빛줄기 (칠해 쓴다)
+    b = Image.new("RGBA", (C * SS, C * SS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(b)
+    for i in range(10):
+        a = i / 10 * math.tau
+        a2 = a + 0.16
+        d.polygon([(64 * SS, 64 * SS), ((64 + math.cos(a) * 62) * SS, (64 + math.sin(a) * 62) * SS),
+                   ((64 + math.cos(a2) * 62) * SS, (64 + math.sin(a2) * 62) * SS)], fill=(255, 255, 255, 200))
+    d.polygon([(x * SS, y * SS) for x, y in star_points(64, 64, 30, 12)], fill=(255, 255, 255, 255))
+    put(15, b.resize((C, C), Image.LANCZOS))
     return atlas
 
 
@@ -679,9 +835,50 @@ def building(kind):
     return p.done(C, C)
 
 
+# 왕국의 마지막 냄비 (Buildings.png 6 = 솥과 장작불, 7 = 뚜껑). 국물 면은 HUD가 그 위에 칠한다
+# 솥 아가리: 가운데 (128, POT_RIM_Y), 반지름 (POT_RIM_RX, POT_RIM_RY) → UILayout.csv PotRim*
+POT_RIM_Y = 100
+POT_RIM_RX = 86
+POT_RIM_RY = 24
+
+
+def pot_body():
+    C = 256
+    p = Pen(C, C, lw=4.5)
+    base = C * 0.94
+    # 다리 (뒤)
+    for x, d in ((78, -1), (178, 1)):
+        p.stick(x, POT_RIM_Y + 80, x + d * 14, base - 4, 9, rgba("#3A3D44"))
+    # 솥 몸통 + 손잡이 + 테 + 아가리 안쪽
+    for x in (30, 226):
+        p.ellipse(x, POT_RIM_Y + 20, 12, 16, rgba("#3A3D44"))
+    p.ellipse(128, POT_RIM_Y + 48, 98, 66, rgba("#4A4E57"))
+    p.ellipse(94, POT_RIM_Y + 44, 18, 26, rgba("#626772"), line=False)
+    p.ellipse(128, POT_RIM_Y, POT_RIM_RX + 10, POT_RIM_RY + 8, rgba("#6E7480"))
+    p.ellipse(128, POT_RIM_Y, POT_RIM_RX, POT_RIM_RY, rgba("#241C18"), line=False)
+    p.rect(64, POT_RIM_Y + 40, 192, POT_RIM_Y + 52, rgba("#D9A93A"), radius=4)
+    # 장작과 불 (솥 아래, 앞)
+    for x0, x1 in ((64, 192), (74, 200)):
+        p.stick(x0, base - 4, x1, base - 12, 11, rgba("#7A4A26"))
+    p.poly([(88, base - 8), (100, base - 40), (114, base - 24), (128, base - 52), (142, base - 24), (156, base - 42), (168, base - 8)], rgba("#FF7A2A"))
+    p.poly([(108, base - 8), (128, base - 36), (148, base - 8)], rgba("#FFE46A"), line=False)
+    return p.done(C, C)
+
+
+def pot_lid():
+    C = 256
+    p = Pen(C, C, lw=4.5)
+    p.ellipse(128, POT_RIM_Y - 4, POT_RIM_RX + 14, POT_RIM_RY + 22, rgba("#8C939E"))
+    p.ellipse(110, POT_RIM_Y - 14, 34, 10, rgba("#AEB5C0"), line=False)
+    p.rect(108, POT_RIM_Y - 44, 148, POT_RIM_Y - 26, rgba("#5A3A20"), radius=6)
+    return p.done(C, C)
+
+
 def buildings_atlas():
     C = 256
     atlas = Image.new("RGBA", (C * 8, C), (0, 0, 0, 0))
+    atlas.alpha_composite(pot_body(), (6 * C, 0))
+    atlas.alpha_composite(pot_lid(), (7 * C, 0))
     for k in range(6):
         atlas.alpha_composite(building(k), (k * C, 0))
     return atlas
@@ -744,6 +941,95 @@ def ui_icon(i):
         p.poly([(58, 70), (66, 48), (72, 70), (64, 118)], rgba("#FF7A2A"))
         for x, y, r in ((36, 40, 9), (92, 30, 11), (64, 18, 7)):
             p.ellipse(x, y, r, r * 0.85, rgba("#6E5236"))
+    elif i == 17:  # 특성 별 바탕 원 (상태 색으로 칠한다)
+        p.ellipse(64, 64, 56, 56, rgba("#FFFFFF"))
+    elif i == 18:  # 응급 처치: 붕대 감은 하트
+        heart(p, 64, 66, 44, rgba("#E04A5A"))
+        p.rect(30, 56, 98, 74, rgba("#F6F0E0"), radius=4)
+        p.rect(55, 46, 73, 84, rgba("#F6F0E0"), radius=4)
+    elif i == 19:  # 끈질긴 졸병: 비석 + 위로 화살
+        p.rect(30, 50, 86, 116, rgba("#A39C90"), radius=24)
+        p.stick(46, 78, 70, 78, 3)
+        p.stick(58, 66, 58, 98, 3)
+        p.poly([(96, 14), (120, 44), (106, 44), (106, 84), (86, 84), (86, 44), (72, 44)], rgba("#5AD27A"))
+    elif i == 20:  # 영웅의 숨결: 초록 하트 + 바람
+        heart(p, 58, 70, 40, rgba("#5AD27A"))
+        for y, w in ((26, 40), (40, 30)):
+            p.arc(98, y + 10, 14, 180, 360, 4, rgba("#BFF5D0"))
+            p.stick(70, y + 10, 70 + w, y + 10, 4, rgba("#BFF5D0"))
+    elif i == 21:  # 분노: 빨간 핏대
+        for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+            cx, cy = 64 + sx * 24, 64 + sy * 24
+            p.poly([(cx - sx * 4, cy - sy * 22), (cx + sx * 18, cy + sy * 4), (cx + sx * 6, cy + sy * 10), (cx - sx * 10, cy - sy * 6)], rgba("#E8333A"))
+    elif i == 22:  # 폭발 화살
+        pts = [(84 + math.cos(a / 12 * math.tau) * (38 if a % 2 == 0 else 20), 50 + math.sin(a / 12 * math.tau) * (38 if a % 2 == 0 else 20)) for a in range(12)]
+        p.poly(pts, rgba("#FF8A2A"))
+        p.stick(12, 116, 70, 62, 6, rgba("#8B5A2B"))
+        p.poly([(62, 56), (84, 46), (74, 70)], rgba("#DDE3EC"))
+    elif i == 23:  # 두 발 쏘기: 나란한 화살 둘
+        for oy in (-22, 22):
+            p.stick(14, 64 + oy, 96, 64 + oy, 5, rgba("#8B5A2B"))
+            p.poly([(96, 52 + oy), (120, 64 + oy), (96, 76 + oy)], rgba("#DDE3EC"))
+            p.poly([(10, 54 + oy), (26, 64 + oy), (10, 74 + oy)], rgba("#E04A3A"))
+    elif i == 24:  # 황금 해골
+        p.ellipse(64, 56, 42, 38, rgba("#F2C230"))
+        p.rect(44, 80, 84, 108, rgba("#F2C230"), radius=8)
+        p.dot(48, 56, 11)
+        p.dot(80, 56, 11)
+        for x in (54, 64, 74):
+            p.stick(x, 92, x, 106, 3)
+        p.poly(star_points(104, 22, 16, 6), rgba("#FFF7B0"), line=False)
+    elif i == 25:  # 영혼 폭발: 혼 + 빛
+        for a in range(8):
+            ang = a / 8 * math.tau
+            p.stick(64 + math.cos(ang) * 44, 66 + math.sin(ang) * 44, 64 + math.cos(ang) * 58, 66 + math.sin(ang) * 58, 5, rgba("#FFE46A"))
+        p.poly([(64, 22), (88, 60), (84, 90), (64, 104), (44, 90), (40, 60), (54, 48), (60, 66)], rgba("#5AF2B8"))
+    elif i == 26:  # 충격파: 망치 + 퍼지는 물결
+        for r in (36, 52):
+            p.arc(64, 96, r, 200, 340, 4, rgba("#FFE46A"))
+        p.stick(84, 20, 58, 76, 8, rgba("#9C6B3D"))
+        p.rect(30, 66, 82, 96, rgba("#8A8F99"), radius=5)
+    elif i == 27:  # 대장장이 근성: 모루 + 초록 십자
+        p.poly([(14, 52), (100, 52), (100, 70), (78, 76), (84, 100), (40, 100), (46, 76), (26, 70)], rgba("#5A5F69"))
+        p.rect(30, 100, 96, 114, rgba("#4A4E57"), radius=3)
+        p.rect(94, 14, 108, 54, rgba("#5AD27A"), radius=3)
+        p.rect(81, 27, 121, 41, rgba("#5AD27A"), radius=3)
+    elif i == 28:  # 유성 연쇄: 운석 둘
+        for ox, oy, k in ((-18, 18, 0.75), (16, -14, 1.0)):
+            p.poly([(64 + ox - 52 * k, 64 + oy + 46 * k), (64 + ox - 6 * k, 64 + oy - 6 * k), (64 + ox + 6 * k, 64 + oy + 10 * k)], rgba("#FFB43A"))
+            p.ellipse(64 + ox + 8 * k, 64 + oy - 2 * k, 22 * k, 20 * k, rgba("#6E4A36"))
+    elif i == 29:  # 치유의 함성: 뿔나팔 + 초록 십자
+        p.poly([(14, 86), (74, 50), (100, 44), (96, 82), (74, 78), (22, 104)], rgba("#E8C27A"))
+        p.ellipse(96, 62, 9, 19, rgba("#C9A050"))
+        p.rect(96, 8, 110, 46, rgba("#5AD27A"), radius=3)
+        p.rect(84, 20, 122, 34, rgba("#5AD27A"), radius=3)
+    elif i == 30:  # 가시 방패
+        for a in range(10):
+            ang = a / 10 * math.tau
+            p.poly([(64 + math.cos(ang - 0.18) * 40, 64 + math.sin(ang - 0.18) * 44), (64 + math.cos(ang) * 60, 64 + math.sin(ang) * 62),
+                    (64 + math.cos(ang + 0.18) * 40, 64 + math.sin(ang + 0.18) * 44)], rgba("#DDE3EC"))
+        p.ellipse(64, 64, 40, 44, rgba("#3F74C9"))
+        p.ellipse(64, 64, 12, 12, rgba("#8A8F99"))
+    elif i == 31:  # 철벽 의지: 방패 + 금 하트
+        p.poly([(24, 20), (104, 20), (104, 64), (64, 116), (24, 64)], rgba("#3F74C9"))
+        p.poly([(32, 28), (96, 28), (96, 62), (64, 104), (32, 62)], rgba("#5A8BDB"), line=False)
+        heart(p, 64, 62, 26, rgba("#F2C230"))
+    elif i == 32:  # 흡혈 군단: 핏방울 + 송곳니
+        p.poly([(64, 10), (96, 66), (96, 84), (80, 112), (48, 112), (32, 84), (32, 66)], rgba("#C0262E"))
+        p.poly([(40, 60), (52, 92), (60, 60)], rgba("#FFFFFF"))
+        p.poly([(68, 60), (76, 92), (88, 60)], rgba("#FFFFFF"))
+    elif i == 33:  # 뼈 (냄비 재료)
+        p.stick(36, 64, 92, 64, 14, rgba("#F1ECDC"))
+        for x in (30, 98):
+            p.ellipse(x, 54, 13, 12, rgba("#F1ECDC"))
+            p.ellipse(x, 74, 13, 12, rgba("#F1ECDC"))
+    elif i == 34:  # 냄비 (끓는 국)
+        for x, y, r in ((48, 26, 12), (70, 16, 14), (88, 30, 10)):
+            p.ellipse(x, y, r, r, rgba("#FFFFFF", 200), line=False)
+        p.ellipse(64, 84, 50, 36, rgba("#4A4E57"))
+        p.ellipse(64, 56, 50, 14, rgba("#6E7480"))
+        p.ellipse(64, 56, 42, 9, rgba("#F2E2B8"), line=False)
+        p.rect(20, 92, 108, 100, rgba("#D9A93A"), radius=3)
     elif i in (13, 14, 15):   # 패널 (9칸 늘리기용. 모서리 = 칸의 1/4)
         fill = {13: rgba("#5C3B28"), 14: rgba("#2E1E16", 235), 15: rgba("#6E4A30")}[i]
         p = Pen(C, C, lw=0)
@@ -753,12 +1039,22 @@ def ui_icon(i):
     return p.done(C, C)
 
 
-UI_ICONS = 17   # 0~15 + 16 대지 가르기 (UILayout.csv Ui* 와 같아야 한다)
+UI_ICONS = 35   # 0~15 + 16 대지 가르기 + 17 특성 바탕 원 + 18~32 중간 별 효과 + 33 뼈 + 34 냄비 (UILayout.csv Ui*, Perks.csv Icon)
+
+
+def heart(p, cx, cy, r, fill):
+    pts = []
+    for i in range(40):
+        t = i / 40 * math.tau
+        x = 16 * math.sin(t) ** 3
+        y = -(13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t))
+        pts.append((cx + x * r / 17, cy + y * r / 17))
+    p.poly(pts, fill)
 
 
 def ui_atlas():
     C = 128
-    atlas = Image.new("RGBA", (C * 8, C * 3), (0, 0, 0, 0))
+    atlas = Image.new("RGBA", (C * 8, C * ((UI_ICONS + 7) // 8)), (0, 0, 0, 0))
     for i in range(UI_ICONS):
         atlas.alpha_composite(ui_icon(i), ((i % 8) * C, (i // 8) * C))
     return atlas

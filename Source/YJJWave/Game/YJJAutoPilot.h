@@ -49,6 +49,9 @@ private:
 	bool bBuyShot = false;
 	bool bQuakeShot = false;
 	bool bBurnShot = false;
+	bool bPotShot = false;
+	bool bTalkShot = false;
+	bool bPromoteShot = false;
 	float CardShotWait = 0.f;
 
 	// 성능 기록
@@ -78,6 +81,12 @@ private:
 	static constexpr float TreeShotAt = 0.6f;
 	/** 주문 연출이 이만큼 지났을 때 한 장 (갈라진 땅·불바다 확인용) */
 	static constexpr float SpellShotAt = 0.15f;
+	/** 말풍선이 이만큼 (초) 나온 뒤 한 장 */
+	static constexpr float TalkShotAt = 1.2f;
+	static constexpr float Half = 0.5f;
+	/** 진급 스크린샷: 빛이 이만큼 진행됐을 때, 이 확대로 */
+	static constexpr float PromoteShotAt = 0.3f;
+	static constexpr float PromoteShotZoom = 1.6f;
 	/** 그다음 옵션 화면 */
 	static constexpr float OptionsShotAt = 0.25f;
 	/** 컷씬 첫 줄이 이만큼 지나면 찍는다 */
