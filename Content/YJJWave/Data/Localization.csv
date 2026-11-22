@@ -94,7 +94,7 @@ Perk.GruntParadise,졸병 천국,Grunt Paradise,쐐기
 Perk.LoneHero,고독한 영웅,Lone Hero,쐐기
 Perk.HumanWave,인해전술,Human Wave,쐐기
 Special.LastStand,{0} 체력이 {1}% 아래로 떨어지면 한 번 최대 체력의 {2}% 회복,{0} heal {2}% once when below {1}% health,{0} 대상 {1} 기준% {2} 회복%
-Special.Revive,{0}가 처음 쓰러지면 체력 {1}%로 한 번 다시 일어남,{0} revive once with {1}% health,
+Special.Revive,{0}(이)가 처음 쓰러지면 체력 {1}%로 한 번 다시 일어남,{0} revive once with {1}% health,
 Special.HeroRegen,{0} 초당 체력 회복 +{3},{0} regenerates +{3} health/s,
 Special.Fury,{0} 체력이 {1}% 아래면 공격력 +{2}%,{0} deal +{2}% damage below {1}% health,
 Special.ArrowBurst,{0} 화살이 반경 {3} 범위 피해,{0} arrows explode (radius {3}),
@@ -104,8 +104,8 @@ Special.SoulBurst,적 처치 시 {1}% 확률로 영혼 {4}배,{1}% chance for {4
 Special.Shockwave,{0} 밀쳐내기 {3}배,{0} knockback x{3},
 Special.MeteorTwice,유성이 {3}초 뒤 한 번 더 떨어짐,Meteor strikes again after {3}s,
 Special.RallyHeal,돌격 함성 때 아군 전체 최대 체력의 {1}% 회복,War Cry heals all troops {1}%,
-Special.Thorns,{0}가 근접으로 맞은 피해의 {1}%를 되돌려줌,{0} reflect {1}% melee damage,
-Special.Lifesteal,{0}가 준 피해의 {1}%만큼 회복,{0} heal {1}% of damage dealt,
+Special.Thorns,{0}(이)가 근접으로 맞은 피해의 {1}%를 되돌려줌,{0} reflect {1}% melee damage,
+Special.Lifesteal,{0}(이)가 준 피해의 {1}%만큼 회복,{0} heal {1}% of damage dealt,
 Unit.Necro,강령술사,Necromancer,시체를 해골로 일으킨다
 UI.FrontBonus,전선 보너스 x{0},Front bonus x{0},금화·영혼 배율
 UI.CardTitle,카드 고르기 (1 · 2 · 3),Pick a card (1 · 2 · 3),웨이브가 바뀔 때

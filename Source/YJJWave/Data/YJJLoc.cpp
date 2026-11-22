@@ -162,7 +162,40 @@ const FString& YJJLoc::Get(const FString& Key)
 
 FString YJJLoc::Format(const TCHAR* Key, const FStringFormatOrderedArguments& Args)
 {
-	return FString::Format(*Get(Key), Args);
+	return ResolveJosa(FString::Format(*Get(Key), Args));
+}
+
+FString YJJLoc::ResolveJosa(const FString& Text)
+{
+	FString Out = Text;
+	for (const FYJJJosa& Josa : FYJJJosaRules::Pairs)
+	{
+		const int32 MarkerLen = FCString::Strlen(Josa.Marker);
+		int32 At = Out.Find(Josa.Marker, ESearchCase::CaseSensitive);
+		while (At != INDEX_NONE)
+		{
+			// 앞 글자 받침: 한글이면 음절 계산, 숫자면 읽는 소리, 그 밖은 받침 없는 쪽
+			const TCHAR Prev = At > 0 ? Out[At - 1] : TEXT(' ');
+			bool bFinal = false;
+			bool bRieul = false;
+			if (Prev >= FYJJJosaRules::HangulFirst && Prev <= FYJJJosaRules::HangulLast)
+			{
+				const int32 Final = (Prev - FYJJJosaRules::HangulFirst) % FYJJJosaRules::FinalCount;
+				bFinal = Final != 0;
+				bRieul = Final == FYJJJosaRules::FinalRieul;
+			}
+			else if (FChar::IsDigit(Prev))
+			{
+				bFinal = FCString::Strchr(FYJJJosaRules::DigitsWithFinal, Prev) != nullptr;
+				bRieul = FCString::Strchr(FYJJJosaRules::DigitsWithRieul, Prev) != nullptr;
+			}
+			const bool bUseFinal = bFinal && !(Josa.bRieulAsVowel && bRieul);
+			const FString Pick = bUseFinal ? Josa.WithFinal : Josa.WithoutFinal;
+			Out = Out.Left(At) + Pick + Out.Mid(At + MarkerLen);
+			At = Out.Find(Josa.Marker, ESearchCase::CaseSensitive, ESearchDir::FromStart, At + Pick.Len());
+		}
+	}
+	return Out;
 }
 
 bool YJJLoc::Has(const FString& Key)
