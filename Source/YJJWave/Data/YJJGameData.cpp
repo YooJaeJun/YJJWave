@@ -1,0 +1,351 @@
+#include "Data/YJJGameData.h"
+#include "Data/YJJDataRows.h"
+#include "Data/YJJLoc.h"
+#include "Engine/DataTable.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "UObject/Package.h"
+#include "YJJWave.h"
+
+FAutoConsoleCommand FYJJGameDatabase::ReloadCommand(
+	TEXT("yjj.ReloadData"),
+	TEXT("Content/YJJWave/Data/*.csv 를 다시 읽는다"),
+	FConsoleCommandDelegate::CreateLambda([]()
+	{
+		FYJJGameDatabase::Get().Reload();
+		YJJLoc::Reload();
+	}));
+
+FYJJGameDatabase& FYJJGameDatabase::Get()
+{
+	static FYJJGameDatabase Instance;
+	if (!Instance.bLoaded)
+	{
+		Instance.Load();
+	}
+	return Instance;
+}
+
+void FYJJGameDatabase::Reload()
+{
+	Load();
+}
+
+FString FYJJGameDatabase::DataPath(const TCHAR* File)
+{
+	return FPaths::ProjectContentDir() / DataFolder / File;
+}
+
+void FYJJGameDatabase::Problem(const FString& Message)
+{
+	Problems.Add(Message);
+	UE_LOG(LogYJJWave, Error, TEXT("[Data] %s"), *Message);
+}
+
+UDataTable* FYJJGameDatabase::LoadTable(const TCHAR* File, UScriptStruct* RowStruct)
+{
+	UDataTable* Table = NewObject<UDataTable>(GetTransientPackage(), NAME_None, RF_Transient);
+	Table->RowStruct = RowStruct;
+	Table->AddToRoot();
+	Tables.Add(Table);
+
+	FString Csv;
+	if (!FFileHelper::LoadFileToString(Csv, *DataPath(File)))
+	{
+		Problem(FString::Printf(TEXT("%s 를 읽지 못했다 (%s)"), File, *DataPath(File)));
+		return Table;
+	}
+	for (const FString& Message : Table->CreateTableFromCSVString(Csv))
+	{
+		Problem(FString::Printf(TEXT("%s: %s"), File, *Message));
+	}
+	return Table;
+}
+
+void FYJJGameDatabase::FillNameValues(const TCHAR* File, const UScriptStruct* Struct, void* Data)
+{
+	const UDataTable* Table = LoadTable(File, FYJJNameValueRow::StaticStruct());
+	TSet<FName> Used;
+	for (TFieldIterator<FProperty> It(Struct); It; ++It)
+	{
+		const FNumericProperty* Number = CastField<FNumericProperty>(*It);
+		if (!Number)
+		{
+			continue;
+		}
+		const FName Name = Number->GetFName();
+		const FYJJNameValueRow* Row = Table->FindRow<FYJJNameValueRow>(Name, ContextName, false);
+		if (!Row)
+		{
+			Problem(FString::Printf(TEXT("%s 에 %s 가 없다"), File, *Name.ToString()));
+			continue;
+		}
+		Used.Add(Name);
+		void* Value = Number->ContainerPtrToValuePtr<void>(Data);
+		if (Number->IsFloatingPoint())
+		{
+			Number->SetFloatingPointPropertyValue(Value, Row->Value);
+		}
+		else
+		{
+			Number->SetIntPropertyValue(Value, static_cast<int64>(FMath::RoundToInt(Row->Value)));
+		}
+	}
+	for (const FName& RowName : Table->GetRowNames())
+	{
+		if (!Used.Contains(RowName))
+		{
+			Problem(FString::Printf(TEXT("%s 의 %s 는 코드가 쓰지 않는다"), File, *RowName.ToString()));
+		}
+	}
+}
+
+void FYJJGameDatabase::Load()
+{
+	bLoaded = true;
+	Problems.Reset();
+	for (UDataTable* Table : Tables)
+	{
+		Table->RemoveFromRoot();
+	}
+	Tables.Reset();
+
+	FillNameValues(TEXT("Tuning.csv"), FYJJTuning::StaticStruct(), &Tuning);
+	FillNameValues(TEXT("UILayout.csv"), FYJJUILayout::StaticStruct(), &Layout);
+	LoadUnits();
+	LoadBuildings();
+	LoadWaves();
+	LoadPerks();
+
+	UE_LOG(LogYJJWave, Display, TEXT("[Data] 유닛 %d, 병영 %d, 물결 %d, 특성 %d, 문제 %d"), Units.Num(), Buildings.Num(), Waves.Num(), Perks.Num(), Problems.Num());
+}
+
+int32 FYJJGameDatabase::FindUnit(const FString& Id, const TCHAR* Where)
+{
+	const int32 Index = Units.IndexOfByPredicate([&Id](const FYJJUnitDef& Def) { return Def.Id == FName(*Id); });
+	if (Index == INDEX_NONE)
+	{
+		Problem(FString::Printf(TEXT("%s: 모르는 유닛 %s"), Where, *Id));
+	}
+	return Index;
+}
+
+int32 FYJJGameDatabase::FindBuilding(const FString& Id, const TCHAR* Where)
+{
+	const int32 Index = Buildings.IndexOfByPredicate([&Id](const FYJJBuildingDef& Def) { return Def.Id == FName(*Id); });
+	if (Index == INDEX_NONE)
+	{
+		Problem(FString::Printf(TEXT("%s: 모르는 병영 %s"), Where, *Id));
+	}
+	return Index;
+}
+
+void FYJJGameDatabase::LoadUnits()
+{
+	Units.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Units.csv"), FYJJUnitRow::StaticStruct());
+	Table->ForeachRow<FYJJUnitRow>(ContextName, [this](const FName& Name, const FYJJUnitRow& Row)
+	{
+		FYJJUnitDef& Def = Units.AddDefaulted_GetRef();
+		Def.Id = Name;
+		Def.Team = Row.Team == TEXT("Enemy") ? EYJJTeam::Enemy : EYJJTeam::Player;
+		Def.NameKey = Row.NameKey;
+		Def.HP = Row.HP;
+		Def.Damage = Row.Damage;
+		Def.AttackInterval = Row.AttackInterval;
+		Def.Range = Row.Range;
+		Def.Sight = Row.Sight;
+		Def.Speed = Row.Speed;
+		Def.Radius = Row.Radius;
+		Def.Mass = Row.Mass;
+		Def.Splash = Row.Splash;
+		Def.Knockback = Row.Knockback;
+		Def.ProjectileSpeed = Row.ProjectileSpeed;
+		Def.ProjectileFrame = Row.ProjectileFrame;
+		Def.Bounty = Row.Bounty;
+		Def.Souls = Row.Souls;
+		Def.AtlasRow = Row.AtlasRow;
+		Def.DrawSize = Row.DrawSize;
+		Def.bBoss = Row.Boss != 0;
+		if (Row.HP <= 0.f || Row.Radius <= 0.f || Row.Mass <= 0.f || Row.AttackInterval <= 0.f)
+		{
+			Problem(FString::Printf(TEXT("Units.csv %s: 체력·반지름·질량·공격 간격은 0보다 커야 한다"), *Name.ToString()));
+		}
+	});
+}
+
+void FYJJGameDatabase::LoadBuildings()
+{
+	Buildings.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Buildings.csv"), FYJJBuildingRow::StaticStruct());
+	TArray<TPair<int32, FYJJBuildingDef>> Sorted;
+	Table->ForeachRow<FYJJBuildingRow>(ContextName, [this, &Sorted](const FName& Name, const FYJJBuildingRow& Row)
+	{
+		FYJJBuildingDef Def;
+		Def.Id = Name;
+		Def.NameKey = Row.NameKey;
+		Def.DescKey = Row.DescKey;
+		Def.Unit = FindUnit(Row.Unit, TEXT("Buildings.csv"));
+		Def.Cost = Row.Cost;
+		Def.BuildCostGrowth = Row.BuildCostGrowth;
+		Def.UpgradeCost = Row.UpgradeCost;
+		Def.UpgradeCostGrowth = Row.UpgradeCostGrowth;
+		Def.SpawnInterval = Row.SpawnInterval;
+		Def.SpawnCount = Row.SpawnCount;
+		Def.CountPerLevel = Row.CountPerLevel;
+		Def.IntervalScalePerLevel = Row.IntervalScalePerLevel;
+		Def.StatPerLevel = Row.StatPerLevel;
+		Def.AtlasCol = Row.AtlasCol;
+		Def.IconCol = Row.IconCol;
+		Def.BotWeight = Row.BotWeight;
+		if (Def.Unit == INDEX_NONE || Def.SpawnInterval <= 0.f)
+		{
+			Problem(FString::Printf(TEXT("Buildings.csv %s: 유닛이 없거나 생산 주기가 0"), *Name.ToString()));
+			return;
+		}
+		Sorted.Emplace(Row.Order, Def);
+	});
+	Sorted.StableSort([](const TPair<int32, FYJJBuildingDef>& A, const TPair<int32, FYJJBuildingDef>& B) { return A.Key < B.Key; });
+	for (const TPair<int32, FYJJBuildingDef>& Entry : Sorted)
+	{
+		Buildings.Add(Entry.Value);
+	}
+}
+
+void FYJJGameDatabase::LoadWaves()
+{
+	Waves.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Waves.csv"), FYJJWaveRow::StaticStruct());
+	Table->ForeachRow<FYJJWaveRow>(ContextName, [this](const FName& Name, const FYJJWaveRow& Row)
+	{
+		if (Row.Level < 1)
+		{
+			Problem(FString::Printf(TEXT("Waves.csv %s: 레벨은 1부터"), *Name.ToString()));
+			return;
+		}
+		if (Waves.Num() < Row.Level)
+		{
+			Waves.SetNum(Row.Level);
+		}
+		FYJJWaveLevel& Level = Waves[Row.Level - 1];
+		Level.Duration = FMath::Max(Level.Duration, Row.Duration);
+		FYJJWaveSpawn Spawn;
+		Spawn.Unit = FindUnit(Row.Unit, TEXT("Waves.csv"));
+		Spawn.Rate = Row.Rate;
+		Spawn.Burst = Row.Burst;
+		if (Spawn.Unit != INDEX_NONE)
+		{
+			Level.Spawns.Add(Spawn);
+		}
+	});
+	for (int32 Index = 0; Index < Waves.Num(); ++Index)
+	{
+		if (Waves[Index].Duration <= 0.f)
+		{
+			Problem(FString::Printf(TEXT("Waves.csv: %d레벨이 비었다"), Index + 1));
+			Waves[Index].Duration = Tuning.EndlessLevelDuration;
+		}
+	}
+}
+
+bool FYJJGameDatabase::ParseStat(const FString& Name, EYJJStat& Out)
+{
+	for (int32 Index = 0; Index < static_cast<int32>(EYJJStat::Count); ++Index)
+	{
+		if (Name == YJJData::StatKey(static_cast<EYJJStat>(Index)))
+		{
+			Out = static_cast<EYJJStat>(Index);
+			return true;
+		}
+	}
+	return false;
+}
+
+void FYJJGameDatabase::LoadPerks()
+{
+	Perks.Reset();
+	const UDataTable* Table = LoadTable(TEXT("Perks.csv"), FYJJPerkRow::StaticStruct());
+	TArray<FString> LinkNames;
+	Table->ForeachRow<FYJJPerkRow>(ContextName, [this, &LinkNames](const FName& Name, const FYJJPerkRow& Row)
+	{
+		FYJJPerkDef& Def = Perks.AddDefaulted_GetRef();
+		Def.Id = Name;
+		Def.Kind = Row.Kind == TEXT("Start") ? EYJJPerkKind::Start : (Row.Kind == TEXT("Notable") ? EYJJPerkKind::Notable : EYJJPerkKind::Small);
+		Def.Pos = FVector2f(Row.X, Row.Y);
+		Def.NameKey = Row.NameKey;
+		auto AddMod = [this, &Def, &Name](const FString& Stat, const FString& Target, float Value)
+		{
+			if (Stat.IsEmpty())
+			{
+				return;
+			}
+			FYJJPerkDef::FMod Mod;
+			if (!ParseStat(Stat, Mod.Stat))
+			{
+				Problem(FString::Printf(TEXT("Perks.csv %s: 모르는 능력치 %s"), *Name.ToString(), *Stat));
+				return;
+			}
+			Mod.Building = Target.IsEmpty() ? INDEX_NONE : FindBuilding(Target, TEXT("Perks.csv"));
+			Mod.Value = Value;
+			Def.Mods.Add(Mod);
+		};
+		AddMod(Row.Stat, Row.Target, Row.Value);
+		AddMod(Row.Stat2, Row.Target2, Row.Value2);
+		LinkNames.Add(Row.Links);
+	});
+
+	// 이름 → 번호 (양쪽 모두에 적힌 선이라도 한 번만)
+	for (int32 Perk = 0; Perk < Perks.Num(); ++Perk)
+	{
+		TArray<FString> Names;
+		LinkNames[Perk].ParseIntoArrayWS(Names);
+		for (const FString& LinkName : Names)
+		{
+			const int32 Other = Perks.IndexOfByPredicate([&LinkName](const FYJJPerkDef& Def) { return Def.Id == FName(*LinkName); });
+			if (Other == INDEX_NONE)
+			{
+				Problem(FString::Printf(TEXT("Perks.csv %s: 모르는 이웃 %s"), *Perks[Perk].Id.ToString(), *LinkName));
+				continue;
+			}
+			Perks[Perk].Links.AddUnique(Other);
+			Perks[Other].Links.AddUnique(Perk);
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+
+const FYJJTuning& YJJData::Tune() { return FYJJGameDatabase::Get().Tuning; }
+const FYJJUILayout& YJJData::Layout() { return FYJJGameDatabase::Get().Layout; }
+TConstArrayView<FYJJUnitDef> YJJData::Units() { return FYJJGameDatabase::Get().Units; }
+const FYJJUnitDef& YJJData::Unit(int32 Index) { return FYJJGameDatabase::Get().Units[Index]; }
+TConstArrayView<FYJJBuildingDef> YJJData::Buildings() { return FYJJGameDatabase::Get().Buildings; }
+const FYJJBuildingDef& YJJData::Building(int32 Index) { return FYJJGameDatabase::Get().Buildings[Index]; }
+TConstArrayView<FYJJWaveLevel> YJJData::Waves() { return FYJJGameDatabase::Get().Waves; }
+TConstArrayView<FYJJPerkDef> YJJData::Perks() { return FYJJGameDatabase::Get().Perks; }
+
+const TCHAR* YJJData::StatKey(EYJJStat Stat)
+{
+	switch (Stat)
+	{
+	case EYJJStat::HP: return TEXT("HP");
+	case EYJJStat::Damage: return TEXT("Damage");
+	case EYJJStat::AttackSpeed: return TEXT("AttackSpeed");
+	case EYJJStat::MoveSpeed: return TEXT("MoveSpeed");
+	case EYJJStat::SpawnRate: return TEXT("SpawnRate");
+	case EYJJStat::SpawnCount: return TEXT("SpawnCount");
+	case EYJJStat::Multishot: return TEXT("Multishot");
+	case EYJJStat::Splash: return TEXT("Splash");
+	case EYJJStat::Gold: return TEXT("Gold");
+	case EYJJStat::Souls: return TEXT("Souls");
+	case EYJJStat::WallHP: return TEXT("WallHP");
+	case EYJJStat::SpellPower: return TEXT("SpellPower");
+	case EYJJStat::SpellCooldown: return TEXT("SpellCooldown");
+	default: return TEXT("");
+	}
+}
+
+bool YJJData::IsFlatStat(EYJJStat Stat)
+{
+	return Stat == EYJJStat::SpawnCount || Stat == EYJJStat::Multishot;
+}

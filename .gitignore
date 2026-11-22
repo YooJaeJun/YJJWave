@@ -1,0 +1,75 @@
+### Unreal Engine
+# 엔진/에디터가 생성하는 폴더
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+Build/
+
+# 플러그인 빌드 산출물
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+
+# 개인 개발자 폴더 / 자동 생성 컬렉션
+Content/Developers/
+Content/Collections/
+
+# 쿠킹/패키징 결과
+*.pak
+*.ucas
+*.utoc
+
+### IDE / 생성된 프로젝트 파일 (GenerateProjectFiles로 재생성)
+*.sln
+*.slnx
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.suo
+*.user
+*.VC.db
+*.VC.opendb
+*.opensdf
+*.sdf
+*.code-workspace
+.vs/
+.vscode/
+.idea/
+*.sln.DotSettings.user
+
+### C++ 빌드 산출물
+*.obj
+*.o
+*.pch
+*.gch
+*.ilk
+*.exp
+*.lib
+*.a
+*.dll
+*.so
+*.dylib
+*.exe
+*.pdb
+*.idb
+*.modules
+*.target
+
+### OS
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.DS_Store
+*.lnk
+
+### Python
+__pycache__/
+*.pyc
+
+### DevLog (영상 원본 소재, 용량 큼)
+DevLog/Footage/
+DevLog/Output/
+
+### 아트용 파이썬 가상환경, 검토용 모음 시트
+Tools/Art/.venv/
+Tools/Art/Generated/_sheet*.png

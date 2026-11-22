@@ -1,0 +1,5 @@
+﻿Name,Order,NameKey,DescKey,Unit,Cost,BuildCostGrowth,UpgradeCost,UpgradeCostGrowth,SpawnInterval,SpawnCount,CountPerLevel,IntervalScalePerLevel,StatPerLevel,AtlasCol,IconCol,BotWeight
+Barracks,0,Building.Barracks,Building.BarracksDesc,Grunt,40,1.15,60,1.55,3,4,1,0.95,0.08,0,9,3
+ArcherPost,1,Building.ArcherPost,Building.ArcherPostDesc,Archer,90,1.18,90,1.6,4.5,2,0.7,0.95,0.08,1,10,2
+ShieldHall,2,Building.ShieldHall,Building.ShieldHallDesc,Shield,120,1.2,110,1.6,5,1,0.5,0.95,0.1,2,11,1
+Forge,3,Building.Forge,Building.ForgeDesc,Brute,300,1.25,250,1.65,9,1,0.34,0.95,0.1,3,12,1

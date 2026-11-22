@@ -1,0 +1,83 @@
+﻿Key,ko,en,Note
+UI.Level,{0} 레벨,Level {0},물결 레벨
+UI.LevelShort,Lv{0},Lv{0},병영 아래 레벨
+UI.Timer,{0}:{1},{0}:{1},레벨 남은 시간 (분:초)
+UI.VS,VS,VS,
+UI.WallHP,{0} / {1},{0} / {1},성벽 체력
+UI.Speed,x{0},x{0},배속 버튼
+UI.Paused,멈춤,Paused,일시정지
+UI.Owned,x{0},x{0},지은 수
+UI.Tree,특성,Perks,특성 성좌 버튼
+UI.TreeTitle,특성 성좌,Constellation,
+UI.TreeNext,다음 별 {0} 영혼 · 찍은 별 {1}개,Next star {0} souls · {1} taken,
+UI.TreeClose,닫기 (T),Close (T),
+UI.Cost,금화 {0},{0} gold,
+UI.PlotBuild,{0} 짓기,Build {0},빈 칸에 마우스
+UI.PlotTitle,{0} Lv{1},{0} Lv{1},
+UI.PlotSpawn,{1}초마다 {0}명,{0} every {1}s,
+UI.PlotUpgrade,클릭: 강화 (금화 {0}),Click: upgrade ({0} gold),
+UI.PlotMax,최대 레벨,Max level,
+UI.GameOver,성벽이 무너졌다!,The wall has fallen!,
+UI.GameOverStats,{0} 레벨 · 처치 {1} · {2}초,Level {0} · {1} kills · {2}s,
+UI.Restart,R: 다시 시작,R: Restart,
+UI.Debug,유닛 {0} · 시뮬 {1}ms · {2} fps · 화살 {3},Units {0} · sim {1}ms · {2} fps · arrows {3},F3로 끄기
+Num.Man,{0}만,{0}0k,만 단위 (en은 근사 표기)
+Num.Eok,{0}억,{0}00M,억 단위 (en은 근사 표기)
+Key.Meteor,Q,Q,
+Key.Rally,E,E,
+Key.Tree,T,T,
+Spell.Meteor,유성 낙하,Meteor,
+Spell.Rally,돌격 함성,War Cry,
+Building.Barracks,졸병 막사,Barracks,
+Building.BarracksDesc,싸고 많다. 물량의 기본,Cheap and many,
+Building.ArcherPost,궁수 초소,Archer Post,
+Building.ArcherPostDesc,뒤에서 화살 일제 사격,Volleys from the back,
+Building.ShieldHall,방패 막사,Shield Hall,
+Building.ShieldHallDesc,느리고 단단하다. 전선 유지,Slow and sturdy,
+Building.Forge,대장간,Forge,
+Building.ForgeDesc,망치로 여럿을 날린다,Hammers that send many flying,
+Unit.Grunt,졸병,Grunt,
+Unit.Archer,궁수,Archer,
+Unit.Shield,방패병,Shieldbearer,
+Unit.Brute,망치 대장,Hammer Boss,
+Unit.Skeleton,해골,Skeleton,
+Unit.Imp,도깨비,Imp,
+Unit.Fatty,뚱보 좀비,Fat Zombie,
+Unit.BoneArcher,해골 궁수,Bone Archer,
+Unit.BoneKing,해골 왕,Bone King,보스
+Target.All,병사,Troops,모든 병영 대상
+Stat.HP,{1} 체력 {0},{1} health {0},
+Stat.Damage,{1} 공격력 {0},{1} damage {0},
+Stat.AttackSpeed,{1} 공격 속도 {0},{1} attack speed {0},
+Stat.MoveSpeed,{1} 이동 속도 {0},{1} move speed {0},
+Stat.SpawnRate,{1} 생산 속도 {0},{1} spawn rate {0},
+Stat.SpawnCount,{1} 한 번에 {0}명,{1} {0} per spawn,
+Stat.Multishot,{1} 화살 {0}발,{1} {0} arrows,
+Stat.Splash,{1} 범위 {0},{1} area {0},
+Stat.Gold,처치 금화 {0},Kill gold {0},
+Stat.Souls,처치 영혼 {0},Kill souls {0},
+Stat.WallHP,성벽 체력 {0},Wall health {0},
+Stat.SpellPower,스펠 위력 {0},Spell power {0},
+Stat.SpellCooldown,스펠 대기 감소 {0},Spell cooldown -{0},
+Perk.Start,시작 별,Origin,
+Perk.Small,작은 별,Minor star,
+Perk.Taken,찍은 별,Taken,
+Perk.Locked,이어진 별을 먼저 찍어야 한다,Take a connected star first,
+Perk.Cost,클릭: {0} 영혼으로 찍기,Click: take for {0} souls,
+Perk.NeedSouls,영혼 부족 ({0} 필요),Need {0} souls,
+Perk.PotHelmet,냄비 투구,Pot Helmets,큰 별
+Perk.EndlessGrunts,졸병 무한 생산,Endless Grunts,큰 별
+Perk.StoneWall,돌 성벽,Stone Wall,큰 별
+Perk.Fortress,난공불락,Fortress,큰 별
+Perk.DoubleShot,두 발 쏘기,Double Shot,큰 별
+Perk.ArrowRain,화살비,Arrow Rain,큰 별
+Perk.GoldRush,금광,Gold Rush,큰 별
+Perk.SoulHarvest,영혼 수확,Soul Harvest,큰 별
+Perk.BigHammer,더 큰 망치,Bigger Hammer,큰 별
+Perk.Smithy,대장장이 공방,Smithy,큰 별
+Perk.Meteorology,천문학,Meteorology,큰 별
+Perk.QuickCast,빠른 주문,Quick Cast,큰 별
+Perk.IronWall,철벽,Iron Wall,큰 별
+Perk.ShieldBash,방패 밀치기,Shield Bash,큰 별
+Perk.Charge,전군 돌격,Charge!,큰 별
+Perk.HordeTactics,물량 공세,Horde Tactics,큰 별

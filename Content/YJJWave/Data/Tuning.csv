@@ -1,0 +1,68 @@
+﻿Name,Value,Note
+SimStep,0.0333333,시뮬 고정 틱 (초)
+MaxStepsPerFrame,8,한 프레임에 도는 최대 틱 (배속 포함)
+SpeedSteps,3,배속 단계 수 (x1 x2 x4)
+SpeedFactor,2,단계마다 곱하는 배속
+UnitCapacity,40000,유닛 슬롯 수 (양 팀 합)
+MaxUnitsPerTeam,18000,편마다 최대 유닛 (넘으면 생산을 쉰다)
+FieldWidth,3600,전장 너비
+FieldHeight,1300,전장 높이
+FieldMargin,30,유닛이 못 가는 위아래·양 끝 여백
+WallX,520,성벽 x
+WallHP,2000,성벽 체력
+StartGold,200,시작 금화
+PassiveGold,4,초당 기본 금화
+EndlessLevelDuration,30,Waves.csv가 비었을 때 레벨 길이
+EndlessRateGrowth,1.15,정의된 마지막 레벨 뒤 레벨마다 생산 배율
+LevelHPGrowth,1.1,물결 레벨마다 적 체력 배율
+LevelDamageGrowth,1.06,물결 레벨마다 적 공격력 배율
+EnemySpawnInset,40,적이 나오는 곳: 오른쪽 끝에서 이만큼 안
+SpawnScatter,30,생산 위치 흩뿌림
+EnemySpawnBand,0.6,"적이 나오는 띠 높이 (전장 높이 비율, 가운데 기준)"
+MaxPendingDeaths,20000,HUD가 안 가져간 죽음 기록 최대
+PlotColumns,4,건설 칸 가로 수
+PlotRows,6,건설 칸 세로 수
+PlotStartX,70,첫 칸 x
+PlotSpacingX,120,칸 가로 간격
+PlotSpacingY,190,칸 세로 간격
+PlotSize,150,건설 먼지 연출 크기
+PlotPulseTime,0.3,병사를 내보낼 때 들썩이는 시간
+MaxBuildingLevel,20,병영 최대 레벨
+GridCellSize,24,이웃 찾기 격자 칸 크기 (작은 유닛 지름의 1.5~2배)
+RetargetTicks,8,몇 틱마다 대상을 다시 찾나 (유닛마다 엇갈림)
+MaxNeighbors,28,밀어내기 검사 최대 이웃 수
+SeparationStiffness,0.5,겹친 만큼 밀어내는 비율 (틱마다)
+MaxPushPerTick,3,한 틱에 밀려나는 최대 거리
+UnitAcceleration,8,원하는 속도로 붙는 빠르기 (/초)
+ImpulseDamping,5,밀쳐진 속도가 줄어드는 빠르기 (/초)
+LateralDrift,0.25,행군할 때 위아래로 흔들리는 정도 (속도 비율)
+BigUnitRadius,20,이 반지름 이상은 큰 유닛(보스): 모두가 따로 밀어내기 검사
+WallAttackReach,8,적이 성벽을 때리는 거리
+ArrowHitRadius,18,대상이 먼저 죽은 화살이 다른 적을 맞히는 반경
+MultishotSpread,80,추가 화살이 노리는 대상 주변 반경
+HitFlashTime,0.12,맞으면 붉게 깜빡이는 시간
+AttackAnimTime,0.2,공격 그림을 보여 주는 시간
+DeathFling,140,죽을 때 맞은 방향으로 날아가는 속도
+MeteorDamage,400,유성 피해
+MeteorRadius,140,유성 반경
+MeteorKnockback,1800,유성 밀쳐내기 (질량으로 나눈다)
+MeteorFallTime,0.6,유성이 떨어지는 시간
+MeteorCooldown,12,유성 재사용 대기
+RallyDuration,6,돌격 함성 지속
+RallyMoveSpeed,1.5,함성 중 이동 속도 배율
+RallyAttackSpeed,1.6,함성 중 공격 속도 배율
+RallyCooldown,25,함성 재사용 대기
+MinCooldownScale,0.3,재사용 대기 감소의 바닥
+BlastEffectTime,0.5,유성 폭발 연출 시간
+RallyEffectTime,0.8,함성 고리 연출 시간
+BuildEffectTime,0.5,건설 먼지 연출 시간
+PerkCostBase,15,첫 별 영혼 비용
+PerkCostGrowth,1.12,별을 찍을 때마다 비용 배율
+BotThinkInterval,0.5,봇 판단 간격 (게임 시간)
+BotCameraFollow,1.5,봇 카메라가 전선을 따라가는 빠르기
+BotCameraZoom,0.7,봇 카메라 확대
+BotMeteorLead,60,봇 유성: 적 앞줄보다 이만큼 뒤
+BotRallyRatio,1.2,적 수가 아군의 이 배를 넘으면 함성
+BotExitDelay,2,끝나고 종료까지 기다리는 실제 시간
+BenchDepth,0.25,벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
+BenchCameraZoom,0.5,벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)
