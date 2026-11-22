@@ -228,7 +228,7 @@ struct FYJJUILayout
 	UPROPERTY() float MidText = 0.f;   // 중간 글자
 	UPROPERTY() float SmallText = 0.f;   // 작은 글자
 	UPROPERTY() float TinyText = 0.f;   // 아주 작은 글자
-	UPROPERTY() float PanelPad = 0.f;   // 패널 안쪽 여백
+	UPROPERTY() float PanelPad = 0.f;   // 패널 안쪽 여백 (테두리 두께 포함, 글자가 테두리에 붙지 않게)
 	UPROPERTY() float SidePanelW = 0.f;   // 좌측 패널 너비 (모든 UI가 여기. 전장은 나머지 전부)
 	UPROPERTY() float SectionGap = 0.f;   // 패널 칸 사이 간격
 	UPROPERTY() float HeaderH = 0.f;   // 스테이지·웨이브 칸 높이

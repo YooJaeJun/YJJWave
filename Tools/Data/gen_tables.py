@@ -219,7 +219,7 @@ LAYOUT = [
     ("MidText", 26, False, "중간 글자"),
     ("SmallText", 20, False, "작은 글자"),
     ("TinyText", 16, False, "아주 작은 글자"),
-    ("PanelPad", 14, False, "패널 안쪽 여백"),
+    ("PanelPad", 22, False, "패널 안쪽 여백 (테두리 두께 포함, 글자가 테두리에 붙지 않게)"),
     ("SidePanelW", 420, False, "좌측 패널 너비 (모든 UI가 여기. 전장은 나머지 전부)"),
     ("SectionGap", 12, False, "패널 칸 사이 간격"),
     ("HeaderH", 120, False, "스테이지·웨이브 칸 높이"),

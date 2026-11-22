@@ -780,7 +780,7 @@ void AYJJWaveHUD::DrawCardPick()
 		const TArray<FString> Lines = WrapText(EffectText(Def), L.SmallText, L.CardW - Pad * 2.f);
 		for (int32 Line = 0; Line < Lines.Num(); ++Line)
 		{
-			DrawLabel(Lines[Line], X + Pad, Y + Pad * 2.f + L.MidText + Line * L.TipLineH, L.SmallText, YJJUI::Paper, 0.f, L.CardW - Pad * 2.f);
+			DrawLabel(Lines[Line], X + Pad, Y + Pad * 2.5f + L.MidText + Line * L.TipLineH, L.SmallText, YJJUI::Paper, 0.f, L.CardW - Pad * 2.f);
 		}
 		AddButton(EButton::Card, Index, X, Y, L.CardW, L.CardPickH);
 	}
