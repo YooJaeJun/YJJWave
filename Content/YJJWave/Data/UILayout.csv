@@ -4,6 +4,17 @@ FxCell,128,Fx.png 칸 크기
 BuildingCell,256,Buildings.png 칸 크기
 UiCell,128,UI.png 칸 크기
 ProjectileRow,15,Units.png 투사체 줄
+AnimWalkFirst,0,Units.png 걷기 첫 칸
+AnimWalkFrames,6,걷기 칸 수 (그림 크기만큼 걸을 때 한 바퀴)
+AnimAttackFirst,6,공격 첫 칸
+AnimAttackFrames,4,공격 칸 수 (들어 올림 → 때림 → 돌아옴)
+AnimHitFirst,10,맞음 첫 칸
+AnimHitFrames,2,맞음 칸 수
+AnimCorpse,12,시체 칸
+AnimIdleFirst,13,숨쉬기 첫 칸
+AnimIdleFrames,2,숨쉬기 칸 수
+AnimIdleSpeed,6,이 속력보다 느리면 숨쉬기 그림
+AnimIdleFps,2.5,숨쉬기 초당 칸
 EmptyPlotCol,4,Buildings.png 빈 칸
 WallCol,5,Buildings.png 성벽 조각
 FxShadow,0,Fx 칸: 그림자
@@ -39,7 +50,6 @@ EdgePan,1,1이면 화면 가장자리에 마우스를 대면 이동
 EdgePanPixels,12,가장자리 폭
 GroundTargetWidth,4096,피·시체가 쌓이는 바닥 렌더 타깃 너비 (높이는 전장 비율)
 FootAnchor,0.92,유닛 그림에서 발 위치 (위=0 아래=1)
-WalkBob,0.06,걸을 때 통통 튀는 높이 (그림 크기 비율)
 CullMargin,120,화면 밖 여유 (월드)
 SortBuckets,512,앞뒤 정렬 버킷 수
 ShadowMinZoom,0.55,이보다 멀리 보면 그림자 생략

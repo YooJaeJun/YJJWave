@@ -143,8 +143,8 @@ private:
 	void DrawGround();
 	void DrawCamp();
 	void DrawUnits();
-	/** 유닛 그림 칸과 걸을 때 통통 튀는 높이 (ParallelFor 안에서 부른다: 읽기만) */
-	void PickFrame(const FYJJHordeView& Horde, int32 Slot, float Size, int32& OutFrame, float& OutBob) const;
+	/** 유닛 그림 칸: 공격 > 맞음 > 걷기 > 숨쉬기 (ParallelFor 안에서 부른다: 읽기만) */
+	int32 PickFrame(const FYJJHordeView& Horde, int32 Slot) const;
 	void DrawDying();
 	void DrawProjectiles();
 	void DrawEffects();
@@ -231,17 +231,14 @@ private:
 	int32 HoverPerk = INDEX_NONE;
 	float FrameMs = 0.f;
 	float UnitDrawMs = 0.f;
+	/** 숨쉬기 그림 시계 (실제 시간) */
+	float AnimClock = 0.f;
 
 	// 그리기용 임시 배열 (매 프레임 다시 쓴다)
 	TArray<int32> Visible;
 	TArray<int32> Sorted;
 	TArray<int32> BucketStart;
 
-	// 아틀라스 칸 약속 (Tools/Art/generate_art.py 와 같다)
-	static constexpr int32 FrameWalkA = 0;
-	static constexpr int32 FrameWalkB = 1;
-	static constexpr int32 FrameAttack = 2;
-	static constexpr int32 FrameCorpse = 3;
 
 	static constexpr float VirtualWidth = 1920.f;
 	static constexpr float VirtualHeight = 1080.f;

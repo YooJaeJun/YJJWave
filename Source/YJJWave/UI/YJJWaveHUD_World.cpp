@@ -174,9 +174,7 @@ void AYJJWaveHUD::DrawUnits()
 			const int32 Slot = Sorted[Index];
 			const FYJJUnitDef& Def = Defs[Horde.Type[Slot]];
 			const float Size = Def.DrawSize * Zoom;
-			int32 Frame = 0;
-			float Bob = 0.f;
-			PickFrame(Horde, Slot, Size, Frame, Bob);
+			const int32 Frame = PickFrame(Horde, Slot);
 			const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
 
 			FLinearColor Color = FLinearColor::White;
@@ -191,7 +189,7 @@ void AYJJWaveHUD::DrawUnits()
 			const FVector2f UV0 = UnitAtlas.UV(Frame, Def.AtlasRow);
 			const bool bFlip = Horde.FaceLeft[Slot] != 0;
 			FYJJSpriteInstance& Sprite = Sprites[Index];
-			Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half - Bob, Size * Half, Size * Half);
+			Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half, Size * Half, Size * Half);
 			Sprite.UV = bFlip
 				? FVector4f(UV0.X + UnitAtlas.CellUV.X, UV0.Y, -UnitAtlas.CellUV.X, UnitAtlas.CellUV.Y)
 				: FVector4f(UV0.X, UV0.Y, UnitAtlas.CellUV.X, UnitAtlas.CellUV.Y);
@@ -201,17 +199,28 @@ void AYJJWaveHUD::DrawUnits()
 	UnitDrawMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);
 }
 
-void AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot, float Size, int32& OutFrame, float& OutBob) const
+int32 AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot) const
 {
-	const float Phase = Horde.WalkPhase[Slot];
-	OutBob = 0.f;
+	const FYJJUILayout& L = UI();
+	const FYJJTuning& T = YJJData::Tune();
+	auto Step = [](float Fraction, float Frames) { return FMath::Clamp(FMath::FloorToInt(Fraction * Frames), 0, FMath::Max(FMath::RoundToInt(Frames) - 1, 0)); };
 	if (Horde.AttackAnim[Slot] > 0.f)
 	{
-		OutFrame = FrameAttack;
-		return;
+		const float Done = 1.f - Horde.AttackAnim[Slot] / FMath::Max(T.AttackAnimTime, KINDA_SMALL_NUMBER);
+		return FMath::RoundToInt(L.AnimAttackFirst) + Step(Done, L.AnimAttackFrames);
 	}
-	OutFrame = FMath::Frac(Phase) < Half ? FrameWalkA : FrameWalkB;
-	OutBob = FMath::Abs(FMath::Sin(Phase * UE_PI)) * UI().WalkBob * Size;
+	if (Horde.Flash[Slot] > 0.f)
+	{
+		const float Done = 1.f - Horde.Flash[Slot] / FMath::Max(T.HitFlashTime, KINDA_SMALL_NUMBER);
+		return FMath::RoundToInt(L.AnimHitFirst) + Step(Done, L.AnimHitFrames);
+	}
+	if (Horde.MoveSpeed[Slot] >= L.AnimIdleSpeed)
+	{
+		return FMath::RoundToInt(L.AnimWalkFirst) + Step(FMath::Frac(Horde.WalkPhase[Slot]), L.AnimWalkFrames);
+	}
+	// 숨쉬기: 유닛마다 박자를 조금씩 어긋나게 (걷기 위상을 씨앗으로)
+	const float Breath = FMath::Frac(AnimClock * L.AnimIdleFps / FMath::Max(L.AnimIdleFrames, 1.f) + Horde.WalkPhase[Slot]);
+	return FMath::RoundToInt(L.AnimIdleFirst) + Step(Breath, L.AnimIdleFrames);
 }
 
 void AYJJWaveHUD::DrawDying()
@@ -226,7 +235,7 @@ void AYJJWaveHUD::DrawDying()
 		const FYJJUnitDef& Def = YJJData::Unit(Body.Type);
 		const float Size = Def.DrawSize * Zoom;
 		const FVector2f Center = WorldToScreen(Body.Pos - FVector2f(0.f, Body.Height + Def.DrawSize * (UI().FootAnchor - Half)));
-		AddQuadRotated(Batch, Center, FVector2f(Size), Body.Angle, UnitAtlas.UV(FrameAttack, Def.AtlasRow), UnitAtlas.CellUV, FLinearColor::White, Body.bFaceLeft);
+		AddQuadRotated(Batch, Center, FVector2f(Size), Body.Angle, UnitAtlas.UV(FMath::RoundToInt(UI().AnimHitFirst), Def.AtlasRow), UnitAtlas.CellUV, FLinearColor::White, Body.bFaceLeft);
 	}
 }
 

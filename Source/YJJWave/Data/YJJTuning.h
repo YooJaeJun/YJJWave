@@ -105,6 +105,17 @@ struct FYJJUILayout
 	UPROPERTY() float BuildingCell = 0.f;   // Buildings.png 칸 크기
 	UPROPERTY() float UiCell = 0.f;   // UI.png 칸 크기
 	UPROPERTY() float ProjectileRow = 0.f;   // Units.png 투사체 줄
+	UPROPERTY() float AnimWalkFirst = 0.f;   // Units.png 걷기 첫 칸
+	UPROPERTY() float AnimWalkFrames = 0.f;   // 걷기 칸 수 (그림 크기만큼 걸을 때 한 바퀴)
+	UPROPERTY() float AnimAttackFirst = 0.f;   // 공격 첫 칸
+	UPROPERTY() float AnimAttackFrames = 0.f;   // 공격 칸 수 (들어 올림 → 때림 → 돌아옴)
+	UPROPERTY() float AnimHitFirst = 0.f;   // 맞음 첫 칸
+	UPROPERTY() float AnimHitFrames = 0.f;   // 맞음 칸 수
+	UPROPERTY() float AnimCorpse = 0.f;   // 시체 칸
+	UPROPERTY() float AnimIdleFirst = 0.f;   // 숨쉬기 첫 칸
+	UPROPERTY() float AnimIdleFrames = 0.f;   // 숨쉬기 칸 수
+	UPROPERTY() float AnimIdleSpeed = 0.f;   // 이 속력보다 느리면 숨쉬기 그림
+	UPROPERTY() float AnimIdleFps = 0.f;   // 숨쉬기 초당 칸
 	UPROPERTY() float EmptyPlotCol = 0.f;   // Buildings.png 빈 칸
 	UPROPERTY() float WallCol = 0.f;   // Buildings.png 성벽 조각
 	UPROPERTY() float FxShadow = 0.f;   // Fx 칸: 그림자
@@ -142,7 +153,6 @@ struct FYJJUILayout
 	// ---- 전장 그리기 ----
 	UPROPERTY() float GroundTargetWidth = 0.f;   // 피·시체가 쌓이는 바닥 렌더 타깃 너비 (높이는 전장 비율)
 	UPROPERTY() float FootAnchor = 0.f;   // 유닛 그림에서 발 위치 (위=0 아래=1)
-	UPROPERTY() float WalkBob = 0.f;   // 걸을 때 통통 튀는 높이 (그림 크기 비율)
 	UPROPERTY() float CullMargin = 0.f;   // 화면 밖 여유 (월드)
 	UPROPERTY() float SortBuckets = 0.f;   // 앞뒤 정렬 버킷 수
 	UPROPERTY() float ShadowMinZoom = 0.f;   // 이보다 멀리 보면 그림자 생략

@@ -1,6 +1,6 @@
 """YJJWave 그림을 Pillow로 만든다 → Content/YJJWave/Art/*.png (게임이 실행 중에 바로 읽는다).
 
-  Units.png      128px 칸, 8열. 줄 = Units.csv AtlasRow, 열 0 걷기A 1 걷기B 2 공격 3 시체. 15번 줄 = 투사체
+  Units.png      128px 칸, 16열. 줄 = Units.csv AtlasRow, 열 0~5 걷기 6~9 공격 10~11 맞음 12 시체 13~14 숨쉬기. 15번 줄 = 투사체
   Fx.png         128px 칸: 0 그림자 1~4 피 5 그을음 6 먼지 7 고리 8 운석 9 폭발
   Buildings.png  256px 칸: 0 졸병 막사 1 궁수 초소 2 방패 막사 3 대장간 4 빈 칸 5 성벽 조각
   UI.png         128px 칸: 0 금화 1 영혼 2 칼 3 해골 4 유성 5 뿔나팔 6 별 7 큰 별 8 성벽 9~12 병영 아이콘 13 패널 14 어두운 패널 15 카드
@@ -22,7 +22,7 @@ INK = (46, 28, 22, 255)      # 먹선
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "..", "Content", "YJJWave", "Art")
 
 UNIT_CELL = 128
-UNIT_COLS = 8
+UNIT_COLS = 16
 UNIT_ROWS = 16
 PROJECTILE_ROW = 15
 FOOT = 0.92
@@ -110,8 +110,35 @@ UNITS = [
 ]
 
 
-def draw_unit(u, frame, dead=False):
-    """오른쪽을 보는 졸라맨. frame 0/1 걷기, 2 공격"""
+# 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다)
+def walk_pose(i, n):
+    t = i / n * math.tau
+    s = math.sin(t)
+    return dict(step=(-7 * s, 7 * s), lean=1, swing=0.08 * s, bob=abs(math.cos(t)) * 2.5)
+
+
+ATTACK_POSES = [
+    dict(step=(-3, 3), lean=-3, swing=-0.5),                 # 들어 올림
+    dict(step=(-2, 4), lean=2, swing=0.2),                   # 내리치는 중
+    dict(step=(-4, 6), lean=6, swing=1.0, mouth="open"),     # 때림
+    dict(step=(-3, 4), lean=3, swing=0.6, mouth="open"),     # 돌아옴
+]
+HIT_POSES = [
+    dict(step=(3, -2), lean=-7, swing=-0.2, eyes="squint", mouth="open"),
+    dict(step=(2, -1), lean=-4, swing=-0.1, eyes="squint"),
+]
+IDLE_POSES = [
+    dict(step=(-2, 2), lean=0, swing=0, bob=0),
+    dict(step=(-2, 2), lean=0, swing=0.04, bob=1.2),
+]
+WALK_FRAMES = 6
+FRAME_LAYOUT = ([walk_pose(i, WALK_FRAMES) for i in range(WALK_FRAMES)] + ATTACK_POSES + HIT_POSES)   # 0~11
+CORPSE_COL = 12
+IDLE_COL = 13
+
+
+def draw_unit(u, pose, dead=False):
+    """오른쪽을 보는 졸라맨. pose: step(뒷발,앞발 x), lean(앞으로 기울기), swing(-0.5 들어 올림 ~ 1 때림), bob, eyes, mouth"""
     p = Pen(UNIT_CELL, UNIT_CELL, lw=3.2)
     k = u["scale"]
     cx = 64
@@ -125,12 +152,13 @@ def draw_unit(u, frame, dead=False):
     bw = (13 if not fat else 24) * k
     bh = 20 * k
     leg = 14 * k
-    hip_y = foot - leg
+    bob = pose.get("bob", 0)
+    hip_y = foot - leg - bob
     body_cy = hip_y - bh * 0.45
     head_cy = body_cy - bh * 0.5 - hr * 0.78
 
-    step = [(-7, 6), (6, -6), (-3, 3)][frame]
-    lean = [0, 0, 5][frame]
+    step = pose["step"]
+    lean = pose["lean"]
 
     if u.get("cape"):
         p.poly([(cx - 4 + lean, body_cy - bh * 0.4), (cx - 26 * k, foot - 2), (cx + 6, foot - 4)], rgba(u["cape"]))
@@ -143,10 +171,10 @@ def draw_unit(u, frame, dead=False):
     wx = cx + bw * 0.6 + lean
     wy = body_cy
     weapon = u["weapon"]
-    swing = frame == 2
+    swing = pose["swing"]
 
     def club(color, length, thick, head_r):
-        ang = math.radians(-20 if swing else -100)
+        ang = math.radians(-100 + 80 * swing)
         ex, ey = wx + math.cos(ang) * length, wy + math.sin(ang) * length
         p.stick(wx, wy, ex, ey, thick, rgba(color))
         if head_r:
@@ -169,7 +197,7 @@ def draw_unit(u, frame, dead=False):
     elif weapon == "bone":
         club("#F1ECDC", 22 * k, 5 * k, 5 * k)
     elif weapon == "hammer":
-        ang = math.radians(-10 if swing else -95)
+        ang = math.radians(-95 + 85 * swing)
         ex, ey = wx + math.cos(ang) * 30 * k, wy + math.sin(ang) * 30 * k
         p.stick(wx, wy, ex, ey, 5 * k, rgba("#9C6B3D"))
         hx, hy = math.cos(ang + math.pi / 2), math.sin(ang + math.pi / 2)
@@ -178,25 +206,25 @@ def draw_unit(u, frame, dead=False):
                 (ex + hx * 14 * k + math.cos(ang) * 8, ey + hy * 14 * k + math.sin(ang) * 8),
                 (ex - hx * 14 * k + math.cos(ang) * 8, ey - hy * 14 * k + math.sin(ang) * 8)], rgba("#8A8F99"))
     elif weapon == "greatsword":
-        ang = math.radians(-15 if swing else -80)
+        ang = math.radians(-80 + 65 * swing)
         ex, ey = wx + math.cos(ang) * 42, wy + math.sin(ang) * 42
         p.stick(wx, wy, ex, ey, 7, rgba("#C9CED8"))
         p.stick(wx - math.sin(ang) * 9, wy + math.cos(ang) * 9, wx + math.sin(ang) * 9, wy - math.cos(ang) * 9, 4, rgba("#D9A93A"))
     elif weapon in ("bow", "bonebow"):
         color = "#A0683A" if weapon == "bow" else "#F1ECDC"
-        bx = wx + (6 if swing else 2)
+        bx = wx + 2 + 4 * max(swing, 0)
         p.arc(bx - 8, wy, 16 * k, -70, 70, 3.5, rgba(color))
         p.stick(bx - 8 + 16 * k * math.cos(math.radians(-70)), wy + 16 * k * math.sin(math.radians(-70)),
                 bx - 8 + 16 * k * math.cos(math.radians(70)), wy + 16 * k * math.sin(math.radians(70)), 1.2, rgba("#EEEEEE"), line=False)
-        if swing:
+        if swing > 0.3:
             p.stick(bx - 14, wy, bx + 14, wy, 2, rgba("#7A5230"))
     elif weapon == "shield":
-        sx = cx + bw * 0.55 + lean + (5 if swing else 0)
+        sx = cx + bw * 0.55 + lean + 5 * max(swing, 0)
         p.ellipse(sx, body_cy + 2, 12 * k, 16 * k, rgba("#B8834C"))
         p.ellipse(sx, body_cy + 2, 4 * k, 4 * k, rgba("#8A8F99"))
     elif weapon == "claw":
         for i in range(3):
-            a = math.radians(-30 + i * 25 + (20 if swing else 0))
+            a = math.radians(-30 + i * 25 + 20 * swing)
             p.stick(wx, wy, wx + math.cos(a) * 12, wy + math.sin(a) * 12, 2.5, rgba("#FFF4D6"))
 
     # 머리
@@ -234,7 +262,12 @@ def draw_unit(u, frame, dead=False):
     # 얼굴: 점 눈 (해골은 큰 구멍)
     ex = hx + hr * 0.25
     ey = head_cy + hr * 0.05
-    if dead:
+    if pose.get("eyes") == "squint" and not dead:
+        for ox, d in ((-hr * 0.28, 1), (hr * 0.28, -1)):
+            p.stick(ex + ox - 3 * d, ey - 3, ex + ox + 3 * d, ey, 2)
+            p.stick(ex + ox + 3 * d, ey, ex + ox - 3 * d, ey + 3, 2)
+        p.ellipse(ex, ey + hr * 0.45, 3.5, 3, rgba("#7A2A20"), line=False)
+    elif dead:
         for ox in (-hr * 0.28, hr * 0.28):
             p.stick(ex + ox - 3, ey - 3, ex + ox + 3, ey + 3, 2)
             p.stick(ex + ox - 3, ey + 3, ex + ox + 3, ey - 3, 2)
@@ -250,7 +283,7 @@ def draw_unit(u, frame, dead=False):
     else:
         p.dot(ex - hr * 0.28, ey, 2.6)
         p.dot(ex + hr * 0.28, ey, 2.6)
-        if frame == 2:
+        if pose.get("mouth") == "open":
             p.ellipse(ex, ey + hr * 0.42, 3.5, 3, rgba("#7A2A20"), line=False)   # 기합 입
         else:
             p.stick(ex - 3, ey + hr * 0.42, ex + 3, ey + hr * 0.42, 1.6)
@@ -260,7 +293,7 @@ def draw_unit(u, frame, dead=False):
 
 def corpse(u):
     """시체: 쓰러진 모습 (눈 X) + 바닥에 붙게 아래로"""
-    img = draw_unit(u, 0, dead=True)
+    img = draw_unit(u, IDLE_POSES[0], dead=True)
     img = img.rotate(90, resample=Image.BICUBIC, expand=False)
     out = Image.new("RGBA", img.size, (0, 0, 0, 0))
     out.alpha_composite(img, (0, int(UNIT_CELL * 0.18)))
@@ -281,9 +314,11 @@ def projectile(kind):
 def units_atlas():
     atlas = Image.new("RGBA", (UNIT_CELL * UNIT_COLS, UNIT_CELL * UNIT_ROWS), (0, 0, 0, 0))
     for row, u in enumerate(UNITS):
-        for frame in range(3):
-            atlas.alpha_composite(draw_unit(u, frame), (frame * UNIT_CELL, row * UNIT_CELL))
-        atlas.alpha_composite(corpse(u), (3 * UNIT_CELL, row * UNIT_CELL))
+        for col, pose in enumerate(FRAME_LAYOUT):
+            atlas.alpha_composite(draw_unit(u, pose), (col * UNIT_CELL, row * UNIT_CELL))
+        atlas.alpha_composite(corpse(u), (CORPSE_COL * UNIT_CELL, row * UNIT_CELL))
+        for i, pose in enumerate(IDLE_POSES):
+            atlas.alpha_composite(draw_unit(u, pose), ((IDLE_COL + i) * UNIT_CELL, row * UNIT_CELL))
     for kind in range(2):
         atlas.alpha_composite(projectile(kind), (kind * UNIT_CELL, PROJECTILE_ROW * UNIT_CELL))
     return atlas
@@ -486,7 +521,7 @@ def ui_icon(i):
         p.stick(22, 78, 106, 78, 3)
     elif 9 <= i <= 12:   # 병영 아이콘 = 병사 얼굴
         u = UNITS[i - 9]
-        face = draw_unit(u, 0).crop((16, 0, 112, 96)).resize((C, C), Image.LANCZOS)
+        face = draw_unit(u, IDLE_POSES[0]).crop((16, 0, 112, 96)).resize((C, C), Image.LANCZOS)
         return face
     elif i in (13, 14, 15):   # 패널 (9칸 늘리기용. 모서리 = 칸의 1/4)
         fill = {13: rgba("#5C3B28"), 14: rgba("#2E1E16", 235), 15: rgba("#6E4A30")}[i]

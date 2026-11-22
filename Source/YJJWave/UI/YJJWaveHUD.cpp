@@ -194,6 +194,7 @@ void AYJJWaveHUD::DrawHUD()
 		return;
 	}
 	ScreenSize = FVector2f(Canvas->ClipX, Canvas->ClipY);
+	AnimClock = GetWorld()->GetRealTimeSeconds();
 	ViewScale = FMath::Min(ScreenSize.X / VirtualWidth, ScreenSize.Y / VirtualHeight);
 	ViewOffset = FVector2f((ScreenSize.X - VirtualWidth * ViewScale) * Half, (ScreenSize.Y - VirtualHeight * ViewScale) * Half);
 	Buttons.Reset();
@@ -292,7 +293,7 @@ void AYJJWaveHUD::TakeDeaths()
 			FYJJStamp& Stamp = Stamps.AddDefaulted_GetRef();
 			Stamp.Pos = Death.Pos;
 			Stamp.Size = Def.DrawSize;
-			Stamp.Cell = Def.AtlasRow * UnitAtlas.Columns + FrameCorpse;
+			Stamp.Cell = Def.AtlasRow * UnitAtlas.Columns + FMath::RoundToInt(UI().AnimCorpse);
 			Stamp.bUnits = true;
 			Stamp.bFlip = Death.bFaceLeft;
 			Stamp.Color = FLinearColor::White;
@@ -356,7 +357,7 @@ void AYJJWaveHUD::UpdateDying(float Dt)
 		FYJJStamp& Stamp = Stamps.AddDefaulted_GetRef();
 		Stamp.Pos = Body.Pos;
 		Stamp.Size = Def.DrawSize;
-		Stamp.Cell = Def.AtlasRow * UnitAtlas.Columns + FrameCorpse;
+		Stamp.Cell = Def.AtlasRow * UnitAtlas.Columns + FMath::RoundToInt(UI().AnimCorpse);
 		Stamp.bUnits = true;
 		Stamp.bFlip = Body.bFaceLeft;
 		Stamp.Color = FLinearColor(UI().CorpseShade, UI().CorpseShade, UI().CorpseShade, 1.f);
