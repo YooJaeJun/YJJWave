@@ -201,7 +201,7 @@ Talk.Boss2,끓여 보면 안다.,We'll find out.,
 Talk.Deep1,끝이 안 보입니다.,There's no end to them.,말풍선 (Dialogues.csv Deep)
 Talk.Deep2,냄비 바닥도 안 보인다. 계속 넣어라.,Nor to the pot. Keep them coming.,
 Talk.HeroLow1,아직 간도 안 봤다.,I haven't even tasted it yet.,말풍선 (Dialogues.csv HeroLow)
-Font.File,DoHyeon-Regular.ttf,DoHyeon-Regular.ttf,언어별 글꼴 (Content/YJJWave/Fonts). 그 글꼴에 없는 한글은 DoHyeon으로
+Font.File,DoHyeon-Regular.ttf,LilitaOne-Regular.ttf,언어별 글꼴 (Content/YJJWave/Fonts). en = Lilita One (OFL). 그 글꼴에 없는 한글은 DoHyeon으로
 Title.Name,국거리 디펜스,Soup Fodder Defense,"게임 제목 (국거리 = 냄비에 들어갈 운명, cannon fodder 말장난)"
 Title.Tagline,이긴 쪽이 끓인다,The winners do the cooking.,
 Title.Start,시작하기,Start,

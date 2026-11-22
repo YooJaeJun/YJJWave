@@ -12,6 +12,9 @@ $Editor = Join-Path $EngineDir "Binaries\Win64\UnrealEditor-Cmd.exe"
 
 python (Join-Path $PSScriptRoot "generate_audio.py") (Join-Path $PSScriptRoot "Generated")
 if ($LASTEXITCODE -ne 0) { throw "generate_audio.py failed" }
+# 효과음 팩(Kenney CC0)으로 고른 효과음을 덮어쓴다
+python (Join-Path $PSScriptRoot "apply_sfx_pack.py")
+if ($LASTEXITCODE -ne 0) { throw "apply_sfx_pack.py failed" }
 if ($SkipImport) { exit 0 }
 
 $Script = (Join-Path $PSScriptRoot "import_audio.py").Replace('\', '/')
