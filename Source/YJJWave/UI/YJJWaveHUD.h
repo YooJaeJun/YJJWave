@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Data/YJJTuning.h"
 #include "GameFramework/HUD.h"
+#include "Sim/YJJHorde.h"
 #include "Sim/YJJWaveTypes.h"
 #include "YJJWaveHUD.generated.h"
 
@@ -116,7 +117,12 @@ private:
 		Speed,
 	};
 
+	/** 기다리지 않는 판 (Horde 밖 필드만). 유닛은 View() */
 	FYJJBattle* Battle() const;
+	/** 판을 바꾸는 입력용: 작업 스레드 시뮬이 끝날 때까지 기다린다 */
+	FYJJBattle* EditBattle() const;
+	/** 이번 프레임 유닛 사본 */
+	const FYJJHordeView& View() const;
 	const FYJJUILayout& UI() const;
 
 	// 준비
@@ -137,6 +143,8 @@ private:
 	void DrawGround();
 	void DrawCamp();
 	void DrawUnits();
+	/** 유닛 그림 칸과 걸을 때 통통 튀는 높이 (ParallelFor 안에서 부른다: 읽기만) */
+	void PickFrame(const FYJJHordeView& Horde, int32 Slot, float Size, int32& OutFrame, float& OutBob) const;
 	void DrawDying();
 	void DrawProjectiles();
 	void DrawEffects();
@@ -244,6 +252,7 @@ private:
 	static constexpr int32 NineSlice = 3;
 	static constexpr int32 QuadVertices = 4;
 	static constexpr int32 QuadTriangles = 2;
+	static constexpr int32 SpriteChunk = 1024;
 	static constexpr const TCHAR* BaseFontPath = TEXT("/Engine/EngineFonts/Roboto.Roboto");
 	static constexpr const TCHAR* GameFontFile = TEXT("YJJWave/Fonts/Jua-Regular.ttf");
 	static constexpr const TCHAR* GameFontFace = TEXT("Regular");

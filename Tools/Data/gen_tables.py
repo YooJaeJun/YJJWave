@@ -47,6 +47,7 @@ TUNING = [
     ("# 유닛 움직임", None, False, ""),
     ("GridCellSize", 24, False, "이웃 찾기 격자 칸 크기 (작은 유닛 지름의 1.5~2배)"),
     ("RetargetTicks", 8, True, "몇 틱마다 대상을 다시 찾나 (유닛마다 엇갈림)"),
+    ("ReorderTicks", 30, True, "몇 틱마다 유닛 슬롯을 격자 칸 순서로 다시 모으나 (캐시 적중, 0이면 끔)"),
     ("MaxNeighbors", 28, True, "밀어내기 검사 최대 이웃 수"),
     ("SeparationStiffness", 0.5, False, "겹친 만큼 밀어내는 비율 (틱마다)"),
     ("MaxPushPerTick", 3, False, "한 틱에 밀려나는 최대 거리"),

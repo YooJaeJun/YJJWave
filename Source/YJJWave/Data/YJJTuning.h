@@ -48,6 +48,7 @@ struct FYJJTuning
 	// ---- 유닛 움직임 ----
 	UPROPERTY() float GridCellSize = 0.f;   // 이웃 찾기 격자 칸 크기 (작은 유닛 지름의 1.5~2배)
 	UPROPERTY() int32 RetargetTicks = 0;   // 몇 틱마다 대상을 다시 찾나 (유닛마다 엇갈림)
+	UPROPERTY() int32 ReorderTicks = 0;   // 몇 틱마다 유닛 슬롯을 격자 칸 순서로 다시 모으나 (캐시 적중, 0이면 끔)
 	UPROPERTY() int32 MaxNeighbors = 0;   // 밀어내기 검사 최대 이웃 수
 	UPROPERTY() float SeparationStiffness = 0.f;   // 겹친 만큼 밀어내는 비율 (틱마다)
 	UPROPERTY() float MaxPushPerTick = 0.f;   // 한 틱에 밀려나는 최대 거리

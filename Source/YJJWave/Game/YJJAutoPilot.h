@@ -56,6 +56,8 @@ private:
 	double DensePhaseMsSum[static_cast<int32>(EYJJHordePhase::Count)] = {};
 	double DenseUnitDrawMsSum = 0.0;
 	int64 DenseVisibleSum = 0;
+	double DenseWaitMsSum = 0.0;
+	double DenseReorderMsSum = 0.0;
 	FRandomStream Random;
 
 	static constexpr int32 RandomSeed = 1234;

@@ -30,6 +30,7 @@ PlotPulseTime,0.3,병사를 내보낼 때 들썩이는 시간
 MaxBuildingLevel,20,병영 최대 레벨
 GridCellSize,24,이웃 찾기 격자 칸 크기 (작은 유닛 지름의 1.5~2배)
 RetargetTicks,8,몇 틱마다 대상을 다시 찾나 (유닛마다 엇갈림)
+ReorderTicks,30,"몇 틱마다 유닛 슬롯을 격자 칸 순서로 다시 모으나 (캐시 적중, 0이면 끔)"
 MaxNeighbors,28,밀어내기 검사 최대 이웃 수
 SeparationStiffness,0.5,겹친 만큼 밀어내는 비율 (틱마다)
 MaxPushPerTick,3,한 틱에 밀려나는 최대 거리

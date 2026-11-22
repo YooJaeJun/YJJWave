@@ -11,6 +11,7 @@ TAutoConsoleVariable<int32> AYJJWaveGameMode::CVarAutoPlay(TEXT("yjj.AutoPlay"),
 TAutoConsoleVariable<float> AYJJWaveGameMode::CVarAutoPlayTime(TEXT("yjj.AutoPlayTime"), 0.f, TEXT("오토파일럿: 게임 시간(초)이 지나면 요약을 남기고 종료. 0이면 계속"));
 TAutoConsoleVariable<float> AYJJWaveGameMode::CVarAutoPlaySpeed(TEXT("yjj.AutoPlaySpeed"), 1.f, TEXT("오토파일럿 배속"));
 TAutoConsoleVariable<float> AYJJWaveGameMode::CVarShotInterval(TEXT("yjj.ShotInterval"), 0.f, TEXT("오토파일럿: 실제 시간 몇 초마다 스크린샷 (0이면 끝에만)"));
+TAutoConsoleVariable<int32> AYJJWaveGameMode::CVarAsyncSim(TEXT("yjj.AsyncSim"), 1, TEXT("1이면 유닛 시뮬을 작업 스레드에서 그리기와 겹쳐 돌린다"));
 TAutoConsoleVariable<int32> AYJJWaveGameMode::CVarBench(TEXT("yjj.Bench"), 0, TEXT("시작하자마자 편마다 N마리를 깔아 맞붙인다"));
 
 AYJJWaveGameMode::AYJJWaveGameMode()
@@ -59,8 +60,22 @@ void AYJJWaveGameMode::CycleSpeed()
 	bUserPaused = false;
 }
 
+void AYJJWaveGameMode::WaitForSim()
+{
+	if (!bSimRunning)
+	{
+		return;
+	}
+	const double Start = FPlatformTime::Seconds();
+	SimTask.Wait();
+	SimWaitMs = static_cast<float>((FPlatformTime::Seconds() - Start) * MsPerSecond);
+	bSimRunning = false;
+}
+
 void AYJJWaveGameMode::Restart()
 {
+	WaitForSim();
+	PendingPostDt = 0.f;
 	Battle.Reset();
 	Accumulator = 0.0;
 	bBenchSpawned = false;
@@ -81,7 +96,9 @@ void AYJJWaveGameMode::SpawnBenchmark(int32 PerTeam)
 {
 	// 양 끝에서 빽빽한 덩어리로 시작해 가운데서 부딪히게
 	const FYJJTuning& T = YJJData::Tune();
-	FRandomStream Random(PerTeam);
+	// 한 스트림에서 Y·깊이를 번갈아 뽑으면 LCG 격자 무늬(사선 줄)가 생겨서 둘로 나눈다
+	FRandomStream RandomY(PerTeam);
+	FRandomStream RandomDepth(PerTeam * BenchSeedSalt + 1);
 	TArray<int32> PlayerUnits;
 	TArray<int32> EnemyUnits;
 	for (int32 Unit = 0; Unit < YJJData::Units().Num(); ++Unit)
@@ -98,8 +115,8 @@ void AYJJWaveGameMode::SpawnBenchmark(int32 PerTeam)
 	const FYJJSpawnStats Stats;
 	for (int32 Index = 0; Index < PerTeam; ++Index)
 	{
-		const float Y = Random.FRandRange(T.FieldMargin, Battle.FieldHeight - T.FieldMargin);
-		const float Depth = Random.FRand() * Battle.FieldWidth * T.BenchDepth;
+		const float Y = RandomY.FRandRange(T.FieldMargin, Battle.FieldHeight - T.FieldMargin);
+		const float Depth = RandomDepth.FRand() * Battle.FieldWidth * T.BenchDepth;
 		Battle.Horde.Spawn(PlayerUnits[Index % PlayerUnits.Num()], EYJJTeam::Player, FVector2f(Battle.WallX + Depth, Y), Stats);
 		Battle.Horde.Spawn(EnemyUnits[Index % EnemyUnits.Num()], EYJJTeam::Enemy, FVector2f(Battle.FieldWidth - T.EnemySpawnInset - Depth, Y), Stats);
 	}
@@ -109,6 +126,8 @@ void AYJJWaveGameMode::SpawnBenchmark(int32 PerTeam)
 void AYJJWaveGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	// 지난 프레임에 띄운 시뮬이 끝나야 판을 만질 수 있다
+	WaitForSim();
 
 	// 콘솔 변수는 -ExecCmds 로 첫 프레임 뒤에 들어오므로 여기서 확인한다
 	if (!AutoPilot && CVarAutoPlay.GetValueOnGameThread() > 0)
@@ -122,6 +141,23 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 		SpawnBenchmark(CVarBench.GetValueOnGameThread());
 	}
 
+	// 1) 지난 프레임에 띄운 시뮬을 마무리 (연출·보상·패배 판정)
+	WaitForSim();
+	if (PendingPostDt > 0.f)
+	{
+		Battle.PostStep(PendingPostDt);
+		PendingPostDt = 0.f;
+	}
+
+	if (AutoPilot)
+	{
+		AutoPilot->Tick(DeltaSeconds);
+	}
+
+	// 2) 이번 프레임 그리기용 사본
+	Battle.Horde.CopyTo(View);
+
+	// 3) 규칙·생산은 여기서, 유닛 시뮬은 작업 스레드로 (그리기와 겹친다)
 	if (IsRunning())
 	{
 		const FYJJTuning& T = YJJData::Tune();
@@ -129,16 +165,40 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 		int32 Steps = 0;
 		while (Accumulator >= T.SimStep && Steps < T.MaxStepsPerFrame)
 		{
-			Battle.Tick(T.SimStep);
 			Accumulator -= T.SimStep;
 			++Steps;
 		}
 		// 너무 밀리면 버린다 (느린 기계에서 눈덩이처럼 쌓이지 않게)
 		Accumulator = FMath::Min(Accumulator, static_cast<double>(T.SimStep));
+		if (Steps > 0)
+		{
+			Battle.PreStep(T.SimStep * Steps);
+			PendingPostDt = T.SimStep * Steps;
+			const float Step = T.SimStep;
+			if (CVarAsyncSim.GetValueOnGameThread() > 0)
+			{
+				bSimRunning = true;
+				SimTask = UE::Tasks::Launch(UE_SOURCE_LOCATION, [this, Steps, Step]()
+				{
+					for (int32 Index = 0; Index < Steps; ++Index)
+					{
+						Battle.Horde.Step(Step);
+					}
+				});
+			}
+			else
+			{
+				for (int32 Index = 0; Index < Steps; ++Index)
+				{
+					Battle.Horde.Step(Step);
+				}
+			}
+		}
 	}
+}
 
-	if (AutoPilot)
-	{
-		AutoPilot->Tick(DeltaSeconds);
-	}
+void AYJJWaveGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	WaitForSim();
+	Super::EndPlay(EndPlayReason);
 }

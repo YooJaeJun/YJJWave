@@ -63,7 +63,18 @@ const FYJJUILayout& AYJJWaveHUD::UI() const
 FYJJBattle* AYJJWaveHUD::Battle() const
 {
 	AYJJWaveGameMode* Mode = GetWorld() ? GetWorld()->GetAuthGameMode<AYJJWaveGameMode>() : nullptr;
+	return Mode ? &Mode->BattleNoWait() : nullptr;
+}
+
+FYJJBattle* AYJJWaveHUD::EditBattle() const
+{
+	AYJJWaveGameMode* Mode = GetWorld() ? GetWorld()->GetAuthGameMode<AYJJWaveGameMode>() : nullptr;
 	return Mode ? &Mode->GetBattle() : nullptr;
+}
+
+const FYJJHordeView& AYJJWaveHUD::View() const
+{
+	return GetWorld()->GetAuthGameMode<AYJJWaveGameMode>()->GetView();
 }
 
 void AYJJWaveHUD::BeginPlay()

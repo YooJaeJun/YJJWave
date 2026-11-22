@@ -42,7 +42,10 @@ class YJJWAVE_API FYJJBattle
 {
 public:
 	void Reset();
+	/** 한 틱 = PreStep(규칙·생산, 게임 스레드) → Horde.Step(작업 스레드 가능) → PostStep(연출·보상·패배, 게임 스레드) */
 	void Tick(float Dt);
+	void PreStep(float Dt);
+	void PostStep(float Dt);
 
 	// ---- 병영 ----
 	int32 BuildCost(int32 Building) const;
@@ -82,8 +85,6 @@ public:
 	TArray<FYJJDeath> RecentDeaths;
 	/** HUD가 바닥에 그을음으로 굽고 비운다 */
 	TArray<FVector2f> RecentCraters;
-	/** 나온 보스 슬롯 (체력바) */
-	TArray<int32> Bosses;
 
 	double Gold = 0.0;
 	double Souls = 0.0;
@@ -100,8 +101,6 @@ public:
 	float WallX = 0.f;
 
 	float LevelDuration() const;
-	/** 지금 살아 있는 첫 보스 (없으면 INDEX_NONE) */
-	int32 ActiveBoss() const;
 
 private:
 	void TickPlots(float Dt);

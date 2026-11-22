@@ -58,6 +58,8 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		{
 			DensePhaseMsSum[Phase] += Battle.Horde.LastPhaseMs(static_cast<EYJJHordePhase>(Phase));
 		}
+		DenseWaitMsSum += Mode->LastSimWaitMs();
+		DenseReorderMsSum += Battle.Horde.LastReorderMs();
 		if (HUD)
 		{
 			DenseUnitDrawMsSum += HUD->LastUnitDrawMs();
@@ -238,7 +240,7 @@ void FYJJAutoPilot::Finish(const FYJJBattle& Battle)
 	UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] DENSE 최대 유닛 %d의 %.0f%% 이상 구간 (%d프레임): 시뮬 틱 %.2fms, 프레임 평균 %.1fms (%.0f fps), 최악 프레임 %.1fms"),
 		PeakUnits, DenseShare * 100.f, DenseSamples, DenseStep, DenseFrame, DenseFrame > 0.0 ? MsPerSecond / DenseFrame : 0.0, DenseWorstFrameMs);
 	const double DenseCount = FMath::Max(DenseSamples, 1);
-	UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] PHASE 격자 %.2fms · 생각·이동(병렬) %.2fms · 전투 %.2fms · 정리 %.2fms | 유닛 그리기 CPU %.2fms (화면 안 %.0f마리)"),
-		DensePhaseMsSum[0] / DenseCount, DensePhaseMsSum[1] / DenseCount, DensePhaseMsSum[2] / DenseCount, DensePhaseMsSum[3] / DenseCount,
-		DenseUnitDrawMsSum / DenseCount, static_cast<double>(DenseVisibleSum) / DenseCount);
+	UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] PHASE 격자 %.2fms · 생각·이동(병렬) %.2fms · 전투 %.2fms · 정리 %.2fms · 재배치(마지막) %.2fms | 유닛 그리기 CPU %.2fms (화면 안 %.0f마리) | 시뮬 대기 %.2fms"),
+		DensePhaseMsSum[0] / DenseCount, DensePhaseMsSum[1] / DenseCount, DensePhaseMsSum[2] / DenseCount, DensePhaseMsSum[3] / DenseCount, DenseReorderMsSum / DenseCount,
+		DenseUnitDrawMsSum / DenseCount, static_cast<double>(DenseVisibleSum) / DenseCount, DenseWaitMsSum / DenseCount);
 }

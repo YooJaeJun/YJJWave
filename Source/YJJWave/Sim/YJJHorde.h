@@ -79,6 +79,36 @@ enum class EYJJHordePhase : uint8
 	Count
 };
 
+/**
+ * 그리기용 사본. 시뮬은 작업 스레드에서 돌고, HUD는 프레임 시작에 복사해 둔 이 사본만 읽는다
+ * (시뮬과 그리기가 동시에 돌 수 있게).
+ */
+struct FYJJHordeView
+{
+	int32 HighWater = 0;
+	TArray<uint8> Alive;
+	TArray<uint8> Team;
+	TArray<uint8> FaceLeft;
+	TArray<uint16> Type;
+	TArray<FVector2f> Pos;
+	TArray<float> MoveSpeed;   // 지금 속력 (멈춰 있으면 숨쉬기 그림)
+	TArray<float> Flash;
+	TArray<float> AttackAnim;
+	TArray<float> WalkPhase;
+	TArray<FYJJProjectile> Projectiles;
+	int32 Count[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
+	float Front[static_cast<int32>(EYJJTeam::Count)] = { -1.f, -1.f };
+	/** 살아 있는 첫 보스 (없으면 INDEX_NONE) */
+	int32 Boss = INDEX_NONE;
+	float BossHP = 0.f;
+	float BossMaxHP = 0.f;
+	float StepMs = 0.f;
+	float PhaseMs[static_cast<int32>(EYJJHordePhase::Count)] = {};
+	float ReorderMs = 0.f;
+
+	int32 Num(EYJJTeam InTeam) const { return Count[static_cast<int32>(InTeam)]; }
+};
+
 /** 시뮬이 Tuning.csv 에서 읽어 두는 값 */
 struct FYJJHordeConfig
 {
@@ -98,6 +128,7 @@ struct FYJJHordeConfig
 	float WallAttackReach = 0.f;
 	float BigUnitRadius = 0.f;
 	float MultishotSpread = 0.f;
+	int32 ReorderTicks = 0;
 };
 
 class YJJWAVE_API FYJJHorde
@@ -111,6 +142,9 @@ public:
 
 	void Step(float Dt);
 
+	/** 그리기용 사본을 만든다 (시뮬이 돌지 않을 때 게임 스레드에서) */
+	void CopyTo(FYJJHordeView& View) const;
+
 	/** 원 안의 Victims 편에게 피해 + 바깥으로 밀쳐내기 (스펠·범위 공격) */
 	void DamageArea(const FVector2f& Center, float Radius, float Damage, float Knockback, EYJJTeam Victims);
 
@@ -122,6 +156,7 @@ public:
 	/** 아군 가장 앞(오른쪽) x, 적 가장 앞(왼쪽) x. 그 편이 없으면 -1 */
 	float FrontX(EYJJTeam InTeam) const { return Front[static_cast<int32>(InTeam)]; }
 	float LastStepMs() const { return StepMs; }
+	float LastReorderMs() const { return ReorderMs; }
 	float LastPhaseMs(EYJJHordePhase Phase) const { return PhaseMs[static_cast<int32>(Phase)]; }
 	int64 StepCount() const { return Steps; }
 
@@ -149,6 +184,9 @@ public:
 
 private:
 	void BuildGrids();
+	void BuildGrid(int32 TeamId);
+	/** 살아 있는 유닛을 격자 칸 순서로 앞에서부터 다시 채운다 (이웃끼리 메모리도 가깝게 → 캐시 적중) */
+	void Reorder();
 	void ThinkAndMove(int32 Slot, float Dt);
 	int32 FindNearestEnemy(int32 Slot, float Sight) const;
 	FVector2f Separation(int32 Slot) const;
@@ -178,10 +216,15 @@ private:
 	TArray<FVector2f> LastHitDir;
 	/** 이번 틱 공격 대상 (INDEX_NONE 없음, WallTarget 성벽) */
 	TArray<int32> Pending;
+	/** 유닛별 한 번 쓰는 효과 표시 (EYJJUnitFlag 비트) */
+	TArray<uint8> Flags;
+	/** 유닛마다 고정된 난수 (행군 흔들림 박자). 슬롯 번호를 쓰면 재배치 뒤 이웃끼리 박자가 같아져 줄무늬가 생긴다 */
+	TArray<float> Seed;
 
 	TArray<int32> FreeSlots;
 	TArray<int32> BigUnits;   // 반지름이 큰 유닛(보스): 모두가 따로 밀어내기 검사
 	int32 HighWaterMark = 0;
+	int32 HeroSlot = INDEX_NONE;
 	int32 TeamCount[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	float Front[static_cast<int32>(EYJJTeam::Count)] = { -1.f, -1.f };
 	FVector2f Field = FVector2f::ZeroVector;
@@ -189,7 +232,11 @@ private:
 	float MaxNormalRadius = 0.f;
 	float StepMs = 0.f;
 	float PhaseMs[static_cast<int32>(EYJJHordePhase::Count)] = {};
+	float ReorderMs = 0.f;
 	int64 Steps = 0;
+	/** Reorder용 (옛 슬롯 → 새 슬롯) */
+	TArray<int32> Remap;
+	TArray<int32> Order;
 	FRandomStream Random;
 	FYJJHordeConfig Config;
 	FYJJGrid Grids[static_cast<int32>(EYJJTeam::Count)];
@@ -201,5 +248,5 @@ private:
 	static constexpr float HalfShare = 0.5f;
 	static constexpr uint32 RandomSeed = 20261122u;
 	static constexpr float DriftPhaseSpeed = 0.37f;
-	static constexpr float DriftSlotPhase = 0.61f;
+	static constexpr float FullTurn = 2.f * UE_PI;
 };

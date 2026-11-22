@@ -42,7 +42,7 @@ FootAnchor,0.92,유닛 그림에서 발 위치 (위=0 아래=1)
 WalkBob,0.06,걸을 때 통통 튀는 높이 (그림 크기 비율)
 CullMargin,120,화면 밖 여유 (월드)
 SortBuckets,512,앞뒤 정렬 버킷 수
-ShadowMinZoom,0.45,이보다 멀리 보면 그림자 생략
+ShadowMinZoom,0.55,이보다 멀리 보면 그림자 생략
 ShadowAlpha,0.45,그림자 진하기
 ShadowWidth,0.7,그림자 너비 (그림 크기 비율)
 ShadowHeight,0.28,그림자 높이

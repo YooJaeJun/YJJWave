@@ -5,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "HAL/IConsoleManager.h"
 #include "Sim/YJJBattle.h"
+#include "Tasks/Task.h"
 #include "YJJWaveGameMode.generated.h"
 
 /**
@@ -27,9 +28,20 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	FYJJBattle& GetBattle() { return Battle; }
-	const FYJJBattle& GetBattle() const { return Battle; }
+	/** 판 상태를 바꾸기 전에 부른다 (작업 스레드의 시뮬이 끝날 때까지 기다림) */
+	FYJJBattle& GetBattle() { WaitForSim(); return Battle; }
+	/**
+	 * HUD 전용, 기다리지 않는다. 작업 스레드가 쓰는 것은 Horde 뿐이므로 Horde 밖의 판 필드(금화·병영·연출·죽음 목록)만 읽고 쓴다.
+	 * 유닛은 GetView() 사본을 읽는다.
+	 */
+	FYJJBattle& BattleNoWait() { return Battle; }
+	/** 이번 프레임 그리기용 유닛 사본 */
+	const FYJJHordeView& GetView() const { return View; }
+	void WaitForSim();
+	/** 지난 프레임 시뮬을 기다린 시간 (겹치기가 잘 되면 0에 가깝다) */
+	float LastSimWaitMs() const { return SimWaitMs; }
 
 	/** 시뮬이 흐르는 중인가 (일시정지·특성 창·패배가 아니면) */
 	bool IsRunning() const;
@@ -44,6 +56,11 @@ private:
 	void SpawnBenchmark(int32 PerTeam);
 
 	FYJJBattle Battle;
+	FYJJHordeView View;
+	UE::Tasks::FTask SimTask;
+	bool bSimRunning = false;
+	float PendingPostDt = 0.f;
+	float SimWaitMs = 0.f;
 	TUniquePtr<FYJJAutoPilot> AutoPilot;
 	double Accumulator = 0.0;
 	int32 SpeedIndex = 0;
@@ -55,4 +72,7 @@ private:
 	static TAutoConsoleVariable<float> CVarAutoPlaySpeed;
 	static TAutoConsoleVariable<float> CVarShotInterval;
 	static TAutoConsoleVariable<int32> CVarBench;
+	static TAutoConsoleVariable<int32> CVarAsyncSim;
+	static constexpr double MsPerSecond = 1000.0;
+	static constexpr int32 BenchSeedSalt = 7919;
 };

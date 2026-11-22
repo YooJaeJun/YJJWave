@@ -1,0 +1,41 @@
+// 유닛·그림자 사각형을 인스턴싱으로 그린다 (Source/YJJWave/Render/YJJSpriteRenderItem).
+// 인스턴스 하나 = float4 3개: (가운데 x, y, 반너비, 반높이) 픽셀, (u0, v0, du, dv) — du가 음수면 좌우 뒤집힘, (색 rgba)
+// 정점 버퍼는 없다: SV_VertexID 0~5 로 사각형 모서리를 만든다.
+
+#include "/Engine/Public/Platform.ush"
+
+StructuredBuffer<float4> Instances;
+float2 InvViewSize;
+
+Texture2D SpriteTexture;
+SamplerState SpriteSampler;
+float Gamma;
+
+static const float2 Corners[6] = { float2(-1, -1), float2(1, -1), float2(1, 1), float2(-1, -1), float2(1, 1), float2(-1, 1) };
+
+void MainVS(
+	uint VertexId : SV_VertexID,
+	uint InstanceId : SV_InstanceID,
+	out float2 OutUV : TEXCOORD0,
+	out float4 OutColor : COLOR0,
+	out float4 OutPosition : SV_POSITION)
+{
+	const float4 Rect = Instances[InstanceId * 3 + 0];
+	const float4 Tex = Instances[InstanceId * 3 + 1];
+	const float2 Corner = Corners[VertexId];
+	const float2 Pixel = Rect.xy + Corner * Rect.zw;
+	const float2 Clip = Pixel * InvViewSize * float2(2, -2) + float2(-1, 1);
+	OutPosition = float4(Clip, 0, 1);
+	OutUV = Tex.xy + (Corner * 0.5 + 0.5) * Tex.zw;
+	OutColor = Instances[InstanceId * 3 + 2];
+}
+
+void MainPS(
+	float2 UV : TEXCOORD0,
+	float4 Color : COLOR0,
+	out float4 OutColor : SV_Target0)
+{
+	const float4 Sample = SpriteTexture.Sample(SpriteSampler, UV) * Color;
+	// 캔버스 기본 그리기(SimpleElement)와 같은 감마 처리
+	OutColor = float4(pow(max(Sample.rgb, 0), Gamma), Sample.a);
+}

@@ -31,7 +31,6 @@ void FYJJBattle::Reset()
 	Effects.Reset();
 	RecentDeaths.Reset();
 	RecentCraters.Reset();
-	Bosses.Reset();
 	Gold = T.StartGold;
 	Souls = 0.0;
 	Kills = 0;
@@ -66,7 +65,7 @@ void FYJJBattle::Reset()
 // ---------------------------------------------------------------------------------------------
 // 틱
 
-void FYJJBattle::Tick(float Dt)
+void FYJJBattle::PreStep(float Dt)
 {
 	if (bGameOver)
 	{
@@ -93,7 +92,21 @@ void FYJJBattle::Tick(float Dt)
 
 	TickPlots(Dt);
 	TickEnemies(Dt);
+}
+
+void FYJJBattle::Tick(float Dt)
+{
+	PreStep(Dt);
 	Horde.Step(Dt);
+	PostStep(Dt);
+}
+
+void FYJJBattle::PostStep(float Dt)
+{
+	if (bGameOver)
+	{
+		return;
+	}
 	TickEffects(Dt);
 	CollectRewards();
 
@@ -159,23 +172,9 @@ void FYJJBattle::SpawnEnemy(int32 Unit)
 	++Spawned[static_cast<int32>(EYJJTeam::Enemy)];
 	if (YJJData::Unit(Unit).bBoss)
 	{
-		Bosses.Add(Slot);
 		AddEffect(EYJJEffectKind::Build, Pos, T.BuildEffectTime, YJJData::Unit(Unit).DrawSize * BossEffectRadiusScale);
 		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 보스 등장: %s (레벨 %d)"), *YJJData::Unit(Unit).Id.ToString(), Level);
 	}
-}
-
-int32 FYJJBattle::ActiveBoss() const
-{
-	// 슬롯이 다른 유닛에 다시 쓰였으면 보스 종류가 아니게 되므로 같이 걸러진다
-	for (const int32 Boss : Bosses)
-	{
-		if (Horde.Alive.IsValidIndex(Boss) && Horde.Alive[Boss] && YJJData::Unit(Horde.Type[Boss]).bBoss)
-		{
-			return Boss;
-		}
-	}
-	return INDEX_NONE;
 }
 
 void FYJJBattle::TickEnemies(float Dt)

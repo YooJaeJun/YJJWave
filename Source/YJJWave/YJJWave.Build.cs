@@ -11,7 +11,7 @@ public class YJJWave : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 		// ImageCore: 그림 PNG를 실행 중에 읽어 밉맵을 만든다 (Render/YJJTextureLoader)
-		// RenderCore: 캔버스 배치(FBatchedElements)에 유닛 사각형을 직접 넣는다
-		PrivateDependencyModuleNames.AddRange(new string[] { "ImageCore", "RenderCore", "Slate", "SlateCore" });
+		// RenderCore·RHI·YJJWaveShaders: 유닛 사각형을 캔버스 안에서 인스턴싱으로 그린다 (Render/YJJSpriteRenderItem)
+		PrivateDependencyModuleNames.AddRange(new string[] { "ImageCore", "RenderCore", "RHI", "Renderer", "Slate", "SlateCore", "YJJWaveShaders" });
 	}
 }

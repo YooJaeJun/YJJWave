@@ -40,6 +40,7 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, float InWallX, int32 InCapacit
 	Config.WallAttackReach = T.WallAttackReach;
 	Config.BigUnitRadius = T.BigUnitRadius;
 	Config.MultishotSpread = T.MultishotSpread;
+	Config.ReorderTicks = T.ReorderTicks;
 
 	Field = FieldSize;
 	WallX = InWallX;
@@ -59,7 +60,8 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, float InWallX, int32 InCapacit
 	Resize(Alive); Resize(Team); Resize(Type); Resize(Pos); Resize(Vel); Resize(HP); Resize(MaxHP);
 	Resize(Flash); Resize(AttackAnim); Resize(WalkPhase); Resize(FaceLeft);
 	Resize(Gen); Resize(Target); Resize(TargetGen); Resize(Cooldown); Resize(Damage); Resize(AttackInterval);
-	Resize(Speed); Resize(Splash); Resize(Multishot); Resize(Impulse); Resize(PosNext); Resize(LastHitDir); Resize(Pending);
+	Resize(Speed); Resize(Splash); Resize(Multishot); Resize(Impulse); Resize(PosNext); Resize(LastHitDir); Resize(Pending); Resize(Flags); Resize(Seed);
+	HeroSlot = INDEX_NONE;
 
 	FreeSlots.Reset();
 	BigUnits.Reset();
@@ -113,6 +115,8 @@ int32 FYJJHorde::Spawn(int32 InType, EYJJTeam InTeam, const FVector2f& InPos, co
 	Flash[Slot] = 0.f;
 	AttackAnim[Slot] = 0.f;
 	WalkPhase[Slot] = Random.FRand();
+	Seed[Slot] = Random.FRand() * FullTurn;
+	Flags[Slot] = 0;
 	FaceLeft[Slot] = InTeam == EYJJTeam::Enemy ? 1 : 0;
 	Target[Slot] = INDEX_NONE;
 	TargetGen[Slot] = 0;
@@ -132,49 +136,158 @@ bool FYJJHorde::IsValidTarget(int32 Slot, uint32 InGen) const
 
 void FYJJHorde::BuildGrids()
 {
-	for (int32 TeamId = 0; TeamId < static_cast<int32>(EYJJTeam::Count); ++TeamId)
-	{
-		FYJJGrid& Grid = Grids[TeamId];
-		FMemory::Memzero(Grid.Start.GetData(), Grid.Start.Num() * sizeof(int32));
-	}
+	// 두 편 격자는 서로 독립이라 동시에 만든다
+	ParallelFor(static_cast<int32>(EYJJTeam::Count), [this](int32 TeamId) { BuildGrid(TeamId); });
+}
+
+void FYJJHorde::BuildGrid(int32 TeamId)
+{
+	FYJJGrid& Grid = Grids[TeamId];
+	FMemory::Memzero(Grid.Start.GetData(), Grid.Start.Num() * sizeof(int32));
+	const uint8 MyTeam = static_cast<uint8>(TeamId);
 
 	// 1) 칸별 수
 	for (int32 Slot = 0; Slot < HighWaterMark; ++Slot)
 	{
-		if (Alive[Slot])
+		if (Alive[Slot] && Team[Slot] == MyTeam)
 		{
-			FYJJGrid& Grid = Grids[Team[Slot]];
 			const FIntPoint C = Grid.CellOf(Pos[Slot]);
 			++Grid.Start[Grid.Index(C.X, C.Y) + 1];
 		}
 	}
 	// 2) 누적 → 시작 위치
-	for (FYJJGrid& Grid : Grids)
+	for (int32 Index = 1; Index < Grid.Start.Num(); ++Index)
 	{
-		for (int32 Index = 1; Index < Grid.Start.Num(); ++Index)
-		{
-			Grid.Start[Index] += Grid.Start[Index - 1];
-		}
-		Grid.Items.SetNumUninitialized(Grid.Start.Last(), EAllowShrinking::No);
+		Grid.Start[Index] += Grid.Start[Index - 1];
 	}
+	Grid.Items.SetNumUninitialized(Grid.Start.Last(), EAllowShrinking::No);
 	// 3) 채우기 (Start를 커서로 쓰고 다시 한 칸 민다)
 	for (int32 Slot = 0; Slot < HighWaterMark; ++Slot)
 	{
-		if (Alive[Slot])
+		if (Alive[Slot] && Team[Slot] == MyTeam)
 		{
-			FYJJGrid& Grid = Grids[Team[Slot]];
 			const FIntPoint C = Grid.CellOf(Pos[Slot]);
 			Grid.Items[Grid.Start[Grid.Index(C.X, C.Y)]++] = Slot;
 		}
 	}
-	for (FYJJGrid& Grid : Grids)
+	for (int32 Index = Grid.Start.Num() - 1; Index > 0; --Index)
 	{
-		for (int32 Index = Grid.Start.Num() - 1; Index > 0; --Index)
-		{
-			Grid.Start[Index] = Grid.Start[Index - 1];
-		}
-		Grid.Start[0] = 0;
+		Grid.Start[Index] = Grid.Start[Index - 1];
 	}
+	Grid.Start[0] = 0;
+}
+
+void FYJJHorde::Reorder()
+{
+	// 격자 칸 순서(위→아래, 왼→오른)로 살아 있는 유닛을 모은다. 격자는 이번 틱 시작에 만든 것
+	Order.Reset();
+	const int32 NumCells = Grids[0].W * Grids[0].H;
+	for (int32 Cell = 0; Cell < NumCells; ++Cell)
+	{
+		for (const FYJJGrid& Grid : Grids)
+		{
+			for (int32 Item = Grid.Start[Cell]; Item < Grid.Start[Cell + 1]; ++Item)
+			{
+				if (Alive[Grid.Items[Item]])
+				{
+					Order.Add(Grid.Items[Item]);
+				}
+			}
+		}
+	}
+	const int32 Count = Order.Num();
+	Remap.Reset();
+	Remap.Init(INDEX_NONE, HighWaterMark);
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		Remap[Order[Index]] = Index;
+	}
+
+	// 모든 슬롯 배열을 새 순서로 (뒤쪽 빈 칸은 Alive만 0이면 된다)
+	auto Permute = [this, Count](auto& Array)
+	{
+		const auto Old = Array;
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			Array[Index] = Old[Order[Index]];
+		}
+	};
+	Permute(Alive); Permute(Team); Permute(Type); Permute(Pos); Permute(Vel); Permute(HP); Permute(MaxHP);
+	Permute(Flash); Permute(AttackAnim); Permute(WalkPhase); Permute(FaceLeft); Permute(Gen); Permute(Target);
+	Permute(TargetGen); Permute(Cooldown); Permute(Damage); Permute(AttackInterval); Permute(Speed); Permute(Splash);
+	Permute(Multishot); Permute(Impulse); Permute(PosNext); Permute(LastHitDir); Permute(Flags); Permute(Seed);
+	for (int32 Slot = Count; Slot < HighWaterMark; ++Slot)
+	{
+		Alive[Slot] = 0;
+		++Gen[Slot];
+	}
+
+	// 슬롯을 가리키던 것들을 새 번호로
+	auto Moved = [this](int32 Old) { return Old >= 0 && Remap.IsValidIndex(Old) ? Remap[Old] : INDEX_NONE; };
+	for (int32 Slot = 0; Slot < Count; ++Slot)
+	{
+		Target[Slot] = Moved(Target[Slot]);
+		Pending[Slot] = INDEX_NONE;
+	}
+	for (FYJJProjectile& Shot : Projectiles)
+	{
+		Shot.Target = Moved(Shot.Target);
+	}
+	for (int32& Big : BigUnits)
+	{
+		Big = Moved(Big);
+	}
+	BigUnits.RemoveAll([](int32 Slot) { return Slot == INDEX_NONE; });
+	HeroSlot = Moved(HeroSlot);
+	FreeSlots.Reset();
+	HighWaterMark = Count;
+}
+
+void FYJJHorde::CopyTo(FYJJHordeView& View) const
+{
+	const int32 Count = HighWaterMark;
+	View.HighWater = Count;
+	auto Copy = [Count](auto& Dest, const auto& Source)
+	{
+		Dest.SetNumUninitialized(Count, EAllowShrinking::No);
+		if (Count > 0)
+		{
+			FMemory::Memcpy(Dest.GetData(), Source.GetData(), Count * Source.GetTypeSize());
+		}
+	};
+	Copy(View.Alive, Alive);
+	Copy(View.Team, Team);
+	Copy(View.FaceLeft, FaceLeft);
+	Copy(View.Type, Type);
+	Copy(View.Pos, Pos);
+	Copy(View.Flash, Flash);
+	Copy(View.AttackAnim, AttackAnim);
+	Copy(View.WalkPhase, WalkPhase);
+	View.MoveSpeed.SetNumUninitialized(Count, EAllowShrinking::No);
+	for (int32 Slot = 0; Slot < Count; ++Slot)
+	{
+		View.MoveSpeed[Slot] = Vel[Slot].Size();
+	}
+	View.Projectiles = Projectiles;
+	for (int32 TeamId = 0; TeamId < static_cast<int32>(EYJJTeam::Count); ++TeamId)
+	{
+		View.Count[TeamId] = TeamCount[TeamId];
+		View.Front[TeamId] = Front[TeamId];
+	}
+	View.Boss = INDEX_NONE;
+	for (const int32 Big : BigUnits)
+	{
+		if (Alive[Big] && YJJData::Unit(Type[Big]).bBoss)
+		{
+			View.Boss = Big;
+			View.BossHP = HP[Big];
+			View.BossMaxHP = MaxHP[Big];
+			break;
+		}
+	}
+	View.StepMs = StepMs;
+	FMemory::Memcpy(View.PhaseMs, PhaseMs, sizeof(PhaseMs));
+	View.ReorderMs = ReorderMs;
 }
 
 int32 FYJJHorde::FindNearestEnemy(int32 Slot, float Sight) const
@@ -346,7 +459,7 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	else
 	{
 		// 대상이 없으면 앞으로 행군. 슬롯마다 다른 박자로 위아래로 조금씩 흔들려 줄이 퍼진다
-		const float Drift = FMath::Sin(static_cast<float>(Steps) * Dt * DriftPhaseSpeed + Slot * DriftSlotPhase) * Config.LateralDrift;
+		const float Drift = FMath::Sin(static_cast<float>(Steps) * Dt * DriftPhaseSpeed + Seed[Slot]) * Config.LateralDrift;
 		Desired = FVector2f(MarchDir * MoveSpeed, Drift * MoveSpeed);
 		FaceLeft[Slot] = MarchDir < 0.f ? 1 : 0;
 	}
@@ -603,6 +716,12 @@ void FYJJHorde::Step(float Dt)
 	EndPhase(EYJJHordePhase::Combat);
 	CollectDead();
 	EndPhase(EYJJHordePhase::Cleanup);
+	if (Config.ReorderTicks > 0 && Steps % Config.ReorderTicks == 0)
+	{
+		const double ReorderStart = FPlatformTime::Seconds();
+		Reorder();
+		ReorderMs = static_cast<float>((FPlatformTime::Seconds() - ReorderStart) * MsPerSecond);
+	}
 	++Steps;
 
 	StepMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);

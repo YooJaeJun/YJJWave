@@ -9,6 +9,8 @@
 #include "Sim/YJJBattle.h"
 #include "UI/YJJUIStyle.h"
 #include "UI/YJJWaveHUD.h"
+#include "Async/ParallelFor.h"
+#include "Render/YJJSpriteRenderItem.h"
 
 void AYJJWaveHUD::DrawWorld()
 {
@@ -92,8 +94,8 @@ void AYJJWaveHUD::DrawCamp()
 void AYJJWaveHUD::DrawUnits()
 {
 	const FYJJBattle* Current = Battle();
-	const FYJJHorde& Horde = Current->Horde;
-	if (!UnitAtlas.Texture || !FxAtlas.Texture)
+	const FYJJHordeView& Horde = View();
+	if (!UnitAtlas.Texture || !FxAtlas.Texture || !UnitAtlas.Texture->GetResource() || !FxAtlas.Texture->GetResource())
 	{
 		return;
 	}
@@ -104,7 +106,7 @@ void AYJJWaveHUD::DrawUnits()
 	const FVector2f WorldMin = ScreenToWorld(FVector2f::ZeroVector) - Margin;
 	const FVector2f WorldMax = ScreenToWorld(ScreenSize) + Margin;
 	Visible.Reset();
-	for (int32 Slot = 0; Slot < Horde.HighWater(); ++Slot)
+	for (int32 Slot = 0; Slot < Horde.HighWater; ++Slot)
 	{
 		const FVector2f& P = Horde.Pos[Slot];
 		if (Horde.Alive[Slot] && P.X >= WorldMin.X && P.X <= WorldMax.X && P.Y >= WorldMin.Y && P.Y <= WorldMax.Y)
@@ -130,47 +132,86 @@ void AYJJWaveHUD::DrawUnits()
 	{
 		Sorted[BucketStart[FMath::Clamp(FMath::FloorToInt((Horde.Pos[Slot].Y - WorldMin.Y) * BucketScale), 0, NumBuckets - 1)]++] = Slot;
 	}
-
-	// 그림자 (가까이 볼 때만)
-	if (Zoom >= UI().ShadowMinZoom)
+	const int32 Count = Sorted.Num();
+	if (Count == 0)
 	{
-		const FYJJQuadBatch Shadows = BeginBatch(Canvas->Canvas, FxAtlas.Texture, Sorted.Num());
-		const FVector2f ShadowUV = FxAtlas.UV(FMath::RoundToInt(UI().FxShadow));
-		const FLinearColor ShadowColor(1.f, 1.f, 1.f, UI().ShadowAlpha);
-		for (const int32 Slot : Sorted)
+		UnitDrawMs = 0.f;
+		return;
+	}
+	const TConstArrayView<FYJJUnitDef> Defs = YJJData::Units();
+	const FYJJUILayout& L = UI();
+	const int32 NumChunks = FMath::DivideAndRoundUp(Count, SpriteChunk);
+
+	// 그림자 (가까이 볼 때만). 인스턴스는 ParallelFor로 채우고 GPU 인스턴싱 한 번으로 그린다
+	if (Zoom >= L.ShadowMinZoom)
+	{
+		TArray<FYJJSpriteInstance>& Shadows = FYJJSpriteRenderItem::Add(Canvas->Canvas, FxAtlas.Texture->GetResource(), Count);
+		const FVector2f ShadowUV = FxAtlas.UV(FMath::RoundToInt(L.FxShadow));
+		const FLinearColor ShadowColor(1.f, 1.f, 1.f, L.ShadowAlpha);
+		ParallelFor(NumChunks, [&](int32 Chunk)
 		{
-			const float Size = YJJData::Unit(Horde.Type[Slot]).DrawSize * Zoom;
-			const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
-			const FVector2f QuadSize(Size * UI().ShadowWidth, Size * UI().ShadowHeight);
-			AddQuad(Shadows, Feet - QuadSize * Half, QuadSize, ShadowUV, FxAtlas.CellUV, ShadowColor, false);
-		}
+			const int32 End = FMath::Min((Chunk + 1) * SpriteChunk, Count);
+			for (int32 Index = Chunk * SpriteChunk; Index < End; ++Index)
+			{
+				const int32 Slot = Sorted[Index];
+				const float Size = Defs[Horde.Type[Slot]].DrawSize * Zoom;
+				const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
+				FYJJSpriteInstance& Sprite = Shadows[Index];
+				Sprite.Rect = FVector4f(Feet.X, Feet.Y, Size * L.ShadowWidth * Half, Size * L.ShadowHeight * Half);
+				Sprite.UV = FVector4f(ShadowUV.X, ShadowUV.Y, FxAtlas.CellUV.X, FxAtlas.CellUV.Y);
+				Sprite.Color = ShadowColor;
+			}
+		});
 	}
 
 	const bool bRally = Current->RallyLeft() > 0.f;
-	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, UnitAtlas.Texture, Sorted.Num());
-	for (const int32 Slot : Sorted)
+	TArray<FYJJSpriteInstance>& Sprites = FYJJSpriteRenderItem::Add(Canvas->Canvas, UnitAtlas.Texture->GetResource(), Count);
+	ParallelFor(NumChunks, [&](int32 Chunk)
 	{
-		const FYJJUnitDef& Def = YJJData::Unit(Horde.Type[Slot]);
-		const float Size = Def.DrawSize * Zoom;
-		const float Phase = Horde.WalkPhase[Slot];
-		const bool bAttack = Horde.AttackAnim[Slot] > 0.f;
-		const int32 Frame = bAttack ? FrameAttack : (FMath::Frac(Phase) < Half ? FrameWalkA : FrameWalkB);
-		const float Bob = bAttack ? 0.f : FMath::Abs(FMath::Sin(Phase * UE_PI)) * UI().WalkBob * Size;
-		const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
-		const FVector2f TopLeft(Feet.X - Size * Half, Feet.Y - Size * UI().FootAnchor - Bob);
+		const int32 End = FMath::Min((Chunk + 1) * SpriteChunk, Count);
+		for (int32 Index = Chunk * SpriteChunk; Index < End; ++Index)
+		{
+			const int32 Slot = Sorted[Index];
+			const FYJJUnitDef& Def = Defs[Horde.Type[Slot]];
+			const float Size = Def.DrawSize * Zoom;
+			int32 Frame = 0;
+			float Bob = 0.f;
+			PickFrame(Horde, Slot, Size, Frame, Bob);
+			const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
 
-		FLinearColor Color = FLinearColor::White;
-		if (Horde.Flash[Slot] > 0.f)
-		{
-			Color = YJJUI::HitTint;
+			FLinearColor Color = FLinearColor::White;
+			if (Horde.Flash[Slot] > 0.f)
+			{
+				Color = YJJUI::HitTint;
+			}
+			else if (bRally && Horde.Team[Slot] == static_cast<uint8>(EYJJTeam::Player))
+			{
+				Color = YJJUI::Highlight;
+			}
+			const FVector2f UV0 = UnitAtlas.UV(Frame, Def.AtlasRow);
+			const bool bFlip = Horde.FaceLeft[Slot] != 0;
+			FYJJSpriteInstance& Sprite = Sprites[Index];
+			Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half - Bob, Size * Half, Size * Half);
+			Sprite.UV = bFlip
+				? FVector4f(UV0.X + UnitAtlas.CellUV.X, UV0.Y, -UnitAtlas.CellUV.X, UnitAtlas.CellUV.Y)
+				: FVector4f(UV0.X, UV0.Y, UnitAtlas.CellUV.X, UnitAtlas.CellUV.Y);
+			Sprite.Color = Color;
 		}
-		else if (bRally && Horde.Team[Slot] == static_cast<uint8>(EYJJTeam::Player))
-		{
-			Color = YJJUI::Highlight;
-		}
-		AddQuad(Batch, TopLeft, FVector2f(Size), UnitAtlas.UV(Frame, Def.AtlasRow), UnitAtlas.CellUV, Color, Horde.FaceLeft[Slot] != 0);
-	}
+	});
 	UnitDrawMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);
+}
+
+void AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot, float Size, int32& OutFrame, float& OutBob) const
+{
+	const float Phase = Horde.WalkPhase[Slot];
+	OutBob = 0.f;
+	if (Horde.AttackAnim[Slot] > 0.f)
+	{
+		OutFrame = FrameAttack;
+		return;
+	}
+	OutFrame = FMath::Frac(Phase) < Half ? FrameWalkA : FrameWalkB;
+	OutBob = FMath::Abs(FMath::Sin(Phase * UE_PI)) * UI().WalkBob * Size;
 }
 
 void AYJJWaveHUD::DrawDying()
@@ -191,7 +232,7 @@ void AYJJWaveHUD::DrawDying()
 
 void AYJJWaveHUD::DrawProjectiles()
 {
-	const FYJJHorde& Horde = Battle()->Horde;
+	const FYJJHordeView& Horde = View();
 	if (!UnitAtlas.Texture || Horde.Projectiles.Num() == 0)
 	{
 		return;

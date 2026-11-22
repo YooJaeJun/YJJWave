@@ -185,10 +185,10 @@ void AYJJWaveHUD::DrawTopBar()
 		const float Mid = X + W * Half;
 		DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(UI().UiPanel));
 		DrawIcon(FMath::RoundToInt(UI().UiSword), X + Pad, Y + Pad, Icon);
-		DrawLabel(FormatCount(Current->Horde.Num(EYJJTeam::Player)), X + Pad + Icon + UI().IconGap, Y + Pad, UI().BigText, YJJUI::Ally);
+		DrawLabel(FormatCount(View().Num(EYJJTeam::Player)), X + Pad + Icon + UI().IconGap, Y + Pad, UI().BigText, YJJUI::Ally);
 		DrawLabel(YJJLoc::Get(TEXT("UI.VS")), Mid, Y + Pad, UI().BigText, YJJUI::Paper, Half);
 		DrawIcon(FMath::RoundToInt(UI().UiSkull), X + W - Pad - Icon, Y + Pad, Icon);
-		DrawLabel(FormatCount(Current->Horde.Num(EYJJTeam::Enemy)), X + W - Pad - Icon - UI().IconGap, Y + Pad, UI().BigText, YJJUI::Enemy, 1.f);
+		DrawLabel(FormatCount(View().Num(EYJJTeam::Enemy)), X + W - Pad - Icon - UI().IconGap, Y + Pad, UI().BigText, YJJUI::Enemy, 1.f);
 
 		const float BarX = X + Pad + Icon * UI().SmallIconScale + UI().IconGap;
 		const float BarY = Y + H - Pad - UI().BarH;
@@ -219,13 +219,12 @@ void AYJJWaveHUD::DrawTopBar()
 
 void AYJJWaveHUD::DrawBossBar()
 {
-	const FYJJBattle* Current = Battle();
-	const int32 Boss = Current->ActiveBoss();
-	if (Boss == INDEX_NONE)
+	const FYJJHordeView& Units = View();
+	if (Units.Boss == INDEX_NONE)
 	{
 		return;
 	}
-	const FYJJUnitDef& Def = YJJData::Unit(Current->Horde.Type[Boss]);
+	const FYJJUnitDef& Def = YJJData::Unit(Units.Type[Units.Boss]);
 	const float X = UI().VsPanelX;
 	const float W = UI().VsPanelW;
 	const float Y = UI().TopY + UI().TopH + UI().BossBarGap;
@@ -233,7 +232,7 @@ void AYJJWaveHUD::DrawBossBar()
 	const float Pad = UI().PanelPad;
 	DrawLabel(YJJLoc::Get(Def.NameKey), X + Pad, Y + (UI().BossBarH - UI().MidText) * Half, UI().MidText, YJJUI::Bad);
 	const float BarX = X + W * UI().BossBarSplit;
-	DrawBar(BarX, Y + (UI().BossBarH - UI().BarH) * Half, X + W - Pad - BarX, UI().BarH, Current->Horde.HP[Boss] / FMath::Max(Current->Horde.MaxHP[Boss], KINDA_SMALL_NUMBER), YJJUI::BossBar);
+	DrawBar(BarX, Y + (UI().BossBarH - UI().BarH) * Half, X + W - Pad - BarX, UI().BarH, Units.BossHP / FMath::Max(Units.BossMaxHP, KINDA_SMALL_NUMBER), YJJUI::BossBar);
 }
 
 void AYJJWaveHUD::DrawBottomBar()
@@ -377,13 +376,16 @@ void AYJJWaveHUD::DrawDebugLine()
 	{
 		return;
 	}
-	const FYJJHorde& Horde = Battle()->Horde;
+	const FYJJHordeView& Horde = View();
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	const int32 Fps = FMath::RoundToInt(1000.f / FMath::Max(FrameMs, KINDA_SMALL_NUMBER));
 	const FString Text = YJJLoc::Format(TEXT("UI.Debug"), {
 		Horde.Num(EYJJTeam::Player) + Horde.Num(EYJJTeam::Enemy),
-		FString::Printf(TEXT("%.1f"), Horde.LastStepMs()),
+		FString::Printf(TEXT("%.1f"), Horde.StepMs),
 		Fps,
-		Horde.Projectiles.Num() });
+		Horde.Projectiles.Num(),
+		FString::Printf(TEXT("%.1f"), UnitDrawMs),
+		FString::Printf(TEXT("%.1f"), Mode ? Mode->LastSimWaitMs() : 0.f) });
 	DrawLabel(Text, UI().PanelPad, VirtualHeight - UI().PanelPad - UI().TinyText, UI().TinyText, YJJUI::Muted);
 }
 
@@ -529,7 +531,7 @@ void AYJJWaveHUD::DrawTree()
 
 void AYJJWaveHUD::HandleMouseDown(bool bRight)
 {
-	FYJJBattle* Current = Battle();
+	FYJJBattle* Current = EditBattle();
 	AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	if (!Current || !Mode)
 	{
@@ -614,7 +616,7 @@ void AYJJWaveHUD::HandleWheel(float Delta)
 
 void AYJJWaveHUD::ClickWorld()
 {
-	FYJJBattle* Current = Battle();
+	FYJJBattle* Current = EditBattle();
 	if (Current->bGameOver || IsMouseOverUI())
 	{
 		return;
@@ -643,7 +645,7 @@ void AYJJWaveHUD::ClickWorld()
 
 void AYJJWaveHUD::HandleKey(const FKey& Key)
 {
-	FYJJBattle* Current = Battle();
+	FYJJBattle* Current = EditBattle();
 	AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	if (!Current || !Mode)
 	{
