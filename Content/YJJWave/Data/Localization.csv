@@ -159,12 +159,15 @@ Option.Close,닫기 (ESC),Close (ESC),
 Lang.ko,한국어,한국어,언어 이름은 그 언어로
 Lang.en,English,English,
 Cut.Hint,클릭·스페이스: 다음  ESC: 건너뛰기,Click/Space: next  ESC: skip,
-Cut.M1,제1장 · 마지막 냄비\n왕국의 쇠는 모두 녹여 창이 되었다. 남은 것은 부엌의 냄비뿐이다.,Chapter 1 · The Last Pot\nEvery scrap of iron in the realm was melted into spears. Only the kitchen pots remain.,"장 제목 카드: 첫 줄 제목, \n 뒤 한 줄"
-Cut.M2,투구가 없으면 냄비를 써라. 냄비는 수백 년 동안 불을 견뎌 왔다.,No helmets? Then wear pots. Pots have endured fire for centuries.,
-Cut.M3,대장님... 그럼 오늘 저녁 국은 어디에 끓입니까?,Captain... then where do we cook tonight's stew?,
-Cut.M4,이긴 다음에 생각하자. 오늘 우리가 국거리가 되지 않으려면.,"We'll think about that after we win. Today, we must not become the stew.",
-Cut.S1,제2장 · 뼈의 언덕\n이 언덕에서 쓰러진 자는 눕지 않는다. 일어나 적이 된다.,"Chapter 2 · Hill of Bones\nOn this hill, the fallen do not lie down. They rise as the enemy.","장 제목 카드: 첫 줄 제목, \n 뒤 한 줄"
-Cut.S2,어제의 네 전우가 오늘은 내 병사다. 장례는 생략하지.,Yesterday's comrades are my soldiers today. We'll skip the funeral.,
-Cut.S3,천 년을 기다렸다. 이 땅의 마지막 냄비를.,A thousand years I have waited. For the last pot of this land.,
-Cut.S4,냄비는 못 준다. 그 안에서 왕국의 마지막 저녁이 끓고 있다.,You cannot have it. The kingdom's last supper is simmering inside.,
-Cut.S5,"전군, 뚜껑 닫아라. 돌격!","All troops, lids on. Charge!",
+Cut.M1,제1장 · 마지막 냄비\n쇠는 모두 창이 되었다. 남은 건 냄비뿐.,Chapter 1 · The Last Pot\nAll the iron became spears. Only pots remain.,"장 제목 카드: 첫 줄 제목, \n 뒤 한 줄"
+Cut.M2,투구가 없으면 냄비를 써라.,No helmets? Wear pots.,
+Cut.M3,그럼 저녁은 어디에 끓입니까?,Then what do we cook supper in?,
+Cut.M4,이긴 쪽이 끓인다.,The winners do the cooking.,
+Cut.M5,…진 쪽은요?,...And the losers?,
+Cut.M6,국거리.,Go in the pot.,
+Cut.S1,"제2장 · 뼈의 언덕\n천 년 전, 진 쪽이 묻힌 곳.","Chapter 2 · Hill of Bones\nWhere the losers were buried, a thousand years ago.","장 제목 카드: 첫 줄 제목, \n 뒤 한 줄"
+Cut.S2,해골들이 왜 저리 반질반질합니까?,Why are those skeletons so... polished?,
+Cut.S3,천 년을 푹 고아진 뼈다.,Simmered for a thousand years.,
+Cut.S4,뼈는 기억한다. 몇 시간 끓였는지.,Bones remember. Every hour in the pot.,
+Cut.S5,국물 값을 받으러 왔다.,We have come to collect for the broth.,
+Cut.S6,"전군, 뚜껑 닫아라. 돌격!","All troops, lids on. Charge!",
