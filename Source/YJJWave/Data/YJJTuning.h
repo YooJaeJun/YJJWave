@@ -117,6 +117,7 @@ struct FYJJUILayout
 
 	// ---- 아틀라스 (Tools/Art/generate_art.py 와 같아야 한다) ----
 	UPROPERTY() float UnitCell = 0.f;   // Units.png 칸 크기
+	UPROPERTY() float BigUnitCell = 0.f;   // BigUnits.png 칸 크기 (보스·영웅)
 	UPROPERTY() float FxCell = 0.f;   // Fx.png 칸 크기
 	UPROPERTY() float BuildingCell = 0.f;   // Buildings.png 칸 크기
 	UPROPERTY() float UiCell = 0.f;   // UI.png 칸 크기

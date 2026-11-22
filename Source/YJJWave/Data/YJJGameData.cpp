@@ -170,6 +170,7 @@ void FYJJGameDatabase::LoadUnits()
 		Def.DrawSize = Row.DrawSize;
 		Def.bBoss = Row.Boss != 0;
 		Def.bHero = Row.Hero != 0;
+		Def.BigRow = Row.BigRow;
 		RaiseNames.Add(Row.RaiseUnit);
 		if (Row.HP <= 0.f || Row.Radius <= 0.f || Row.Mass <= 0.f || Row.AttackInterval <= 0.f)
 		{

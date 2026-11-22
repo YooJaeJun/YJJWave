@@ -23,6 +23,9 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file_
 
 UNIT_CELL = 128
 UNIT_COLS = 32
+BIG_CELL = 256          # 보스·영웅처럼 크게 그려지는 유닛 (Units.csv BigRow)
+BIG_ROWS = 4
+BIG_UNITS = ["BoneKing", "Hero"]   # BigUnits.png 줄 순서 = Units.csv BigRow
 UNIT_ROWS = 16
 PROJECTILE_ROW = 15
 FOOT = 0.92
@@ -409,13 +412,13 @@ def draw_face(p, hx, hy, hr, style, pose):
             omega(my - hr * 0.02, hr * 0.15)
 
 
-def corpse(u):
+def corpse(u, out=UNIT_CELL):
     """시체: 쓰러진 모습 (눈 X) + 바닥에 붙게 아래로"""
-    img = draw_unit(u, IDLE_POSES[0], dead=True)
+    img = draw_unit(u, IDLE_POSES[0], dead=True, out=out)
     img = img.rotate(90, resample=Image.BICUBIC, expand=False)
-    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    out.alpha_composite(img, (0, int(UNIT_CELL * 0.18)))
-    return out
+    lying = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    lying.alpha_composite(img, (0, int(img.size[1] * 0.18)))
+    return lying
 
 
 def projectile(kind):
@@ -436,6 +439,19 @@ def orb():
     p.ellipse(78, 64, 16, 16, rgba("#9B4DFF"))
     p.ellipse(73, 59, 5, 5, rgba("#E6C8FF"), line=False)
     return p.done(UNIT_CELL, UNIT_CELL)
+
+
+def big_atlas():
+    """보스·영웅: 같은 칸 배치를 256px로 (128px를 늘리면 흐릿해서)"""
+    atlas = Image.new("RGBA", (BIG_CELL * UNIT_COLS, BIG_CELL * BIG_ROWS), (0, 0, 0, 0))
+    for row, name in enumerate(BIG_UNITS):
+        u = next(x for x in UNITS if x["name"] == name)
+        for col, pose in enumerate(FRAME_LAYOUT):
+            atlas.alpha_composite(draw_unit(u, pose, out=BIG_CELL), (col * BIG_CELL, row * BIG_CELL))
+        atlas.alpha_composite(corpse(u, BIG_CELL), (CORPSE_COL * BIG_CELL, row * BIG_CELL))
+        for i, pose in enumerate(IDLE_POSES):
+            atlas.alpha_composite(draw_unit(u, pose, out=BIG_CELL), ((IDLE_COL + i) * BIG_CELL, row * BIG_CELL))
+    return atlas
 
 
 def units_atlas():
@@ -717,7 +733,7 @@ def ground():
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    jobs = [("Units.png", units_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground)]
+    jobs = [("Units.png", units_atlas), ("BigUnits.png", big_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground)]
     for name, make in jobs:
         make().save(os.path.join(OUT, name))
         print("wrote", name)

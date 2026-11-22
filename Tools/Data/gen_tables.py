@@ -108,6 +108,7 @@ TUNING = [
 LAYOUT = [
     ("# 아틀라스 (Tools/Art/generate_art.py 와 같아야 한다)", None, False, ""),
     ("UnitCell", 128, False, "Units.png 칸 크기"),
+    ("BigUnitCell", 256, False, "BigUnits.png 칸 크기 (보스·영웅)"),
     ("FxCell", 128, False, "Fx.png 칸 크기"),
     ("BuildingCell", 256, False, "Buildings.png 칸 크기"),
     ("UiCell", 128, False, "UI.png 칸 크기"),

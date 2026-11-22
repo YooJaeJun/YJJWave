@@ -88,11 +88,13 @@ void AYJJWaveHUD::BeginPlay()
 void AYJJWaveHUD::LoadArt()
 {
 	UnitTexture = FYJJTextureLoader::Load(TEXT("Units.png"), true);
+	BigUnitTexture = FYJJTextureLoader::Load(TEXT("BigUnits.png"), true);
 	FxTexture = FYJJTextureLoader::Load(TEXT("Fx.png"), true);
 	BuildingTexture = FYJJTextureLoader::Load(TEXT("Buildings.png"), true);
 	UiTexture = FYJJTextureLoader::Load(TEXT("UI.png"), true);
 	GroundTexture = FYJJTextureLoader::Load(TEXT("Ground.png"), false);
 	UnitAtlas.Init(UnitTexture, UI().UnitCell);
+	BigAtlas.Init(BigUnitTexture, UI().BigUnitCell);
 	FxAtlas.Init(FxTexture, UI().FxCell);
 	BuildingAtlas.Init(BuildingTexture, UI().BuildingCell);
 	UiAtlas.Init(UiTexture, UI().UiCell);
@@ -333,8 +335,9 @@ void AYJJWaveHUD::TakeDeaths()
 			FYJJStamp& Stamp = Stamps.AddDefaulted_GetRef();
 			Stamp.Pos = Death.Pos;
 			Stamp.Size = Def.DrawSize;
-			Stamp.Cell = Def.AtlasRow * UnitAtlas.Columns + FMath::RoundToInt(UI().AnimCorpse);
+			Stamp.Cell = RowFor(Def) * AtlasFor(Def).Columns + FMath::RoundToInt(UI().AnimCorpse);
 			Stamp.bUnits = true;
+			Stamp.bBig = &AtlasFor(Def) == &BigAtlas;
 			Stamp.bFlip = Death.bFaceLeft;
 			Stamp.Color = FLinearColor::White;
 			AddBlood(Death.Pos, Def.DrawSize);
@@ -402,8 +405,9 @@ void AYJJWaveHUD::UpdateDying(float Dt)
 		FYJJStamp& Stamp = Stamps.AddDefaulted_GetRef();
 		Stamp.Pos = Body.Pos;
 		Stamp.Size = Def.DrawSize;
-		Stamp.Cell = Def.AtlasRow * UnitAtlas.Columns + FMath::RoundToInt(UI().AnimCorpse);
+		Stamp.Cell = RowFor(Def) * AtlasFor(Def).Columns + FMath::RoundToInt(UI().AnimCorpse);
 		Stamp.bUnits = true;
+		Stamp.bBig = &AtlasFor(Def) == &BigAtlas;
 		Stamp.bFlip = Body.bFaceLeft;
 		Stamp.Color = FLinearColor(UI().CorpseShade, UI().CorpseShade, UI().CorpseShade, 1.f);
 		Dying.RemoveAtSwap(Index, EAllowShrinking::No);
@@ -424,15 +428,20 @@ void AYJJWaveHUD::BakeStamps()
 	if (TargetCanvas && TargetCanvas->Canvas)
 	{
 		const float Scale = Size.X / Current->FieldWidth;
-		// 피(Fx)를 먼저, 시체(Units)를 위에
-		for (int32 Pass = 0; Pass < 2; ++Pass)
+		// 피(Fx)를 먼저, 시체(Units·BigUnits)를 위에
+		for (int32 Pass = 0; Pass < BakePasses; ++Pass)
 		{
-			const bool bUnits = Pass == 1;
-			const FYJJAtlas& Atlas = bUnits ? UnitAtlas : FxAtlas;
+			const bool bUnits = Pass > 0;
+			const bool bBig = Pass == BakePasses - 1;
+			const FYJJAtlas& Atlas = !bUnits ? FxAtlas : (bBig ? BigAtlas : UnitAtlas);
+			if (!Atlas.Texture)
+			{
+				continue;
+			}
 			const FYJJQuadBatch Batch = BeginBatch(TargetCanvas->Canvas, Atlas.Texture, Stamps.Num());
 			for (const FYJJStamp& Stamp : Stamps)
 			{
-				if (Stamp.bUnits != bUnits)
+				if (Stamp.bUnits != bUnits || (bUnits && Stamp.bBig != bBig))
 				{
 					continue;
 				}

@@ -46,6 +46,7 @@ struct FYJJUnitRow : public FTableRowBase
 	UPROPERTY() int32 Boss = 0;
 	UPROPERTY() int32 Hero = 0;
 	UPROPERTY() FString RaiseUnit;
+	UPROPERTY() int32 BigRow = -1;
 };
 
 /** Buildings.csv */

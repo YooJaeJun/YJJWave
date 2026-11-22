@@ -36,7 +36,8 @@ struct FYJJStamp
 	float Size = 0.f;
 	float Angle = 0.f;
 	int32 Cell = 0;           // 아틀라스 칸 번호
-	bool bUnits = false;      // true: Units.png, false: Fx.png
+	bool bUnits = false;      // true: Units.png(또는 BigUnits.png), false: Fx.png
+	bool bBig = false;        // BigUnits.png
 	bool bFlip = false;
 	FLinearColor Color = FLinearColor::White;
 };
@@ -216,6 +217,7 @@ private:
 	static int32 BuildingIndexForKey(const FKey& Key);
 
 	UPROPERTY() TObjectPtr<UTexture2D> UnitTexture;
+	UPROPERTY() TObjectPtr<UTexture2D> BigUnitTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> FxTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> BuildingTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> UiTexture;
@@ -224,6 +226,12 @@ private:
 	UPROPERTY() TObjectPtr<UFont> BaseFont;
 
 	FYJJAtlas UnitAtlas;
+	FYJJAtlas BigAtlas;
+	/** 유닛 그림이 있는 아틀라스와 줄 (큰 유닛은 BigUnits.png) */
+	const FYJJAtlas& AtlasFor(const FYJJUnitDef& Def) const { return Def.BigRow != INDEX_NONE && BigAtlas.Texture ? BigAtlas : UnitAtlas; }
+	int32 RowFor(const FYJJUnitDef& Def) const { return Def.BigRow != INDEX_NONE && BigAtlas.Texture ? Def.BigRow : Def.AtlasRow; }
+	/** 큰 유닛만 따로 그리는 목록 */
+	TArray<int32> BigSorted;
 	FYJJAtlas FxAtlas;
 	FYJJAtlas BuildingAtlas;
 	FYJJAtlas UiAtlas;
@@ -287,6 +295,7 @@ private:
 	static constexpr int32 QuadVertices = 4;
 	static constexpr int32 QuadTriangles = 2;
 	static constexpr int32 SpriteChunk = 1024;
+	static constexpr int32 BakePasses = 3;   // 피 → 시체 → 큰 시체
 	static constexpr const TCHAR* BaseFontPath = TEXT("/Engine/EngineFonts/Roboto.Roboto");
 	static constexpr const TCHAR* GameFontFile = TEXT("YJJWave/Fonts/Jua-Regular.ttf");
 	static constexpr const TCHAR* GameFontFace = TEXT("Regular");

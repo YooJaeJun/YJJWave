@@ -1,5 +1,6 @@
 ﻿Name,Value,Note
 UnitCell,128,Units.png 칸 크기
+BigUnitCell,256,BigUnits.png 칸 크기 (보스·영웅)
 FxCell,128,Fx.png 칸 크기
 BuildingCell,256,Buildings.png 칸 크기
 UiCell,128,UI.png 칸 크기
