@@ -69,6 +69,16 @@ struct FYJJDeath
 	bool bFaceLeft = false;
 };
 
+/** Step 구간 (성능 측정용) */
+enum class EYJJHordePhase : uint8
+{
+	Grid,      // 격자 다시 만들기 (순차)
+	Think,     // 대상 찾기·이동·밀어내기 (ParallelFor)
+	Combat,    // 위치 반영 + 공격 적용 + 투사체 (순차)
+	Cleanup,   // 죽은 유닛 정리 (순차)
+	Count
+};
+
 /** 시뮬이 Tuning.csv 에서 읽어 두는 값 */
 struct FYJJHordeConfig
 {
@@ -112,6 +122,7 @@ public:
 	/** 아군 가장 앞(오른쪽) x, 적 가장 앞(왼쪽) x. 그 편이 없으면 -1 */
 	float FrontX(EYJJTeam InTeam) const { return Front[static_cast<int32>(InTeam)]; }
 	float LastStepMs() const { return StepMs; }
+	float LastPhaseMs(EYJJHordePhase Phase) const { return PhaseMs[static_cast<int32>(Phase)]; }
 	int64 StepCount() const { return Steps; }
 
 	// 유닛 배열 (슬롯 0 ~ HighWater-1, Alive가 0이면 빈 칸)
@@ -177,6 +188,7 @@ private:
 	float WallX = 0.f;
 	float MaxNormalRadius = 0.f;
 	float StepMs = 0.f;
+	float PhaseMs[static_cast<int32>(EYJJHordePhase::Count)] = {};
 	int64 Steps = 0;
 	FRandomStream Random;
 	FYJJHordeConfig Config;
@@ -185,6 +197,7 @@ private:
 	static constexpr int32 WallTarget = -2;
 	static constexpr int32 ParallelChunk = 256;
 	static constexpr float NearZero = 1.e-4f;
+	static constexpr double MsPerSecond = 1000.0;
 	static constexpr float HalfShare = 0.5f;
 	static constexpr uint32 RandomSeed = 20261122u;
 	static constexpr float DriftPhaseSpeed = 0.37f;

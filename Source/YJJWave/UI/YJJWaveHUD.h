@@ -101,6 +101,9 @@ public:
 	FVector2f CameraCenter() const { return CamCenter; }
 
 	bool IsTreeOpen() const { return bTreeOpen; }
+	/** 지난 프레임 DrawUnits 의 CPU 시간 (화면 안 유닛 고르기·정렬·사각형 넣기) */
+	float LastUnitDrawMs() const { return UnitDrawMs; }
+	int32 LastVisibleUnits() const { return Sorted.Num(); }
 	void SetTreeOpen(bool bOpen) { bTreeOpen = bOpen; }
 
 private:
@@ -219,6 +222,7 @@ private:
 	int32 HoverPlot = INDEX_NONE;
 	int32 HoverPerk = INDEX_NONE;
 	float FrameMs = 0.f;
+	float UnitDrawMs = 0.f;
 
 	// 그리기용 임시 배열 (매 프레임 다시 쓴다)
 	TArray<int32> Visible;
@@ -236,6 +240,7 @@ private:
 	static constexpr float Half = 0.5f;
 	static constexpr float FullTurn = 2.f * UE_PI;
 	static constexpr float Percent = 100.f;
+	static constexpr double MsPerSecond = 1000.0;
 	static constexpr int32 NineSlice = 3;
 	static constexpr int32 QuadVertices = 4;
 	static constexpr int32 QuadTriangles = 2;

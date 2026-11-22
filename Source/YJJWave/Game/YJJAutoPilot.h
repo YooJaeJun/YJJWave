@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Sim/YJJHorde.h"
 
 class AYJJWaveGameMode;
 class AYJJWaveHUD;
@@ -52,6 +53,9 @@ private:
 	double DenseFrameMsSum = 0.0;
 	int32 DenseSamples = 0;
 	float DenseWorstFrameMs = 0.f;
+	double DensePhaseMsSum[static_cast<int32>(EYJJHordePhase::Count)] = {};
+	double DenseUnitDrawMsSum = 0.0;
+	int64 DenseVisibleSum = 0;
 	FRandomStream Random;
 
 	static constexpr int32 RandomSeed = 1234;

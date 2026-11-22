@@ -11,7 +11,9 @@ param(
     [int]$ResX = 1920,
     [int]$ResY = 1080,
     [string]$Lang = "",
-    [string]$Tag = ""
+    [string]$Tag = "",
+    # 추가 콘솔 명령 (쉼표로). 예: -Exec "stat RHI, stat unit"
+    [string]$Exec = ""
 )
 
 $ProjectDir = Resolve-Path (Join-Path $PSScriptRoot "..")
@@ -21,10 +23,11 @@ $Log = Join-Path $ProjectDir "Saved\Logs\RunGame$Tag.log"
 
 Remove-Item (Join-Path $ProjectDir "Saved\Screenshots\Play_*.png") -ErrorAction SilentlyContinue
 
-$Exec = "yjj.AutoPlay 1, yjj.AutoPlayTime $Time, yjj.AutoPlaySpeed $Speed, yjj.ShotInterval $ShotInterval, yjj.Bench $Bench, t.MaxFPS 0, r.VSync 0"
+$AllExec = "yjj.AutoPlay 1, yjj.AutoPlayTime $Time, yjj.AutoPlaySpeed $Speed, yjj.ShotInterval $ShotInterval, yjj.Bench $Bench, t.MaxFPS 0, r.VSync 0"
+if ($Exec) { $AllExec += ", $Exec" }
 $GameArgs = @(
     "`"$Project`"", "-game", "-windowed", "-ResX=$ResX", "-ResY=$ResY", "-WinX=0", "-WinY=0", "-nosplash", "-unattended", "-NoSound",
-    "-ExecCmds=`"$Exec`"", "-log", "-abslog=`"$Log`""
+    "-ExecCmds=`"$AllExec`"", "-log", "-abslog=`"$Log`""
 )
 if ($Lang) { $GameArgs += "-yjjlang=$Lang" }
 

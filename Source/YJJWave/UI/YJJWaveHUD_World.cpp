@@ -97,6 +97,7 @@ void AYJJWaveHUD::DrawUnits()
 	{
 		return;
 	}
+	const double StartTime = FPlatformTime::Seconds();
 
 	// 화면 안의 유닛만, 위에서 아래 순서로 (Y 버킷 계수 정렬)
 	const FVector2f Margin(UI().CullMargin);
@@ -169,6 +170,7 @@ void AYJJWaveHUD::DrawUnits()
 		}
 		AddQuad(Batch, TopLeft, FVector2f(Size), UnitAtlas.UV(Frame, Def.AtlasRow), UnitAtlas.CellUV, Color, Horde.FaceLeft[Slot] != 0);
 	}
+	UnitDrawMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);
 }
 
 void AYJJWaveHUD::DrawDying()

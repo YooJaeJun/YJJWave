@@ -291,9 +291,14 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	const int32 TeamId = TeamIndex(MyTeam);
 	const FVector2f P = Pos[Slot];
 
-	// 대상: 죽었거나 몇 틱마다(슬롯별로 엇갈려) 다시 찾는다
-	const bool bTargetGone = !IsValidTarget(Target[Slot], TargetGen[Slot]);
-	if (bTargetGone || (Steps + Slot) % Config.RetargetTicks == 0)
+	// 대상: 방금 죽었거나 몇 틱마다(슬롯별로 엇갈려) 다시 찾는다.
+	// 대상이 원래 없던 유닛(행군 중)은 엇갈린 주기에만 찾는다 → 매 틱 넓은 시야를 다 뒤지지 않게
+	const bool bTargetDied = Target[Slot] != INDEX_NONE && !IsValidTarget(Target[Slot], TargetGen[Slot]);
+	if (bTargetDied)
+	{
+		Target[Slot] = INDEX_NONE;
+	}
+	if (bTargetDied || (Steps + Slot) % Config.RetargetTicks == 0)
 	{
 		const int32 Found = FindNearestEnemy(Slot, Def.Sight);
 		Target[Slot] = Found;
@@ -559,8 +564,16 @@ void FYJJHorde::CollectDead()
 void FYJJHorde::Step(float Dt)
 {
 	const double StartTime = FPlatformTime::Seconds();
+	double Lap = StartTime;
+	auto EndPhase = [this, &Lap](EYJJHordePhase Phase)
+	{
+		const double Now = FPlatformTime::Seconds();
+		PhaseMs[static_cast<int32>(Phase)] = static_cast<float>((Now - Lap) * MsPerSecond);
+		Lap = Now;
+	};
 
 	BuildGrids();
+	EndPhase(EYJJHordePhase::Grid);
 
 	const int32 NumChunks = FMath::DivideAndRoundUp(HighWaterMark, ParallelChunk);
 	ParallelFor(NumChunks, [this, Dt](int32 Chunk)
@@ -575,6 +588,7 @@ void FYJJHorde::Step(float Dt)
 			}
 		}
 	});
+	EndPhase(EYJJHordePhase::Think);
 
 	for (int32 Slot = 0; Slot < HighWaterMark; ++Slot)
 	{
@@ -586,8 +600,10 @@ void FYJJHorde::Step(float Dt)
 
 	ApplyAttacks();
 	UpdateProjectiles(Dt);
+	EndPhase(EYJJHordePhase::Combat);
 	CollectDead();
+	EndPhase(EYJJHordePhase::Cleanup);
 	++Steps;
 
-	StepMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * 1000.0);
+	StepMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);
 }
