@@ -237,6 +237,7 @@ struct FYJJUILayout
 	UPROPERTY() float ResH = 0.f;   // 금화·영혼 칸 높이
 	UPROPERTY() float SpellH = 0.f;   // 스펠·특성 칸 높이
 	UPROPERTY() float BuyH = 0.f;   // 병사 즉시 구매 버튼 높이
+	UPROPERTY() float BuyPopupGap = 0.f;   // 구매 팝업: 카드 아래 간격
 	UPROPERTY() float BuyCountA = 0.f;   // 구매 버튼 1: 마리 수
 	UPROPERTY() float BuyCountB = 0.f;   // 구매 버튼 2: 마리 수
 	UPROPERTY() float BuyCountC = 0.f;   // 구매 버튼 3: 마리 수

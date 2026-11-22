@@ -117,6 +117,7 @@ public:
 	bool IsTreeOpen() const { return bTreeOpen; }
 	bool IsOptionsOpen() const { return bOptionsOpen; }
 	void SetOptionsOpen(bool bOpen) { bOptionsOpen = bOpen; }
+	void SetBuyPopup(int32 Building) { BuyPopupFor = Building; SelectedBuilding = Building == INDEX_NONE ? SelectedBuilding : Building; }
 	/** 지난 프레임 DrawUnits 의 CPU 시간 (화면 안 유닛 고르기·정렬·사각형 넣기) */
 	float LastUnitDrawMs() const { return UnitDrawMs; }
 	int32 LastVisibleUnits() const { return Sorted.Num(); }
@@ -181,6 +182,9 @@ private:
 	// UI (1920x1080 가상 좌표)
 	/** 좌측 패널 하나에 모든 UI (물결·VS·보스·자원·병영·스펠·특성·성능) */
 	void DrawSidePanel();
+	/** 병영 카드 아래 즉시 구매 팝업 */
+	void DrawBuyPopup(float X, float W);
+	float BuyCountOf(int32 Index) const;
 	void DrawPlotTooltip();
 	void DrawTree();
 	void DrawGameOver();
@@ -278,6 +282,9 @@ private:
 
 	// 상태
 	int32 SelectedBuilding = 0;
+	/** 즉시 구매 팝업이 열린 병영 (INDEX_NONE이면 닫힘) */
+	int32 BuyPopupFor = INDEX_NONE;
+	float BuyPopupY = 0.f;
 	bool bTreeOpen = false;
 	bool bOptionsOpen = false;
 	bool bAimingMeteor = false;
@@ -327,6 +334,7 @@ private:
 	static constexpr int32 OptionResolutionNext = 31;
 	static constexpr int32 OptionClose = 40;
 	static constexpr int32 NumLanguages = 2;
+	static constexpr int32 BuyCountKeys[] = { 0, 1, 2 };   // 팝업 버튼 3개 (마리 수는 UILayout BuyCountA·B·C)
 	inline static const TCHAR* const LanguageCodes[NumLanguages] = { TEXT("ko"), TEXT("en") };
 	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice") };
 	inline static const FName SoundBanner = TEXT("Banner");

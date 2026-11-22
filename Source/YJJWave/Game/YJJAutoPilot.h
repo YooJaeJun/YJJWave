@@ -46,6 +46,7 @@ private:
 	bool bCardShot = false;
 	bool bOptionsShot = false;
 	bool bCutShot = false;
+	bool bBuyShot = false;
 	float CardShotWait = 0.f;
 
 	// 성능 기록
@@ -70,6 +71,8 @@ private:
 	static constexpr float MsPerSecond = 1000.f;
 	static constexpr float DenseShare = 0.8f;
 	/** 끝난 뒤 종료 대기의 이 비율이 지나면 특성 성좌 화면을 한 장 찍는다 */
+	static constexpr float BuyShotAt = 0.85f;
+	static constexpr int32 BuyShotBuilding = 1;
 	static constexpr float TreeShotAt = 0.6f;
 	/** 그다음 옵션 화면 */
 	static constexpr float OptionsShotAt = 0.25f;

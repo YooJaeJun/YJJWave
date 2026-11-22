@@ -29,8 +29,15 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	{
 		// 마지막 스크린샷이 저장될 시간을 준 뒤 종료
 		ExitTimer -= RealDeltaSeconds;
+		if (!bBuyShot && HUD && ExitTimer < T.BotExitDelay * BuyShotAt)
+		{
+			bBuyShot = true;
+			HUD->SetBuyPopup(BuyShotBuilding);
+			Mode->TakeShot(FString::Printf(TEXT("%sBuy"), ShotPrefix));
+		}
 		if (!bOptionsShot && HUD && ExitTimer < T.BotExitDelay * OptionsShotAt)
 		{
+			HUD->SetBuyPopup(INDEX_NONE);
 			bOptionsShot = true;
 			HUD->SetTreeOpen(false);
 			HUD->SetOptionsOpen(true);
@@ -39,6 +46,7 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		if (!bTreeShot && HUD && ExitTimer < T.BotExitDelay * TreeShotAt)
 		{
 			bTreeShot = true;
+			HUD->SetBuyPopup(INDEX_NONE);
 			HUD->SetTreeOpen(true);
 			// 찍은 중간 별 하나의 설명창을 함께 찍는다
 			for (int32 Perk = 0; Perk < YJJData::Perks().Num(); ++Perk)

@@ -208,11 +208,12 @@ void AYJJWaveHUD::AddButton(EButton Kind, int32 Index, float X, float Y, float W
 
 const FYJJButton* AYJJWaveHUD::ButtonAt(const FVector2f& Virtual) const
 {
-	for (const FYJJButton& Button : Buttons)
+	// 나중에 그린 것(팝업)이 위에 있으므로 뒤에서부터 찾는다
+	for (int32 Index = Buttons.Num() - 1; Index >= 0; --Index)
 	{
-		if (Button.Rect.IsInside(Virtual))
+		if (Buttons[Index].Rect.IsInside(Virtual))
 		{
-			return &Button;
+			return &Buttons[Index];
 		}
 	}
 	return nullptr;
@@ -532,7 +533,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		switch (static_cast<EButton>(Button->Kind))
 		{
 		case EButton::BuildCard:
+			// 누르면 그 카드 아래 구매 팝업, 같은 카드나 다른 카드를 누르면 닫힌다
 			SelectedBuilding = Button->Index;
+			BuyPopupFor = BuyPopupFor == INDEX_NONE ? Button->Index : INDEX_NONE;
 			break;
 		case EButton::Spell:
 			if (static_cast<EYJJSpell>(Button->Index) == EYJJSpell::Meteor)
@@ -563,7 +566,7 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 			Current->PickCard(Button->Index);
 			break;
 		case EButton::Buy:
-			Current->Buy(SelectedBuilding, Button->Index);
+			Current->Buy(BuyPopupFor, Button->Index);
 			break;
 		case EButton::Option:
 			HandleOption(Button->Index);
@@ -633,6 +636,7 @@ void AYJJWaveHUD::ClickWorld()
 		return;
 	}
 	const int32 Plot = PlotAt(World);
+	BuyPopupFor = INDEX_NONE;
 	if (Plot == INDEX_NONE)
 	{
 		return;

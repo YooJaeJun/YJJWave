@@ -228,6 +228,7 @@ LAYOUT = [
     ("ResH", 76, False, "금화·영혼 칸 높이"),
     ("SpellH", 120, False, "스펠·특성 칸 높이"),
     ("BuyH", 72, False, "병사 즉시 구매 버튼 높이"),
+    ("BuyPopupGap", 10, False, "구매 팝업: 카드 아래 간격"),
     ("BuyCountA", 3, False, "구매 버튼 1: 마리 수"),
     ("BuyCountB", 5, False, "구매 버튼 2: 마리 수"),
     ("BuyCountC", 10, False, "구매 버튼 3: 마리 수"),
