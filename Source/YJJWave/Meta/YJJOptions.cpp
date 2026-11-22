@@ -30,6 +30,7 @@ void FYJJOptions::Load()
 		Music = Saved->Music;
 		Sfx = Saved->Sfx;
 		Voice = Saved->Voice;
+		Shake = Saved->Shake;
 		Language = Saved->Language;
 		Resolution = Saved->Resolution;
 	}
@@ -41,6 +42,7 @@ void FYJJOptions::Save() const
 	Saved->Music = Music;
 	Saved->Sfx = Sfx;
 	Saved->Voice = Voice;
+	Saved->Shake = Shake;
 	Saved->Language = Language;
 	Saved->Resolution = Resolution;
 	UGameplayStatics::SaveGameToSlot(Saved, Slot, UserIndex);

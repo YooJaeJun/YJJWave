@@ -72,12 +72,6 @@ struct FYJJTuning
 	UPROPERTY() float MeteorKnockback = 0.f;   // 유성 밀쳐내기 (질량으로 나눈다)
 	UPROPERTY() float MeteorFallTime = 0.f;   // 유성이 떨어지는 시간
 	UPROPERTY() float RallyMoveSpeed = 0.f;   // 함성 중 이동 속도 배율 (공격 속도·지속·대기는 Spells.csv Lv별)
-	UPROPERTY() float QuakeDelay = 0.f;   // 대지 가르기: 누르고 갈라지기까지
-	UPROPERTY() float QuakeSplitDelay = 0.f;   // 대지 가르기: 옆 줄이 한 줄마다 늦게 갈라지는 시간
-	UPROPERTY() float QuakeHitStep = 0.f;   // 대지 가르기 판정 원 간격 (폭의 절반 배율)
-	UPROPERTY() float QuakeKnockback = 0.f;   // 대지 가르기 밀쳐내기 (질량으로 나눈다)
-	UPROPERTY() float QuakeEffectTime = 0.f;   // 갈라진 땅 연출 시간
-	UPROPERTY() float QuakeScarScale = 0.f;   // 갈라진 자리 그을음 크기 (폭의 절반 배율)
 	UPROPERTY() float BurnTick = 0.f;   // 불바다 피해 간격
 	UPROPERTY() float ShowerSpread = 0.f;   // 유성우: 작은 운석이 떨어지는 범위 (반경 배율)
 	UPROPERTY() float ShowerDelay = 0.f;   // 유성우: 운석 사이 시간
@@ -113,17 +107,21 @@ struct FYJJTuning
 	// ---- 말풍선 대화 (Dialogues.csv) ----
 	UPROPERTY() float HeroLowShare = 0.f;   // 영웅 체력이 이 비율 아래면 HeroLow 대화
 	// ---- 국자 내려치기 (전장 클릭) ----
-	UPROPERTY() float SmackCharges = 0.f;   // 최대 횟수
-	UPROPERTY() float SmackRecharge = 0.f;   // 한 번 차오르는 시간
-	UPROPERTY() float SmackDamage = 0.f;   // 피해 (스테이지 체력 배율·주문 위력 특성만큼 오른다)
-	UPROPERTY() float SmackRadius = 0.f;   // 범위
 	UPROPERTY() float SmackKnockback = 0.f;   // 밀쳐내기
 	UPROPERTY() float SmackDelay = 0.f;   // 국자가 내려오는 시간
 	UPROPERTY() float SmackDustScale = 0.f;   // 쾅 먼지 크기 (범위 배율)
 	UPROPERTY() float SmackRingTime = 0.f;   // 쾅 고리 시간
+	// ---- 성벽·성문 (적이 성벽을 때려 0이 되면 패배, 체력은 Stages.csv WallHP) ----
+	UPROPERTY() float GateHalf = 0.f;   // 성문 반 높이 (가운데 위아래로)
+	UPROPERTY() float GateExit = 0.f;   // 성문을 나와 모이는 거리
+	UPROPERTY() float WallReach = 0.f;   // 적이 성벽을 때리는 거리 여유
+	UPROPERTY() float WallFlashTime = 0.f;   // 성벽이 맞으면 붉게 깜빡이는 시간
+	UPROPERTY() float WallBreakPuffs = 0.f;   // 성벽이 무너질 때 먼지 수
+	UPROPERTY() float HeroRespawnTime = 0.f;   // 영웅이 쓰러지면 다시 나오기까지
+	UPROPERTY() float AttackStrikeShare = 0.f;   // 공격 동작 중 이 비율에서 맞는다 (휘두르기 전에 맞지 않게)
 	// ---- 마무리·별 ----
 	UPROPERTY() float VictoryDelay = 0.f;   // 적을 다 쓰러뜨린 뒤 결과 창까지 (쓰러지는 연출을 보여 준다)
-	UPROPERTY() float StarThreeHealth = 0.f;   // 이겼을 때 영웅 체력이 이 비율 이상이면 별 3개
+	UPROPERTY() float StarThreeHealth = 0.f;   // 이겼을 때 성벽 체력이 이 비율 이상이면 별 3개
 	UPROPERTY() float StarTwoHealth = 0.f;   // 이 비율 이상이면 별 2개 (아래면 1개)
 	UPROPERTY() float BossSlowMo = 0.f;   // 보스가 쓰러질 때 느려지는 배율
 	UPROPERTY() float BossSlowMoTime = 0.f;   // 느려지는 시간 (게임 시간)
@@ -145,7 +143,6 @@ struct FYJJTuning
 	UPROPERTY() float BotCameraZoom = 0.f;   // 봇 카메라 확대
 	UPROPERTY() float BotMeteorLead = 0.f;   // 봇 유성: 적 앞줄보다 이만큼 뒤
 	UPROPERTY() float BotRallyRatio = 0.f;   // 적 수가 아군의 이 배를 넘으면 함성
-	UPROPERTY() float BotQuakeMinEnemies = 0.f;   // 봇 대지 가르기: 적이 이만큼 있을 때만
 	UPROPERTY() float BotBuyGold = 0.f;   // 봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 	UPROPERTY() int32 BotPotStage = 0;   // 봇: 냄비가 이 단계(0부터) 이상이면 뚜껑을 연다
 	UPROPERTY() float BotPotZoom = 0.f;   // 봇: 냄비 스크린샷 확대
@@ -203,11 +200,6 @@ struct FYJJUILayout
 	UPROPERTY() float UiLadle = 0.f;   // UI 칸: 국자 (남은 횟수)
 	UPROPERTY() float SmackDrawSize = 0.f;   // 내려오는 국자 그림 크기 (월드)
 	UPROPERTY() float SmackStartAngle = 0.f;   // 국자가 휘두르기 시작하는 각도 (라디안)
-	UPROPERTY() float SmackIconSize = 0.f;   // 커서 옆 국자 아이콘 크기
-	UPROPERTY() float SmackIconOffset = 0.f;   // 커서에서 아이콘까지
-	UPROPERTY() float SmackIconGap = 0.f;   // 아이콘 사이
-	UPROPERTY() float SmackEmptyAlpha = 0.f;   // 빈 국자 진하기
-	UPROPERTY() float SmackFillAlpha = 0.f;   // 차오르는 국자 진하기
 	UPROPERTY() float ComboWindow = 0.f;   // 이 시간 안에 또 쓰러뜨리면 연속 처치가 이어진다
 	UPROPERTY() float ComboShowAt = 0.f;   // 이만큼부터 연속 처치 숫자를 보인다
 	UPROPERTY() float ComboHot = 0.f;   // 이만큼이면 가장 크고 붉게
@@ -219,7 +211,33 @@ struct FYJJUILayout
 	UPROPERTY() float ComboRight = 0.f;   // 화면 오른쪽에서 숫자 가운데까지
 	UPROPERTY() float ComboY = 0.f;   // 숫자 높이
 	UPROPERTY() float ComboLabelGap = 0.f;   // 숫자와 글자 사이
+	// ---- 성벽·금화·웨이브 예고 ----
+	UPROPERTY() float BuildingTiers = 0.f;   // Buildings.png 강화 단계 줄 수
+	UPROPERTY() float WallRow = 0.f;   // Buildings 줄: 성벽 조각·성문 탑
+	UPROPERTY() float WallCol = 0.f;   // Buildings 칸: 성벽 조각
+	UPROPERTY() float GateCol = 0.f;   // Buildings 칸: 성문 탑
+	UPROPERTY() float WallSegment = 0.f;   // 성벽 조각 간격 (월드)
+	UPROPERTY() float WallDrawSize = 0.f;   // 성벽 조각 그림 크기 (월드)
+	UPROPERTY() float GateTowerSize = 0.f;   // 성문 탑 그림 크기 (월드)
+	UPROPERTY() float WallAnchor = 0.f;   // 성벽 그림 바닥 자리 (칸 높이 비율)
+	UPROPERTY() float WallBarW = 0.f;   // 성문 위 체력 너비
+	UPROPERTY() float WallBarGap = 0.f;   // 성문 탑과 체력 사이
+	UPROPERTY() float WallLabelW = 0.f;   // 좌측 패널 '성벽' 글자 칸
+	UPROPERTY() float CoinPopsPerSecond = 0.f;   // 처치 금화 튀기는 초당 이만큼까지
+	UPROPERTY() float CoinPopTime = 0.f;   // 금화가 튀었다 사라지는 시간
+	UPROPERTY() float CoinPopJump = 0.f;   // 금화가 튀는 높이 (월드)
+	UPROPERTY() float CoinPopFloat = 0.f;   // 금화가 끝으로 갈수록 더 오르는 높이
+	UPROPERTY() float CoinPopDrift = 0.f;   // 금화가 옆으로 퍼지는 거리
+	UPROPERTY() float CoinPopFade = 0.f;   // 끝에서 흐려지는 비율
+	UPROPERTY() float CoinPopSize = 0.f;   // 튀는 금화 그림 크기
+	UPROPERTY() float CoinPopGap = 0.f;   // 금화와 숫자 사이
+	UPROPERTY() float PreviewY = 0.f;   // 웨이브 예고 판 높이
+	UPROPERTY() float PreviewIcon = 0.f;   // 웨이브 예고 적 그림 크기
+	UPROPERTY() float PreviewCountW = 0.f;   // 웨이브 예고 마리 수 칸
+	UPROPERTY() float PreviewGap = 0.f;   // 예고 제목과 그림 사이
 	// ---- 결과 창 ----
+	UPROPERTY() float ResultStepTime = 0.f;   // 결과 창 한 칸이 나타나는 시간 (위에서부터 차례로)
+	UPROPERTY() float ResultSlide = 0.f;   // 나타나며 미끄러지는 거리
 	UPROPERTY() float ResultPopTime = 0.f;   // 결과 창이 커지며 나타나는 시간
 	UPROPERTY() float ResultPopStart = 0.f;   // 결과 창 처음 크기 배율
 	UPROPERTY() float ResultPopOvershoot = 0.f;   // 결과 창이 살짝 넘쳤다 돌아오는 정도
@@ -318,7 +336,6 @@ struct FYJJUILayout
 	UPROPERTY() float FxRing = 0.f;   // Fx 칸: 고리
 	UPROPERTY() float FxMeteor = 0.f;   // Fx 칸: 운석
 	UPROPERTY() float FxBlast = 0.f;   // Fx 칸: 폭발
-	UPROPERTY() float FxCrack = 0.f;   // Fx 칸: 갈라진 땅 (세로)
 	UPROPERTY() float FxFlame = 0.f;   // Fx 칸: 불꽃
 	UPROPERTY() float UiCoin = 0.f;   // UI 칸: 금화
 	UPROPERTY() float UiSoul = 0.f;   // UI 칸: 영혼
@@ -326,7 +343,6 @@ struct FYJJUILayout
 	UPROPERTY() float UiSkull = 0.f;   // UI 칸: 적 수
 	UPROPERTY() float UiMeteor = 0.f;   // UI 칸: 유성
 	UPROPERTY() float UiRally = 0.f;   // UI 칸: 함성
-	UPROPERTY() float UiQuake = 0.f;   // UI 칸: 대지 가르기
 	UPROPERTY() float UiStar = 0.f;   // UI 칸: 작은 별
 	UPROPERTY() float UiBigStar = 0.f;   // UI 칸: 큰 별
 	UPROPERTY() float UiHero = 0.f;   // UI 칸: 영웅 얼굴
@@ -380,10 +396,6 @@ struct FYJJUILayout
 	UPROPERTY() float CraterScale = 0.f;   // 유성 그을음 크기 (반경 배율)
 	UPROPERTY() float AimRingStart = 0.f;   // 유성 표시 고리 시작 배율
 	UPROPERTY() float AimAlpha = 0.f;   // 주문 조준 표시 진하기
-	UPROPERTY() float QuakeCrackScale = 0.f;   // 갈라진 땅 그림 크기 (폭의 절반 배율)
-	UPROPERTY() float QuakeCrackStep = 0.f;   // 갈라진 땅 그림 간격 (그림 크기 배율)
-	UPROPERTY() float QuakeWarnAlpha = 0.f;   // 곧 갈라질 줄 진하기
-	UPROPERTY() float QuakeEndScale = 0.f;   // 갈라진 땅이 사라지며 커지는 배율
 	UPROPERTY() float BurnFlames = 0.f;   // 불바다 불꽃 수
 	UPROPERTY() float BurnSpread = 0.f;   // 불꽃이 퍼지는 반경 배율
 	UPROPERTY() float BurnFlameScale = 0.f;   // 불꽃 크기 (반경 배율)
@@ -436,6 +448,8 @@ struct FYJJUILayout
 	UPROPERTY() float BarTextScale = 0.f;   // 게이지 안 글자 크기 = 게이지 높이 x 이 비율
 	UPROPERTY() float SpeedButtonW = 0.f;   // 배속 버튼 너비 (화면 오른쪽 위)
 	UPROPERTY() float SpeedButtonH = 0.f;   // 배속 버튼 높이
+	UPROPERTY() float OptionsButtonTopW = 0.f;   // 화면 오른쪽 위 옵션 버튼 너비 (배속 왼쪽)
+	UPROPERTY() float SkillChargeBarH = 0.f;   // 국자 칸: 다음 한 번이 차오르는 막대 두께
 	UPROPERTY() float DragStartPixels = 0.f;   // 왼쪽 버튼을 이만큼 끌면 클릭이 아니라 화면 이동
 	UPROPERTY() float UnitBarLift = 0.f;   // 머리 위 체력 게이지: 발에서 그림 크기의 이 비율 위
 	UPROPERTY() float UnitBarWidth = 0.f;   // 머리 위 체력 게이지 너비 (그림 크기 비율)
@@ -455,8 +469,13 @@ struct FYJJUILayout
 	UPROPERTY() float NumberMan = 0.f;   // 이 이상은 만 단위로
 	UPROPERTY() float NumberEok = 0.f;   // 이 이상은 억 단위로
 	// ---- 카드·배너·흔들림 ----
-	UPROPERTY() float CardW = 0.f;   // 카드 너비
-	UPROPERTY() float CardPickH = 0.f;   // 카드 높이
+	UPROPERTY() float CardW = 0.f;   // 양념 카드 너비
+	UPROPERTY() float CardPickH = 0.f;   // 양념 카드 높이
+	UPROPERTY() float CardIconSize = 0.f;   // 양념 카드 그림 크기
+	UPROPERTY() float CardSubGap = 0.f;   // 양념 고르기 제목과 설명 사이
+	UPROPERTY() float CardLineGap = 0.f;   // 맛 설명 줄 사이
+	UPROPERTY() float SeasoningIcon = 0.f;   // 좌측 패널 넣은 양념 그림 크기
+	UPROPERTY() float SeasoningGap = 0.f;   // 넣은 양념 그림 사이
 	UPROPERTY() float CardPickGap = 0.f;   // 카드 사이
 	UPROPERTY() float CardTitleY = 0.f;   // 카드 고르기 제목 y
 	UPROPERTY() float BannerY = 0.f;   // 물량 배너 y

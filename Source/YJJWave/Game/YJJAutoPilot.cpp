@@ -128,15 +128,10 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		}
 	}
 
-	// 주문 연출 확인용: 갈라진 땅·불바다가 처음 보이면 한 장씩
+	// 스킬 연출 확인용: 불바다·진급·국자가 처음 보이면 한 장씩
 	for (const FYJJEffect& Effect : Battle.Effects)
 	{
 		const bool bShowing = Effect.Age >= Effect.Life * SpellShotAt;
-		if (!bQuakeShot && bShowing && Effect.Kind == EYJJEffectKind::Quake)
-		{
-			bQuakeShot = true;
-			Mode->TakeShot(FString::Printf(TEXT("%sQuake"), ShotPrefix));
-		}
 		if (!bPromoteShot && HUD && Effect.Kind == EYJJEffectKind::Promote && Effect.Age >= Effect.Life * PromoteShotAt)
 		{
 			bPromoteShot = true;
@@ -289,7 +284,7 @@ void FYJJAutoPilot::Think(FYJJBattle& Battle)
 	const float EnemyFront = Battle.Horde.FrontX(EYJJTeam::Enemy);
 	if (EnemyFront > 0.f && Battle.CanSmack())
 	{
-		Battle.Smack(FVector2f(EnemyFront + YJJData::Tune().BotMeteorLead * Half, Random.FRandRange(Battle.FieldHeight * Half - YJJData::Tune().BotSmackSpread, Battle.FieldHeight * Half + YJJData::Tune().BotSmackSpread)));
+		Battle.Cast(EYJJSpell::Ladle, FVector2f(EnemyFront + YJJData::Tune().BotMeteorLead * Half, Random.FRandRange(Battle.FieldHeight * Half - YJJData::Tune().BotSmackSpread, Battle.FieldHeight * Half + YJJData::Tune().BotSmackSpread)));
 	}
 }
 
@@ -381,12 +376,6 @@ void FYJJAutoPilot::CastSpells(FYJJBattle& Battle)
 	{
 		const float Radius = Battle.SpellNow(EYJJSpell::Meteor).Radius;
 		Battle.Cast(EYJJSpell::Meteor, FVector2f(EnemyFront + T.BotMeteorLead, Random.FRandRange(Radius, Battle.FieldHeight - Radius)));
-	}
-	// 대지 가르기: 적이 몰려 있을 때 두 앞줄이 부딪히는 곳에
-	const float PlayerFront = Battle.Horde.FrontX(EYJJTeam::Player);
-	if (EnemyFront > 0.f && PlayerFront > 0.f && Battle.Horde.Num(EYJJTeam::Enemy) >= T.BotQuakeMinEnemies && Battle.CanCast(EYJJSpell::Quake))
-	{
-		Battle.Cast(EYJJSpell::Quake, FVector2f((PlayerFront + EnemyFront) * 0.5f + T.BotMeteorLead, 0.f));
 	}
 	if (Battle.Horde.Num(EYJJTeam::Enemy) > Battle.Horde.Num(EYJJTeam::Player) * T.BotRallyRatio)
 	{

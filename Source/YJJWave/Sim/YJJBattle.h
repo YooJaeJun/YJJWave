@@ -24,8 +24,6 @@ enum class EYJJEffectKind : uint8
 	Build,        // 건설·레벨업 먼지
 	Rescue,       // 최후의 저항·부활 (초록 고리)
 	Raise,        // 강령술사가 시체를 일으킴 (보라 연기)
-	QuakeHit,     // 대지 가르기가 곧 갈라질 줄 (끝나면 피해)
-	Quake,        // 갈라진 땅
 	Burn,         // 불바다 (살아 있는 동안 BurnTick마다 피해)
 	Promote,      // 진급 빛줄기
 	BoneFly,      // 쓰러진 적의 뼈가 냄비로 날아간다 (Pos = 출발)
@@ -33,7 +31,7 @@ enum class EYJJEffectKind : uint8
 	SmackFall,    // 국자가 내려오는 중 (끝나면 쾅)
 };
 
-/** 화면 연출 + 늦게 터지는 주문 (MeteorFall·QuakeHit 끝, Burn 동안의 피해) */
+/** 화면 연출 + 늦게 터지는 스킬 (MeteorFall·SmackFall 끝, Burn 동안의 피해) */
 struct FYJJEffect
 {
 	EYJJEffectKind Kind = EYJJEffectKind::Build;
@@ -97,7 +95,8 @@ public:
 	// ---- 주문 (F1·F2·F3, Lv은 특성 성좌의 주문 별로 올린다) ----
 	bool CanCast(EYJJSpell Spell) const;
 	bool Cast(EYJJSpell Spell, const FVector2f& Where);
-	float CooldownLeft(EYJJSpell Spell) const { return Cooldowns[static_cast<int32>(Spell)]; }
+	/** 국자는 다음 한 번이 차오르기까지 */
+	float CooldownLeft(EYJJSpell Spell) const;
 	float CooldownMax(EYJJSpell Spell) const;
 	float RallyLeft() const { return RallyTime; }
 	/** 1 + 그 주문 별에 찍은 수 */
@@ -117,12 +116,13 @@ public:
 	/** 특성이 올린 비율 합 (Building = INDEX_NONE 이면 모든 병영 공통분만) */
 	float Bonus(EYJJStat Stat, int32 Building) const;
 
-	// ---- 국자 내려치기: 전장을 클릭하면 그 자리를 큰 국자로 쾅 (횟수가 차오른다) ----
+	// ---- 국자 내려치기 (스킬 F3): 전장을 클릭하면 그 자리를 큰 국자로 쾅, 횟수가 차오른다 ----
 	bool CanSmack() const { return !bGameOver && SmackCharge >= 1.f; }
 	bool Smack(const FVector2f& Where);
 	/** 지금 쓸 수 있는 횟수 (소수 = 다음 한 번이 차오르는 중) */
 	float SmackCharges() const { return SmackCharge; }
-	/** HUD가 화면을 흔들고 0으로 */
+	int32 SmackMax() const;
+	/** HUD가 화면을 흔들고 0으로 (보스 등장·쓰러짐에만) */
 	int32 ShakeRequests = 0;
 
 	// ---- 왕국의 마지막 냄비 (적의 뼈를 고아 군대를 먹인다, 이번 판 한정) ----
@@ -179,8 +179,15 @@ public:
 	bool bVictory = false;
 	/** 이겼지만 마무리 연출 중 (적이 다 쓰러졌고 VictoryDelay 뒤에 결과) */
 	bool bEnding = false;
-	/** 이번 판 별 (이겼을 때 영웅 체력 비율로 1~3) */
+	/** 이번 판 별 (이겼을 때 성벽 체력 비율로 1~3, 지면 0) */
 	int32 Stars = 0;
+	/** 성벽: 적이 때려 0이 되면 패배 */
+	float WallHP = 0.f;
+	float WallMaxHP = 0.f;
+	/** 성벽을 막 맞았다 (HUD 깜빡임) */
+	float WallFlash = 0.f;
+	/** 영웅이 쓰러지면 이만큼 뒤 성문 앞에서 다시 */
+	float HeroRespawnLeft = 0.f;
 	/** 보스가 쓰러질 때 잠깐 느리게 (게임 모드가 배속에 곱한다) */
 	float TimeScale() const;
 	float FieldWidth = 0.f;
@@ -211,10 +218,6 @@ private:
 	void CastMeteor(const FYJJSpellStats& Stats, const FVector2f& Target, float Power);
 	void DropMeteor(const FVector2f& Pos, float Delay, float Radius, float Damage, float BurnPower, float BurnTime);
 	void CastRally(const FYJJSpellStats& Stats, float Power);
-	void CastQuake(const FYJJSpellStats& Stats, float X, float Power);
-	void AddQuake(float X, float Delay, float HalfWidth, float Damage);
-	/** 땅이 갈라진다: 전장 위에서 아래까지 원을 이어 붙여 피해 */
-	void QuakeStrike(float X, float HalfWidth, float Damage);
 	/** 병영 병사 Count 명을 진지 끝에서 바로 내보낸다 (값 없이) */
 	void SpawnSquad(int32 Building, int32 Count);
 	void ApplyPerk(int32 Perk);
@@ -245,6 +248,7 @@ private:
 
 	float SmackCharge = 0.f;
 	inline static const FName SoundSmack = TEXT("Smack");
+	inline static const FName SoundWallBreak = TEXT("WallBreak");
 	inline static const FName SoundSwing = TEXT("Swing");
 
 	// 냄비
@@ -282,7 +286,6 @@ private:
 	inline static const FName SoundMeteorFall = TEXT("MeteorFall");
 	inline static const FName SoundMeteorBoom = TEXT("MeteorBoom");
 	inline static const FName SoundRally = TEXT("Rally");
-	inline static const FName SoundQuake = TEXT("MeteorBoom");
 	inline static const FName SoundHeroVoice = TEXT("Voice_Hero");
 	inline static const FName SoundBossAppear = TEXT("BossAppear");
 	inline static const FName SoundCard = TEXT("Card");

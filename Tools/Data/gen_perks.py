@@ -67,7 +67,7 @@ INNER = [("HP", "", 0.04), ("Damage", "", 0.04)]
 
 # 주문 별: (주문, 스펠 갈래 줄 몇 번째에 붙는지, 반지름 칸, 각도 차이)
 SPELL_SPOKE = "Spells"
-SPELL_NODES = [("Meteor", 1, 3, -20), ("Rally", 1, 3, 20), ("Quake", 3, 5, -14)]
+SPELL_NODES = [("Meteor", 1, 3, -20), ("Rally", 1, 3, 20), ("Ladle", 3, 5, -14)]
 MIN_GAP = 110   # 별 사이 최소 거리 (성좌 좌표)
 
 # 중간 별 효과 그림: UI.png 칸 (Tools/Art/generate_art.py ui_icon 18~32). 주문 별은 HUD가 주문 그림을 쓴다

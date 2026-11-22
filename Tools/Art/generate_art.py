@@ -780,10 +780,16 @@ def fx_atlas():
 # ------------------------------------------------------------------------------------------------
 # 건물
 
-def building(kind):
+def building(kind, tier=0):
+    """병영 그림. tier 0~3 = 강화 Lv1~4: 돌 기단·깃발 → 옆 망루·문장 → 금 지붕 장식·왕관"""
     C = 256
     p = Pen(C, C, lw=4.5)
     base = C * 0.9
+    if tier >= 2 and kind < 4:   # 옆 망루 (건물 뒤)
+        p.rect(14, base - 150, 62, base - 6, rgba("#B9B2A6"), radius=4)
+        for i in range(3):
+            p.rect(10 + i * 18, base - 166, 24 + i * 18, base - 146, rgba("#C9C2B6"), radius=2)
+        p.rect(30, base - 120, 46, base - 96, rgba("#3A2418"), radius=6)
     if kind == 4:   # 빈 칸: 흙 + 말뚝 + 망치 표지
         p.ellipse(128, base - 18, 92, 34, rgba("#9B7A52"))
         p.ellipse(128, base - 22, 76, 24, rgba("#B0905F"), line=False)
@@ -835,6 +841,64 @@ def building(kind):
         p.ellipse(110, base - 34, 18, 12, rgba("#FF8A2A"), line=False)
         p.rect(186, base - 40, 236, base - 24, rgba("#5A5F69"), radius=3)
         p.rect(200, base - 24, 222, base - 6, rgba("#5A5F69"), radius=2)
+    tier_extras(p, tier, base)
+    return p.done(C, C)
+
+
+TIER_BANNER = ["#3F74C9", "#3F74C9", "#D9453A", "#F2C230"]
+
+
+def tier_extras(p, tier, base):
+    """강화 단계 표시: 1 돌 기단 + 깃발, 2 문장 방패, 3 금 장식 + 왕관 (단계가 오를수록 눈에 띄게)"""
+    if tier >= 1:
+        p.rect(40, base - 14, 216, base + 2, rgba("#9A938A"), radius=3)
+        for x in range(52, 212, 26):
+            p.stick(x, base - 14, x, base + 2, 1.4)
+        p.stick(232, base - 4, 232, base - 120, 4, rgba("#5E3A1E"))
+        p.poly([(234, base - 120), (252, base - 110), (234, base - 98)], rgba(TIER_BANNER[tier]))
+    if tier >= 2:
+        p.poly([(108, base - 132), (148, base - 132), (148, base - 108), (128, base - 92), (108, base - 108)], rgba("#C0392B"))
+        p.poly(star_points(128, base - 116, 9, 4), rgba("#F2C230"), line=False)
+    if tier >= 3:
+        cx, cy = 128, 26
+        p.poly([(cx - 34, cy + 22), (cx - 34, cy - 4), (cx - 18, cy + 8), (cx, cy - 14), (cx + 18, cy + 8), (cx + 34, cy - 4), (cx + 34, cy + 22)], rgba("#F2C230"))
+        for dx in (-18, 0, 18):
+            p.ellipse(cx + dx, cy + 14, 4, 4, rgba("#E04A3A"))
+        for x, y, r in ((40, 40, 9), (220, 30, 8), (190, 70, 6)):
+            p.poly(star_points(x, y, r, r * 0.4, 4), rgba("#FFE46A"), line=False)
+
+
+def wall_segment():
+    """성벽 한 조각 (세로로 이어 붙인다): 위에서 내려다본 돌 성벽 + 톱니"""
+    C = 256
+    p = Pen(C, C, lw=4)
+    base = C * 0.92
+    p.rect(88, base - 170, 168, base, rgba("#A8A196"), radius=4)
+    p.rect(96, base - 170, 160, base - 150, rgba("#BDB6AA"), radius=2, line=False)
+    for i in range(3):
+        p.rect(84 + i * 30, base - 196, 110 + i * 30, base - 166, rgba("#B9B2A6"), radius=3)
+    for row in range(6):
+        y = base - 140 + row * 24
+        p.stick(90, y, 166, y, 1.6)
+        off = 0 if row % 2 == 0 else 18
+        for x in range(104 + off, 164, 36):
+            p.stick(x, y, x, y + 24 if row < 5 else y + 18, 1.6)
+    return p.done(C, C)
+
+
+def gate_tower():
+    """성문 옆 둥근 탑: 돌 몸통 + 파란 뾰족 지붕 + 깃발"""
+    C = 256
+    p = Pen(C, C, lw=4.5)
+    base = C * 0.92
+    p.rect(78, base - 150, 178, base, rgba("#B9B2A6"), radius=10)
+    for row in range(5):
+        y = base - 130 + row * 26
+        p.stick(80, y, 176, y, 1.8)
+    p.rect(114, base - 110, 142, base - 78, rgba("#3A2418"), radius=10)
+    p.poly([(64, base - 146), (128, base - 230), (192, base - 146)], rgba("#3F74C9"))
+    p.stick(128, base - 230, 128, base - 252, 4, rgba("#5E3A1E"))
+    p.poly([(130, base - 252), (162, base - 244), (130, base - 236)], rgba("#D9453A"))
     return p.done(C, C)
 
 
@@ -878,12 +942,18 @@ def pot_lid():
 
 
 def buildings_atlas():
+    """줄 = 강화 단계 (병영 0~3 칸). 0줄: 4 빈 칸, 5 성벽 탑(옛), 6 냄비, 7 뚜껑 / 1줄: 4 성벽 조각, 5 성문 탑 (UILayout.csv Wall*·Gate*)"""
     C = 256
-    atlas = Image.new("RGBA", (C * 8, C), (0, 0, 0, 0))
+    atlas = Image.new("RGBA", (C * 8, C * 4), (0, 0, 0, 0))
     atlas.alpha_composite(pot_body(), (6 * C, 0))
     atlas.alpha_composite(pot_lid(), (7 * C, 0))
     for k in range(6):
         atlas.alpha_composite(building(k), (k * C, 0))
+    for tier in range(1, 4):
+        for k in range(4):
+            atlas.alpha_composite(building(k, tier), (k * C, tier * C))
+    atlas.alpha_composite(wall_segment(), (4 * C, C))
+    atlas.alpha_composite(gate_tower(), (5 * C, C))
     return atlas
 
 
@@ -1028,6 +1098,61 @@ def ui_icon(i):
             p.ellipse(x, 74, 13, 12, rgba("#F1ECDC"))
     elif i == 35:  # 국자 (내려치기 횟수)
         return ladle_image(C)
+    elif i == 36:  # 쌀 한 가마니
+        p.poly([(30, 50), (98, 50), (106, 112), (22, 112)], rgba("#E8D9B0"))
+        p.rect(40, 34, 88, 52, rgba("#D8C89A"), radius=6)
+        p.stick(42, 50, 86, 50, 4, rgba("#8B5A2B"))
+        for x, y in ((50, 80), (64, 90), (78, 78), (58, 100), (74, 98)):
+            p.ellipse(x, y, 4, 2.5, rgba("#FFFFFF"), line=False)
+        p.ellipse(64, 20, 14, 8, rgba("#FFFFFF"))
+    elif i == 37:  # 고춧가루 단지
+        p.rect(30, 44, 98, 112, rgba("#C8A06A"), radius=16)
+        p.ellipse(64, 46, 34, 10, rgba("#D9453A"))
+        for x in (44, 58, 72, 86):
+            p.ellipse(x, 40, 6, 5, rgba("#E8333A"), line=False)
+        p.rect(40, 70, 88, 86, rgba("#F6E7B0"), radius=4)
+    elif i == 38:  # 사골 뼈
+        p.stick(30, 90, 98, 40, 16, rgba("#F1ECDC"))
+        for x, y in ((24, 96), (36, 102), (92, 34), (104, 40)):
+            p.ellipse(x, y, 12, 11, rgba("#F1ECDC"))
+        p.ellipse(64, 64, 14, 12, rgba("#E8C27A"))
+        p.ellipse(64, 64, 7, 6, rgba("#C0392B"), line=False)
+    elif i == 39:  # 마늘
+        for dx in (-22, 0, 22):
+            p.ellipse(64 + dx, 76, 22, 32, rgba("#F6F0E0"))
+        p.poly([(56, 46), (64, 14), (72, 46)], rgba("#E8E0C8"))
+        p.stick(46, 104, 82, 104, 2, rgba("#C9B890"), line=False)
+    elif i == 40:  # 후추 (통후추 갈이)
+        p.rect(44, 40, 84, 112, rgba("#3A2A22"), radius=12)
+        p.rect(48, 22, 80, 44, rgba("#5A4030"), radius=6)
+        p.ellipse(64, 16, 8, 8, rgba("#8B5A2B"))
+        for x, y in ((24, 100), (100, 96), (30, 80), (104, 76)):
+            p.ellipse(x, y, 6, 6, rgba("#2A2420"))
+    elif i == 41:  # 선지 (그릇에 붉은 덩어리)
+        p.ellipse(64, 88, 50, 22, rgba("#E8E0D0"))
+        p.rect(38, 50, 90, 86, rgba("#7A1E24"), radius=8)
+        p.ellipse(52, 60, 8, 5, rgba("#B8323A"), line=False)
+    elif i == 42:  # 인삼
+        p.poly([(64, 34), (76, 60), (72, 92), (88, 116), (74, 112), (64, 96), (52, 116), (40, 114), (56, 92), (52, 60)], rgba("#E8C890"))
+        for dx in (-14, 0, 14):
+            p.poly([(64, 36), (64 + dx - 8, 8), (64 + dx + 8, 8)], rgba("#4E9A3E"))
+        p.ellipse(56, 70, 3, 3, INK, line=False)
+        p.ellipse(68, 70, 3, 3, INK, line=False)
+    elif i == 43:  # 금가루 주머니
+        p.poly([(34, 64), (94, 64), (104, 112), (24, 112)], rgba("#8B5A2B"))
+        p.poly([(44, 64), (54, 40), (74, 40), (84, 64)], rgba("#A6703A"))
+        p.stick(46, 64, 82, 64, 4, rgba("#F2C230"))
+        for x, y, r in ((30, 30, 10), (96, 24, 8), (64, 18, 6), (104, 50, 6)):
+            p.poly(star_points(x, y, r, r * 0.4, 4), rgba("#FFE46A"), line=False)
+    elif i == 44:  # 청양고추
+        p.poly([(30, 30), (44, 26), (90, 76), (104, 112), (80, 100), (40, 52)], rgba("#3FA040"))
+        p.stick(30, 30, 18, 14, 5, rgba("#2E7A30"))
+        p.stick(46, 40, 84, 82, 3, rgba("#7AD070"), line=False)
+    elif i == 45:  # 대파 한 단
+        for dx, c in ((-16, "#3FA040"), (0, "#4FB050"), (16, "#3FA040")):
+            p.rect(56 + dx, 14, 72 + dx, 70, rgba(c), radius=6)
+            p.rect(56 + dx, 66, 72 + dx, 112, rgba("#F4F4E8"), radius=6)
+        p.rect(36, 74, 92, 84, rgba("#C0392B"), radius=3)
     elif i == 34:  # 냄비 (끓는 국)
         for x, y, r in ((48, 26, 12), (70, 16, 14), (88, 30, 10)):
             p.ellipse(x, y, r, r, rgba("#FFFFFF", 200), line=False)
@@ -1044,7 +1169,7 @@ def ui_icon(i):
     return p.done(C, C)
 
 
-UI_ICONS = 36   # 0~15 + 16 대지 가르기 + 17 특성 바탕 원 + 18~32 중간 별 효과 + 33 뼈 + 34 냄비 + 35 국자 (UILayout.csv Ui*, Perks.csv Icon)
+UI_ICONS = 46   # 0~15 + 16 (안 씀) + 17 특성 바탕 원 + 18~32 중간 별 효과 + 33 뼈 + 34 냄비 + 35 국자 + 36~45 양념 (Cards.csv Icon) (UILayout.csv Ui*, Perks.csv Icon)
 
 
 def ladle_image(C):

@@ -157,6 +157,15 @@ struct FYJJHordeConfig
 	float WalkStrideMax = 0.f;
 	/** 아군이 나아가는 끝 x (적 진영을 남겨 두고 그 앞에서 밀고 당긴다) */
 	float PlayerAdvanceX = 0.f;
+	/** 성벽 x, 성문 가운데 y와 반 높이, 성문을 나와 모이는 거리 */
+	float WallX = 0.f;
+	float GateY = 0.f;
+	float GateHalf = 0.f;
+	float GateExit = 0.f;
+	/** 공격 동작 중 이 비율에서 맞는다 (휘두르기 전에 맞지 않게) */
+	float StrikeShare = 0.f;
+	/** 적이 성벽을 때리는 거리 여유 */
+	float WallReach = 0.f;
 	/** 그 끝보다 이만큼 더 안쪽 적은 쫓지 않는다 */
 	float PlayerChaseMargin = 0.f;
 };
@@ -219,6 +228,8 @@ public:
 	/** 이번 틱까지 죽은 유닛. 쓰는 쪽(FYJJBattle)이 비운다 */
 	TArray<FYJJDeath> Deaths;
 	TArray<FYJJProjectile> Projectiles;
+	/** 적이 성벽에 준 피해 (FYJJBattle이 가져가 0으로) */
+	float WallDamage = 0.f;
 	/** 이번 틱 최후의 저항·부활이 일어난 자리 (FYJJBattle이 연출로 바꾸고 비운다) */
 	TArray<FVector2f> Rescued;
 	/** 적을 잡아 진급한 유닛 (FYJJBattle이 연출로 바꾸고 비운다) */
@@ -243,6 +254,8 @@ private:
 	/** 피해. Attacker(때린 유닛)가 있으면 흡혈, 근접이면 가시 반사도 */
 	void Hit(int32 Victim, float Damage, const FVector2f& From, int32 Attacker = INDEX_NONE, bool bMelee = false);
 	const FYJJUnitSpecial& SpecialOf(int32 Slot) const;
+	/** 공격 시작: 동작을 틀고, StrikeShare 뒤에 맞는다 */
+	void BeginStrike(int32 Slot, int32 Victim);
 	/** 진급: 다음 유닛 종류로 바뀌고 능력치는 같은 비율만큼 오른다, 체력은 가득 */
 	void Promote(int32 Slot);
 	/** 분노까지 더한 이번 공격 피해 */
@@ -278,6 +291,10 @@ private:
 	TArray<float> Seed;
 	/** 이 유닛이 쓰러뜨린 적 수 (진급) */
 	TArray<uint16> Kills;
+	/** 휘두르는 중: 맞기까지 남은 시간과 맞을 대상 (WallTarget = 성벽) */
+	TArray<float> Windup;
+	TArray<int32> Strike;
+	TArray<uint32> StrikeGen;
 
 	TArray<int32> FreeSlots;
 	TArray<int32> BigUnits;   // 반지름이 큰 유닛(보스): 모두가 따로 밀어내기 검사
@@ -304,6 +321,10 @@ private:
 	FYJJUnitSpecial NoSpecial;
 
 	static constexpr int32 ParallelChunk = 256;
+	/** Pending·Strike 대상이 성벽 */
+	static constexpr int32 WallTarget = -2;
+	/** 성문 안쪽 줄을 이 비율 안으로 모은다 (가장자리에 걸리지 않게) */
+	static constexpr float GateFunnel = 0.7f;
 	static constexpr float NearZero = 1.e-4f;
 	static constexpr double MsPerSecond = 1000.0;
 	static constexpr float HalfShare = 0.5f;

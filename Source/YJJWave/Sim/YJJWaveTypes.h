@@ -100,7 +100,7 @@ enum class EYJJSpell : uint8
 {
 	Meteor,   // F1: 커서 위치에 큰 범위 피해 + 밀쳐내기
 	Rally,    // F2: 아군 전체 공격·이동 속도 증가
-	Quake,    // F3: 커서 x 자리 전장을 위아래로 가르는 피해 + 밀쳐내기
+	Ladle,    // F3: 국자 내려치기. 전장 클릭으로 바로 쓴다, 횟수(Duration)가 차오른다(Cooldown마다 하나)
 	Count
 };
 
@@ -110,8 +110,6 @@ enum class EYJJSpell : uint8
  *   Shower     작은 운석 A개가 주변에 더 떨어진다 (피해 x B)
  *   Heal       함성 때 아군 전체 최대 체력의 A만큼 회복
  *   Reinforce  함성 때 지어 둔 병영마다 병사 A명이 바로 나온다
- *   Aftershock 대지 가르기가 A초 뒤 한 번 더 (피해 x B)
- *   Split      양옆으로 A줄 더 갈라진다 (줄 사이 B)
  */
 enum class EYJJSpellFx : uint8
 {
@@ -120,8 +118,6 @@ enum class EYJJSpellFx : uint8
 	Shower,
 	Heal,
 	Reinforce,
-	Aftershock,
-	Split,
 	Count
 };
 
@@ -261,6 +257,7 @@ struct FYJJStageDef
 	FVector2f MapPos = FVector2f::ZeroVector;   // 월드맵 위 스테이지 자리 (화면 비율 0~1)
 	FString Ground;                              // 바닥 그림 파일 (Content/YJJWave/Art)
 	TArray<int32> StartBuild;                    // 처음부터 지어져 있는 병영 (시작하자마자 병사가 쏟아진다)
+	float WallHP = 0.f;                          // 성벽 체력 (0이 되면 패배)
 	TArray<FYJJWaveLevel> Waves;   // 0번 = 1웨이브
 	TArray<FYJJCutLine> Cutscene;  // 시작 컷씬 (Cutscenes.csv, Order 순서)
 };
@@ -292,8 +289,10 @@ struct FYJJPerkDef
 	int32 Spell = INDEX_NONE;
 	TArray<int32> Links;
 	FString NameKey;   // 큰 별 이름 (작은 별은 비움)
-	/** 중간 별 효과 그림 (UI.png 칸, 없으면 INDEX_NONE) */
+	/** 중간 별 효과 그림·양념 그림 (UI.png 칸, 없으면 INDEX_NONE) */
 	int32 Icon = INDEX_NONE;
+	/** 양념 한 줄 맛 설명 (Cards.csv) */
+	FString FlavorKey;
 };
 
 /** Broth.csv 한 줄: 왕국의 마지막 냄비 국물 단계 (뼈가 Bones 만큼 모이면 이 단계) */

@@ -79,6 +79,15 @@ struct FYJJTalkPlay
 	bool bVoiced = false;
 };
 
+/** 처치 금화 튀기 (월드 자리, 금액, 지난 시간) */
+struct FYJJCoinPop
+{
+	FVector2f Pos = FVector2f::ZeroVector;
+	int32 Value = 0;
+	float Age = 0.f;
+	float Side = 0.f;
+};
+
 /** 화면 버튼 영역 (마우스 판정) */
 struct FYJJButton
 {
@@ -157,6 +166,7 @@ private:
 		WorldStage,
 		WorldBack,
 		ResultMap,
+		Seasoning,
 	};
 
 	/** 기다리지 않는 판 (Horde 밖 필드만). 유닛은 View() */
@@ -190,7 +200,7 @@ private:
 	void DrawDying();
 	void DrawProjectiles();
 	void DrawEffects();
-	/** 조준 중인 주문: 유성은 고리, 대지 가르기는 세로 줄 */
+	/** 조준 중인 스킬: 범위 고리 */
 	void DrawSpellAim();
 	// 왕국의 마지막 냄비 (솥 → 국물 면·거품·김 → 뚜껑 → 글자)
 	void DrawPot();
@@ -205,8 +215,6 @@ private:
 	void DrawTalks();
 	/** 그 유닛이 전장에 있으면 화면 가운데에 가장 가까운 슬롯 (없으면 INDEX_NONE) */
 	int32 FindSpeaker(int32 Unit) const;
-	/** 대지 가르기 갈라진 줄 (월드 x, 폭의 절반) */
-	void AddQuakeLine(const FYJJQuadBatch& Batch, float WorldX, float HalfWidth, const FLinearColor& Color) const;
 
 	// 사각형 배치 (캔버스 배치에 직접)
 	FYJJQuadBatch BeginBatch(FCanvas* Target, UTexture2D* Texture, int32 ExpectedQuads) const;
@@ -222,16 +230,23 @@ private:
 	void DrawSpeedButton();
 	/** 영웅·보스 머리 위 작은 체력 게이지 */
 	void DrawUnitBars();
-	/** 커서 옆 국자 내려치기 남은 횟수 (전장 위에서만) */
-	void DrawSmackCharges();
 	/** 연속 처치 숫자 (화면 오른쪽, 처치할수록 커지고 붉어진다) */
 	void DrawCombo();
 	float BuyCountOf(int32 Index) const;
 	void DrawPlotTooltip();
 	void DrawTree();
 	void DrawGameOver();
-	/** 결과 별: 하나씩 튀어나온다 (얻지 못한 별은 어둡게) */
-	void DrawResultStars(float CenterX, float Y, float Age, int32 Stars);
+	/** 결과 별: 빈 별이 먼저, 얻은 만큼 하나씩 채워진다 (Start = 빈 별이 나타나는 때) */
+	void DrawResultStars(float CenterX, float Y, float Start, int32 Stars);
+	/** 결과 창 Start 초부터 0→1 (한 칸이 나타나는 진행) */
+	float ResultStep(float Start) const;
+	/** 성벽과 성문 (진지 오른쪽 끝, 세로로 길게) + 성문 위 체력 */
+	void DrawWall();
+	/** 처치한 적 자리에서 금화가 튀어 오른다 */
+	void DrawCoinPops();
+	void UpdateCoinPops(float Dt);
+	/** 화면 위 가운데: 다음 웨이브에 무엇이 몇 마리 오는지 */
+	void DrawWavePreview();
 	// 타이틀 · 월드맵 (YJJWaveHUD_Menu.cpp)
 	void DrawTitle();
 	void DrawWorldMap();
@@ -290,6 +305,11 @@ private:
 	void PressSpell(EYJJSpell Spell);
 	static bool NeedsAim(EYJJSpell Spell) { return Spell != EYJJSpell::Rally; }
 	void DrawCardPick();
+	/** 양념 하나를 냄비에 (카드 고르기) + 배너 */
+	void PickSeasoning(int32 Choice);
+	/** 좌측 패널: 이번 판 넣은 양념 그림들 (높이를 돌려준다) */
+	float DrawSeasonings(float X, float Y, float W);
+	void DrawSeasoningTooltip();
 	void DrawCutscene();
 	/** 장 제목 카드: 전장을 어둡게 하고 가운데 제목 + 아래 한 줄이 서서히 나타난다 */
 	void DrawChapterCard(const FYJJCutLine& Line, float Time);
@@ -378,7 +398,7 @@ private:
 	bool bOptionsOpen = false;
 	/** 조준 중인 주문 (EYJJSpell 번호, 없으면 INDEX_NONE) */
 	int32 AimingSpell = INDEX_NONE;
-	bool bShowDebug = true;
+	bool bShowDebug = false;   // F4: 성능 표시
 	bool bPotHover = false;
 	// 말풍선 대화
 	TArray<int32> TalkQueue;
@@ -398,6 +418,8 @@ private:
 	float KillWindow = 0.f;
 	int32 KillsAtWindow = 0;
 	bool bBossSeen = false;
+	TArray<FYJJCoinPop> CoinPops;
+	float CoinBudget = 0.f;
 	int32 ComboCount = 0;
 	float ComboTimer = 0.f;
 	float ComboPop = 0.f;
@@ -424,7 +446,7 @@ private:
 	inline static const FName SoundStar = TEXT("Star");
 
 	// 옵션 버튼 번호
-	static constexpr int32 NumVolumeRows = 3;
+	static constexpr int32 NumVolumeRows = 4;   // 배경음·효과음·보이스·카메라 진동 (막대 줄)
 	static constexpr int32 OptionsExtraRows = 2;   // 언어, 해상도
 	static constexpr int32 OptionVolumeDown = 0;
 	static constexpr int32 OptionVolumeUp = 10;
@@ -450,7 +472,7 @@ private:
 	static constexpr int32 RegionCloudLayers = 3;
 	static constexpr int32 BuyCountKeys[] = { 0, 1, 2 };   // 팝업 버튼 3개 (마리 수는 UILayout BuyCountA·B·C)
 	inline static const TCHAR* const LanguageCodes[NumLanguages] = { TEXT("ko"), TEXT("en") };
-	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice") };
+	inline static const TCHAR* const VolumeKeys[NumVolumeRows] = { TEXT("Option.Music"), TEXT("Option.Sfx"), TEXT("Option.Voice"), TEXT("Option.Shake") };
 	inline static const FName SoundBanner = TEXT("Banner");
 	static constexpr const TCHAR* BaseFontPath = TEXT("/Engine/EngineFonts/Roboto.Roboto");
 	static constexpr const TCHAR* FontFolder = TEXT("YJJWave/Fonts");

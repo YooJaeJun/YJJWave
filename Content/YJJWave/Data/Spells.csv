@@ -9,8 +9,8 @@ Rally2,Rally,2,1.7,0,23,7,,0,0
 Rally3,Rally,3,1.8,0,21,8,Heal,0.25,0
 Rally4,Rally,4,1.9,0,19,9,,0,0
 Rally5,Rally,5,2.0,0,17,10,Reinforce,6,0
-Quake1,Quake,1,260,55,16,0,,0,0
-Quake2,Quake,2,360,60,15,0,,0,0
-Quake3,Quake,3,480,65,14,0,Aftershock,1.0,0.6
-Quake4,Quake,4,620,70,13,0,,0,0
-Quake5,Quake,5,800,75,12,0,Split,2,240
+Ladle1,Ladle,1,45,85,1.5,3,,0,0
+Ladle2,Ladle,2,60,90,1.4,3,,0,0
+Ladle3,Ladle,3,75,95,1.3,4,,0,0
+Ladle4,Ladle,4,95,100,1.2,4,,0,0
+Ladle5,Ladle,5,120,110,1.0,5,,0,0

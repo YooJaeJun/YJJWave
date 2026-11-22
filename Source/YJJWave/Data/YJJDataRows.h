@@ -90,6 +90,7 @@ struct FYJJStageRow : public FTableRowBase
 	UPROPERTY() float MapX = 0.f;
 	UPROPERTY() float MapY = 0.f;
 	UPROPERTY() FString Ground;
+	UPROPERTY() float WallHP = 0.f;
 	/** 처음부터 지어져 있는 병영 (빈칸으로 여럿) */
 	UPROPERTY() FString StartBuild;
 	UPROPERTY() FString Note;
@@ -235,4 +236,9 @@ USTRUCT()
 struct FYJJCardRow : public FYJJEffectRow
 {
 	GENERATED_BODY()
+
+	/** 양념 그림 (UI.png 칸) */
+	UPROPERTY() int32 Icon = -1;
+	/** 한 줄 맛 설명 (Localization) */
+	UPROPERTY() FString FlavorKey;
 };

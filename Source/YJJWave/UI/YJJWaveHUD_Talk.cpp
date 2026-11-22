@@ -81,10 +81,12 @@ void AYJJWaveHUD::UpdateTalks(float Dt)
 	const FYJJTalkLine& Line = Talk.Lines[TalkNow.Line];
 	if (TalkNow.Age >= 0.f && !TalkNow.bVoiced)
 	{
-		// 녹음한 대사가 없으면 그 유닛 웅얼웅얼
+		// 대사에 정해 둔 소리가 있을 때만 (지금은 대사 목소리를 쓰지 않는다)
 		TalkNow.bVoiced = true;
-		const bool bLine = FYJJAudio::Has(Line.VoiceKey);
-		FYJJAudio::Play(this, bLine || !YJJData::Units().IsValidIndex(Line.Speaker) ? Line.VoiceKey : YJJData::Unit(Line.Speaker).VoiceKey);
+		if (FYJJAudio::Has(Line.VoiceKey))
+		{
+			FYJJAudio::Play(this, Line.VoiceKey);
+		}
 	}
 	if (TalkNow.Age >= Line.Duration)
 	{

@@ -36,11 +36,6 @@ FxLadle,16,Fx 칸: 큰 국자
 UiLadle,35,UI 칸: 국자 (남은 횟수)
 SmackDrawSize,150,내려오는 국자 그림 크기 (월드)
 SmackStartAngle,-1.6,국자가 휘두르기 시작하는 각도 (라디안)
-SmackIconSize,30,커서 옆 국자 아이콘 크기
-SmackIconOffset,18,커서에서 아이콘까지
-SmackIconGap,4,아이콘 사이
-SmackEmptyAlpha,0.5,빈 국자 진하기
-SmackFillAlpha,0.6,차오르는 국자 진하기
 ComboWindow,2.5,이 시간 안에 또 쓰러뜨리면 연속 처치가 이어진다
 ComboShowAt,10,이만큼부터 연속 처치 숫자를 보인다
 ComboHot,300,이만큼이면 가장 크고 붉게
@@ -52,6 +47,31 @@ ComboFade,0.6,끊기기 전 흐려지는 시간
 ComboRight,180,화면 오른쪽에서 숫자 가운데까지
 ComboY,200,숫자 높이
 ComboLabelGap,6,숫자와 글자 사이
+BuildingTiers,4,Buildings.png 강화 단계 줄 수
+WallRow,1,Buildings 줄: 성벽 조각·성문 탑
+WallCol,4,Buildings 칸: 성벽 조각
+GateCol,5,Buildings 칸: 성문 탑
+WallSegment,80,성벽 조각 간격 (월드)
+WallDrawSize,150,성벽 조각 그림 크기 (월드)
+GateTowerSize,210,성문 탑 그림 크기 (월드)
+WallAnchor,0.92,성벽 그림 바닥 자리 (칸 높이 비율)
+WallBarW,200,성문 위 체력 너비
+WallBarGap,6,성문 탑과 체력 사이
+WallLabelW,64,좌측 패널 '성벽' 글자 칸
+CoinPopsPerSecond,20,처치 금화 튀기는 초당 이만큼까지
+CoinPopTime,0.9,금화가 튀었다 사라지는 시간
+CoinPopJump,60,금화가 튀는 높이 (월드)
+CoinPopFloat,20,금화가 끝으로 갈수록 더 오르는 높이
+CoinPopDrift,30,금화가 옆으로 퍼지는 거리
+CoinPopFade,0.4,끝에서 흐려지는 비율
+CoinPopSize,22,튀는 금화 그림 크기
+CoinPopGap,4,금화와 숫자 사이
+PreviewY,16,웨이브 예고 판 높이
+PreviewIcon,44,웨이브 예고 적 그림 크기
+PreviewCountW,64,웨이브 예고 마리 수 칸
+PreviewGap,6,예고 제목과 그림 사이
+ResultStepTime,0.3,결과 창 한 칸이 나타나는 시간 (위에서부터 차례로)
+ResultSlide,40,나타나며 미끄러지는 거리
 ResultPopTime,0.35,결과 창이 커지며 나타나는 시간
 ResultPopStart,0.6,결과 창 처음 크기 배율
 ResultPopOvershoot,0.06,결과 창이 살짝 넘쳤다 돌아오는 정도
@@ -145,7 +165,6 @@ FxDust,6,Fx 칸: 먼지
 FxRing,7,Fx 칸: 고리
 FxMeteor,8,Fx 칸: 운석
 FxBlast,9,Fx 칸: 폭발
-FxCrack,10,Fx 칸: 갈라진 땅 (세로)
 FxFlame,11,Fx 칸: 불꽃
 UiCoin,0,UI 칸: 금화
 UiSoul,1,UI 칸: 영혼
@@ -153,7 +172,6 @@ UiSword,2,UI 칸: 아군 수
 UiSkull,3,UI 칸: 적 수
 UiMeteor,4,UI 칸: 유성
 UiRally,5,UI 칸: 함성
-UiQuake,16,UI 칸: 대지 가르기
 UiStar,6,UI 칸: 작은 별
 UiBigStar,7,UI 칸: 큰 별
 UiHero,8,UI 칸: 영웅 얼굴
@@ -166,7 +184,7 @@ ZoomDefault,0.7,시작 확대
 ZoomMin,0.3,최소 확대 (실제로는 전장이 화면을 꽉 채우는 값 아래로는 안 간다)
 ZoomMax,2,최대 확대
 ZoomStep,1.15,휠 한 칸 확대 배율
-CameraStartX,1100,시작 시점 x
+CameraStartX,900,시작 시점 x
 PanSpeed,900,키보드·가장자리 이동 속도 (화면 픽셀/초)
 EdgePan,1,1이면 화면 가장자리에 마우스를 대면 이동
 EdgePanPixels,12,가장자리 폭
@@ -205,10 +223,6 @@ BloodAlphaMin,0.5,피 웅덩이 최소 진하기
 CraterScale,2.2,유성 그을음 크기 (반경 배율)
 AimRingStart,1.4,유성 표시 고리 시작 배율
 AimAlpha,0.7,주문 조준 표시 진하기
-QuakeCrackScale,2.6,갈라진 땅 그림 크기 (폭의 절반 배율)
-QuakeCrackStep,0.8,갈라진 땅 그림 간격 (그림 크기 배율)
-QuakeWarnAlpha,0.5,곧 갈라질 줄 진하기
-QuakeEndScale,1.3,갈라진 땅이 사라지며 커지는 배율
 BurnFlames,6,불바다 불꽃 수
 BurnSpread,0.6,불꽃이 퍼지는 반경 배율
 BurnFlameScale,0.8,불꽃 크기 (반경 배율)
@@ -260,6 +274,8 @@ TextBarH,28,숫자가 들어가는 게이지 높이 (영웅·보스)
 BarTextScale,0.8,게이지 안 글자 크기 = 게이지 높이 x 이 비율
 SpeedButtonW,110,배속 버튼 너비 (화면 오른쪽 위)
 SpeedButtonH,54,배속 버튼 높이
+OptionsButtonTopW,160,화면 오른쪽 위 옵션 버튼 너비 (배속 왼쪽)
+SkillChargeBarH,6,국자 칸: 다음 한 번이 차오르는 막대 두께
 DragStartPixels,8,왼쪽 버튼을 이만큼 끌면 클릭이 아니라 화면 이동
 UnitBarLift,0.95,머리 위 체력 게이지: 발에서 그림 크기의 이 비율 위
 UnitBarWidth,0.55,머리 위 체력 게이지 너비 (그림 크기 비율)
@@ -278,8 +294,13 @@ ResultButtonH,64,결과 창 버튼 높이
 GlowSpeed,5,반짝임 속도
 NumberMan,10000,이 이상은 만 단위로
 NumberEok,100000000,이 이상은 억 단위로
-CardW,300,카드 너비
-CardPickH,210,카드 높이
+CardW,300,양념 카드 너비
+CardPickH,330,양념 카드 높이
+CardIconSize,110,양념 카드 그림 크기
+CardSubGap,10,양념 고르기 제목과 설명 사이
+CardLineGap,4,맛 설명 줄 사이
+SeasoningIcon,34,좌측 패널 넣은 양념 그림 크기
+SeasoningGap,6,넣은 양념 그림 사이
 CardPickGap,30,카드 사이
 CardTitleY,220,카드 고르기 제목 y
 BannerY,150,물량 배너 y
@@ -293,7 +314,7 @@ MilestoneFactor,2,다음 물량 배너는 이 배수
 MassacreWindow,1,학살 판정 시간 창 (초)
 MassacreKills,80,이 시간 안에 이만큼 처치하면 학살 배너
 ShakeTime,0.35,화면 흔들림 시간
-ShakePixels,14,화면 흔들림 세기 (픽셀)
+ShakePixels,6,화면 흔들림 세기 (픽셀)
 DeathRiseFromFling,0.6,세게 맞아 날아갈수록 더 높이 튄다 (밀쳐진 속도 비율)
 CutBarH,90,위아래 검은 띠 높이
 CutBoxW,1100,대사 상자 너비

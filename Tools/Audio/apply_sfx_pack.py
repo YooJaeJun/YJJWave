@@ -21,8 +21,6 @@ SOUNDS = {
     "SFX_Hit3": "impactPunch_medium_002",
     "SFX_Arrow": "knifeSlice",
     "SFX_Death": "impactSoft_medium_000",
-    "SFX_MeteorBoom": "impactPunch_heavy_000",
-    "SFX_Rally": "confirmation_004",
     "SFX_Build": "impactWood_medium_000",
     "SFX_Upgrade": "confirmation_002",
     "SFX_Buy": "handleCoins",

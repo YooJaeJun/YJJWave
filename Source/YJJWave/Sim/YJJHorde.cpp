@@ -47,6 +47,12 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Config.WalkStrideMax = T.WalkStrideMax;
 	Config.PlayerAdvanceX = FieldSize.X * T.PlayerAdvanceShare;
 	Config.PlayerChaseMargin = T.PlayerChaseMargin;
+	Config.WallX = T.CampEdgeX;
+	Config.GateY = FieldSize.Y * HalfShare;
+	Config.GateHalf = T.GateHalf;
+	Config.GateExit = T.GateExit;
+	Config.StrikeShare = T.AttackStrikeShare;
+	Config.WallReach = T.WallReach;
 
 	Field = FieldSize;
 	Random.Initialize(RandomSeed);
@@ -65,7 +71,7 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Resize(Alive); Resize(Team); Resize(Type); Resize(Pos); Resize(Vel); Resize(HP); Resize(MaxHP);
 	Resize(Flash); Resize(AttackAnim); Resize(AttackLen); Resize(WalkPhase); Resize(FaceLeft);
 	Resize(Gen); Resize(Target); Resize(TargetGen); Resize(Cooldown); Resize(Damage); Resize(AttackInterval);
-	Resize(Speed); Resize(Splash); Resize(Multishot); Resize(Impulse); Resize(PosNext); Resize(LastHitDir); Resize(Pending); Resize(Flags); Resize(Seed); Resize(Kills);
+	Resize(Speed); Resize(Splash); Resize(Multishot); Resize(Impulse); Resize(PosNext); Resize(LastHitDir); Resize(Pending); Resize(Flags); Resize(Seed); Resize(Kills); Resize(Windup); Resize(Strike); Resize(StrikeGen);
 	HeroSlot = INDEX_NONE;
 
 	FreeSlots.Reset();
@@ -74,6 +80,7 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Projectiles.Reset();
 	Rescued.Reset();
 	Promoted.Reset();
+	WallDamage = 0.f;
 	Specials.Reset();
 	HighWaterMark = 0;
 	TeamCount[0] = TeamCount[1] = 0;
@@ -125,6 +132,9 @@ int32 FYJJHorde::Spawn(int32 InType, EYJJTeam InTeam, const FVector2f& InPos, co
 	Seed[Slot] = Random.FRand() * FullTurn;
 	Flags[Slot] = 0;
 	Kills[Slot] = 0;
+	Windup[Slot] = 0.f;
+	Strike[Slot] = INDEX_NONE;
+	StrikeGen[Slot] = 0;
 	FaceLeft[Slot] = InTeam == EYJJTeam::Enemy ? 1 : 0;
 	Target[Slot] = INDEX_NONE;
 	TargetGen[Slot] = 0;
@@ -223,7 +233,7 @@ void FYJJHorde::Reorder()
 	Permute(Alive); Permute(Team); Permute(Type); Permute(Pos); Permute(Vel); Permute(HP); Permute(MaxHP);
 	Permute(Flash); Permute(AttackAnim); Permute(AttackLen); Permute(WalkPhase); Permute(FaceLeft); Permute(Gen); Permute(Target);
 	Permute(TargetGen); Permute(Cooldown); Permute(Damage); Permute(AttackInterval); Permute(Speed); Permute(Splash);
-	Permute(Multishot); Permute(Impulse); Permute(PosNext); Permute(LastHitDir); Permute(Flags); Permute(Seed); Permute(Kills);
+	Permute(Multishot); Permute(Impulse); Permute(PosNext); Permute(LastHitDir); Permute(Flags); Permute(Seed); Permute(Kills); Permute(Windup); Permute(Strike); Permute(StrikeGen);
 	for (int32 Slot = Count; Slot < HighWaterMark; ++Slot)
 	{
 		Alive[Slot] = 0;
@@ -235,6 +245,7 @@ void FYJJHorde::Reorder()
 	for (int32 Slot = 0; Slot < Count; ++Slot)
 	{
 		Target[Slot] = Moved(Target[Slot]);
+		Strike[Slot] = Strike[Slot] == WallTarget ? WallTarget : Moved(Strike[Slot]);
 		Pending[Slot] = INDEX_NONE;
 	}
 	for (FYJJProjectile& Shot : Projectiles)
@@ -465,7 +476,8 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	}
 	if (bTargetDied || (Steps + Slot) % Config.RetargetTicks == 0)
 	{
-		int32 Found = FindNearestEnemy(Slot, Def.Sight);
+		const bool bInsideWall = MyTeam == EYJJTeam::Player && Slot != HeroSlot && P.X < Config.WallX;
+		int32 Found = bInsideWall ? INDEX_NONE : FindNearestEnemy(Slot, Def.Sight);
 		// 영웅은 자리를 지킨다: 자리에서 너무 먼 적은 쫓지 않는다
 		if (Slot == HeroSlot && Found != INDEX_NONE && FVector2f::DistSquared(Pos[Found], HeroHome) > HeroLeash * HeroLeash)
 		{
@@ -479,6 +491,19 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	AttackAnim[Slot] = FMath::Max(AttackAnim[Slot] - Dt, 0.f);
 	Flash[Slot] = FMath::Max(Flash[Slot] - Dt, 0.f);
 	Pending[Slot] = INDEX_NONE;
+	// 휘두르는 중: 동작이 내리치는 순간에 맞는다 (대상이 그새 쓰러졌으면 헛방)
+	if (Strike[Slot] != INDEX_NONE)
+	{
+		Windup[Slot] -= Dt * AttackBuff[TeamId];
+		if (Windup[Slot] <= 0.f)
+		{
+			if (Strike[Slot] == WallTarget || IsValidTarget(Strike[Slot], StrikeGen[Slot]))
+			{
+				Pending[Slot] = Strike[Slot];
+			}
+			Strike[Slot] = INDEX_NONE;
+		}
+	}
 
 	const float MoveSpeed = Speed[Slot] * MoveBuff[TeamId];
 	const float MarchDir = MyTeam == EYJJTeam::Player ? 1.f : -1.f;
@@ -497,11 +522,9 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 			const bool bTooDeep = bHoldLine && Pos[Victim].X > Config.PlayerAdvanceX + Config.PlayerChaseMargin;
 			Desired = bTooDeep ? FVector2f::ZeroVector : Delta * (MoveSpeed / FMath::Max(Dist, NearZero));
 		}
-		else if (Cooldown[Slot] <= 0.f)
+		else if (Cooldown[Slot] <= 0.f && Strike[Slot] == INDEX_NONE)
 		{
-			Pending[Slot] = Victim;
-			Cooldown[Slot] = AttackInterval[Slot];
-			StartAttackAnim(Slot);
+			BeginStrike(Slot, Victim);
 		}
 		FaceLeft[Slot] = Delta.X < 0.f ? 1 : 0;
 	}
@@ -512,14 +535,25 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 		const float Dist = Home.Size();
 		Desired = Dist > HeroArrive ? Home * (MoveSpeed / Dist) : FVector2f::ZeroVector;
 	}
-	else if (MyTeam == EYJJTeam::Enemy && HeroSlot != INDEX_NONE && Alive[HeroSlot])
+	else if (MyTeam == EYJJTeam::Enemy)
 	{
-		// 적: 싸울 상대가 없으면 영웅(중심)을 향해 간다
-		const FVector2f ToHero = Pos[HeroSlot] - P;
-		const float Dist = ToHero.Size();
+		// 적: 싸울 상대가 없으면 성벽으로 간다. 닿으면 성벽을 때린다
 		const float Drift = FMath::Sin(static_cast<float>(Steps) * Dt * DriftPhaseSpeed + Seed[Slot]) * Config.LateralDrift;
-		Desired = Dist > NearZero ? ToHero * (MoveSpeed / Dist) + FVector2f(0.f, Drift * MoveSpeed) : FVector2f::ZeroVector;
-		FaceLeft[Slot] = ToHero.X < 0.f ? 1 : 0;
+		const bool bAtWall = P.X <= Config.WallX + Def.Radius + Def.Range + Config.WallReach;
+		Desired = FVector2f(bAtWall ? 0.f : -MoveSpeed, Drift * MoveSpeed);
+		FaceLeft[Slot] = 1;
+		if (bAtWall && Cooldown[Slot] <= 0.f && Strike[Slot] == INDEX_NONE)
+		{
+			BeginStrike(Slot, WallTarget);
+		}
+	}
+	else if (MyTeam == EYJJTeam::Player && P.X < Config.WallX)
+	{
+		// 성벽 안 아군: 성문으로 모여 밖으로 나간다
+		const FVector2f Gate(Config.WallX + Config.GateExit, FMath::Clamp(P.Y, Config.GateY - Config.GateHalf * GateFunnel, Config.GateY + Config.GateHalf * GateFunnel));
+		const FVector2f ToGate = Gate - P;
+		Desired = ToGate * (MoveSpeed / FMath::Max(ToGate.Size(), NearZero));
+		FaceLeft[Slot] = ToGate.X < 0.f ? 1 : 0;
 	}
 	else
 	{
@@ -541,6 +575,15 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	FVector2f Next = P + (NewVel + Kick) * Dt + Separation(Slot);
 	Next.X = FMath::Clamp(Next.X, Config.FieldMargin, Field.X - Config.FieldMargin);
 	Next.Y = FMath::Clamp(Next.Y, Config.FieldMargin, Field.Y - Config.FieldMargin);
+	// 성벽: 적은 넘지 못하고, 아군은 성문으로만 드나든다
+	if (MyTeam == EYJJTeam::Enemy)
+	{
+		Next.X = FMath::Max(Next.X, Config.WallX + Def.Radius);
+	}
+	else if (FMath::Abs(Next.Y - Config.GateY) > Config.GateHalf - Def.Radius)
+	{
+		Next.X = P.X < Config.WallX ? FMath::Min(Next.X, Config.WallX - Def.Radius) : FMath::Max(Next.X, Config.WallX + Def.Radius);
+	}
 	PosNext[Slot] = Next;
 }
 
@@ -612,6 +655,15 @@ void FYJJHorde::Promote(int32 Slot)
 const FYJJUnitSpecial& FYJJHorde::SpecialOf(int32 Slot) const
 {
 	return Specials.IsValidIndex(Type[Slot]) ? Specials[Type[Slot]] : NoSpecial;
+}
+
+void FYJJHorde::BeginStrike(int32 Slot, int32 Victim)
+{
+	Cooldown[Slot] = AttackInterval[Slot];
+	StartAttackAnim(Slot);
+	Strike[Slot] = Victim;
+	StrikeGen[Slot] = Victim >= 0 ? Gen[Victim] : 0;
+	Windup[Slot] = AttackLen[Slot] * Config.StrikeShare;
 }
 
 void FYJJHorde::StartAttackAnim(int32 Slot)
@@ -743,6 +795,12 @@ void FYJJHorde::ApplyAttacks()
 		const int32 Victim = Pending[Slot];
 		if (!Alive[Slot] || Victim == INDEX_NONE)
 		{
+			continue;
+		}
+		if (Victim == WallTarget)
+		{
+			WallDamage += AttackDamage(Slot);
+			++HitCount;
 			continue;
 		}
 		const FYJJUnitDef& Def = YJJData::Unit(Type[Slot]);

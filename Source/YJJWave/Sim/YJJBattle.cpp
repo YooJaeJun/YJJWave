@@ -104,8 +104,11 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 		Plots[Index].Level = 1;
 		Plots[Index].SpawnTimer = SpawnInterval(Index);
 	}
-	SmackCharge = T.SmackCharges;
+	SmackCharge = SmackMax();
 	ShakeRequests = 0;
+	WallMaxHP = WallHP = StageDef().WallHP;
+	WallFlash = 0.f;
+	HeroRespawnLeft = 0.f;
 	SpawnHero();
 	StartLevel(1);
 }
@@ -146,8 +149,8 @@ void FYJJBattle::PreStep(float Dt)
 	TickEnemies(Dt);
 	TickPot(Dt);
 
-	// 영웅이 위태로우면 한 번 말한다
-	if (!bHeroLowSaid && Horde.Hero() != INDEX_NONE && Horde.HP[Horde.Hero()] < Horde.MaxHP[Horde.Hero()] * T.HeroLowShare)
+	// 성벽이 위태로우면 한 번 말한다
+	if (!bHeroLowSaid && WallMaxHP > 0.f && WallHP < WallMaxHP * T.HeroLowShare)
 	{
 		bHeroLowSaid = true;
 		AddEvent(EYJJTalkTrigger::HeroLow, YJJData::HeroUnit());
@@ -162,8 +165,11 @@ bool FYJJBattle::Smack(const FVector2f& Where)
 	}
 	const FYJJTuning& T = YJJData::Tune();
 	SmackCharge -= 1.f;
-	const float Damage = T.SmackDamage * (1.f + Bonus(EYJJStat::SpellPower, INDEX_NONE)) * StageDef().HPScale;
-	AddEffect(EYJJEffectKind::SmackFall, Where, T.SmackDelay, T.SmackRadius, Damage);
+	// 피해는 국자 Lv(Spells.csv) x 스킬 위력 특성 x 스테이지 체력 배율 (뒤 스테이지에서도 한 방이 의미 있게)
+	const FYJJSpellStats Stats = SpellNow(EYJJSpell::Ladle);
+	const float Damage = Stats.Power * (1.f + Bonus(EYJJStat::SpellPower, INDEX_NONE)) * StageDef().HPScale;
+	const FVector2f Target(FMath::Clamp(Where.X, CampEdgeX, FieldWidth), FMath::Clamp(Where.Y, 0.f, FieldHeight));
+	AddEffect(EYJJEffectKind::SmackFall, Target, T.SmackDelay, Stats.Radius, Damage);
 	Sounds.Add(SoundSwing);
 	return true;
 }
@@ -214,7 +220,7 @@ void FYJJBattle::TickPot(float Dt)
 {
 	const FYJJTuning& T = YJJData::Tune();
 	BoneFlyBudget = FMath::Min(BoneFlyBudget + T.BoneFlyPerSecond * Dt, T.BoneFlyPerSecond);
-	SmackCharge = FMath::Min(SmackCharge + Dt / FMath::Max(T.SmackRecharge, KINDA_SMALL_NUMBER), T.SmackCharges);
+	SmackCharge = FMath::Min(SmackCharge + Dt / FMath::Max(CooldownMax(EYJJSpell::Ladle), KINDA_SMALL_NUMBER), static_cast<float>(SmackMax()));
 	if (LidAge >= 0.f)
 	{
 		LidAge += Dt;
@@ -325,6 +331,33 @@ void FYJJBattle::PostStep(float Dt)
 	}
 	Horde.Promoted.Reset();
 	SlowMoLeft = FMath::Max(SlowMoLeft - Dt, 0.f);
+	// 성벽: 적이 때린 만큼 깎이고, 0이면 패배 (무너지는 먼지 + 흔들림)
+	WallFlash = FMath::Max(WallFlash - Dt, 0.f);
+	if (Horde.WallDamage > 0.f && !bGameOver && !bEnding)
+	{
+		WallHP = FMath::Max(WallHP - Horde.WallDamage, 0.f);
+		WallFlash = T.WallFlashTime;
+		if (WallHP <= 0.f)
+		{
+			for (int32 Index = 0; Index < T.WallBreakPuffs; ++Index)
+			{
+				const FVector2f Where(CampEdgeX, FieldHeight * (Index + Half) / T.WallBreakPuffs);
+				AddEffect(EYJJEffectKind::Build, Where, T.BuildEffectTime * T.BossBlastTimeScale, T.PlotSize * T.BossBlastScale);
+			}
+			Sounds.Add(SoundWallBreak);
+			Finish(false);
+		}
+	}
+	Horde.WallDamage = 0.f;
+	if (HeroRespawnLeft > 0.f && !bGameOver)
+	{
+		HeroRespawnLeft -= Dt;
+		if (HeroRespawnLeft <= 0.f)
+		{
+			SpawnHero();
+			RecomputeHero();
+		}
+	}
 	CheckVictory();
 	if (bEnding && !bGameOver)
 	{
@@ -344,8 +377,7 @@ void FYJJBattle::CheckVictory()
 	{
 		bEnding = true;
 		EndTimer = T.VictoryDelay;
-		const int32 Hero = Horde.Hero();
-		const float Health = Hero != INDEX_NONE ? Horde.HP[Hero] / FMath::Max(Horde.MaxHP[Hero], KINDA_SMALL_NUMBER) : 0.f;
+		const float Health = WallHP / FMath::Max(WallMaxHP, KINDA_SMALL_NUMBER);
 		Stars = Health >= T.StarThreeHealth ? 3 : Health >= T.StarTwoHealth ? 2 : 1;
 	}
 }
@@ -456,6 +488,7 @@ int32 FYJJBattle::SpawnEnemyAt(int32 Unit, const FVector2f& Pos)
 	{
 		AddEffect(EYJJEffectKind::Build, Pos, T.BuildEffectTime, YJJData::Unit(Unit).DrawSize * BossEffectRadiusScale);
 		Sounds.Add(SoundBossAppear);
+		++ShakeRequests;
 		AddEvent(EYJJTalkTrigger::BossAppear, Unit);
 		UE_LOG(LogYJJWave, Display, TEXT("[Battle] 보스 등장: %s (웨이브 %d)"), *YJJData::Unit(Unit).Id.ToString(), Level);
 	}
@@ -658,7 +691,8 @@ void FYJJBattle::CollectRewards()
 		}
 		else if (Def.bHero && !bGameOver)
 		{
-			Finish(false);
+			// 영웅은 쓰러져도 판이 끝나지 않는다: 잠시 뒤 성문 앞에서 다시
+			HeroRespawnLeft = YJJData::Tune().HeroRespawnTime;
 		}
 		// 보스가 쓰러지면: 큰 폭발 + 잠깐 느리게 (말풍선·배너는 사건으로)
 		if (Def.bBoss)
@@ -669,6 +703,7 @@ void FYJJBattle::CollectRewards()
 			AddEffect(EYJJEffectKind::Promote, Death.Pos, T.PromoteEffectTime * T.BossBlastTimeScale, Def.DrawSize * T.BossBlastScale);
 			Sounds.Add(SoundMeteorBoom);
 			AddEvent(EYJJTalkTrigger::BossDown, Death.Type);
+			++ShakeRequests;
 		}
 		// 강령술사가 쓸 시체 (보스·영웅은 빼고)
 		if (!Def.bBoss && !Def.bHero && MaxCorpses > 0)
@@ -738,14 +773,6 @@ void FYJJBattle::TickEffects(float Dt)
 			AddEffect(EYJJEffectKind::Build, Landed.Pos, T.BuildEffectTime, Landed.Radius * T.SmackDustScale);
 			AddEffect(EYJJEffectKind::Rally, Landed.Pos, T.SmackRingTime, Landed.Radius);
 			Sounds.Add(SoundSmack);
-			++ShakeRequests;
-			continue;
-		}
-		if (Effect.Kind == EYJJEffectKind::QuakeHit)
-		{
-			const FYJJEffect Landed = Effect;
-			Effects.RemoveAtSwap(Index, EAllowShrinking::No);
-			QuakeStrike(Landed.Pos.X, Landed.Radius, Landed.Power);
 			continue;
 		}
 		Effects.RemoveAtSwap(Index, EAllowShrinking::No);
@@ -810,7 +837,8 @@ void FYJJBattle::SpawnSquad(int32 Building, int32 Count)
 	const FYJJSpawnStats Stats = PlayerStats(Building, BestLevel);
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		const FVector2f Pos(CampEdgeX + Random.FRandRange(0.f, T.SpawnScatter), FieldHeight * Half + Random.FRandRange(-T.BuySpread, T.BuySpread));
+		// 바로 사면 성문 앞에 나온다
+		const FVector2f Pos(CampEdgeX + T.GateExit + Random.FRandRange(0.f, T.SpawnScatter), FieldHeight * Half + Random.FRandRange(-T.BuySpread, T.BuySpread));
 		if (Horde.Spawn(YJJData::Building(Building).Unit, EYJJTeam::Player, Pos, Stats) != INDEX_NONE)
 		{
 			++Spawned[static_cast<int32>(EYJJTeam::Player)];
@@ -888,7 +916,25 @@ float FYJJBattle::CooldownMax(EYJJSpell Spell) const
 
 bool FYJJBattle::CanCast(EYJJSpell Spell) const
 {
+	if (Spell == EYJJSpell::Ladle)
+	{
+		return CanSmack();
+	}
 	return !bGameOver && Cooldowns[static_cast<int32>(Spell)] <= 0.f;
+}
+
+float FYJJBattle::CooldownLeft(EYJJSpell Spell) const
+{
+	if (Spell == EYJJSpell::Ladle)
+	{
+		return SmackCharge >= 1.f ? 0.f : (1.f - SmackCharge) * CooldownMax(Spell);
+	}
+	return Cooldowns[static_cast<int32>(Spell)];
+}
+
+int32 FYJJBattle::SmackMax() const
+{
+	return FMath::Max(FMath::RoundToInt(SpellNow(EYJJSpell::Ladle).Duration), 1);
 }
 
 bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
@@ -896,6 +942,10 @@ bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
 	if (!CanCast(Spell))
 	{
 		return false;
+	}
+	if (Spell == EYJJSpell::Ladle)
+	{
+		return Smack(Where);
 	}
 	const float Power = 1.f + Bonus(EYJJStat::SpellPower, INDEX_NONE);
 	const FYJJSpellStats Stats = SpellNow(Spell);
@@ -905,7 +955,6 @@ bool FYJJBattle::Cast(EYJJSpell Spell, const FVector2f& Where)
 	{
 	case EYJJSpell::Meteor: CastMeteor(Stats, Target, Power); break;
 	case EYJJSpell::Rally: CastRally(Stats, Power); break;
-	case EYJJSpell::Quake: CastQuake(Stats, Target.X, Power); break;
 	default: break;
 	}
 	return true;
@@ -969,51 +1018,6 @@ void FYJJBattle::CastRally(const FYJJSpellStats& Stats, float Power)
 		}
 	}
 	AddEffect(EYJJEffectKind::Rally, FVector2f(CampEdgeX, FieldHeight * Half), T.RallyEffectTime, FieldHeight);
-}
-
-void FYJJBattle::CastQuake(const FYJJSpellStats& Stats, float X, float Power)
-{
-	const FYJJTuning& T = YJJData::Tune();
-	const float Damage = Stats.Power * Power;
-	AddQuake(X, T.QuakeDelay, Stats.Radius, Damage);
-	// 여진: A초 뒤 같은 자리 한 번 더 (피해 x B)
-	if (Stats.Has(EYJJSpellFx::Aftershock))
-	{
-		AddQuake(X, T.QuakeDelay + Stats.A(EYJJSpellFx::Aftershock), Stats.Radius, Damage * Stats.B(EYJJSpellFx::Aftershock));
-	}
-	// 세 갈래: 양옆으로 번갈아 A줄 더 (줄 사이 B), 바깥 줄일수록 조금 늦게
-	if (Stats.Has(EYJJSpellFx::Split))
-	{
-		const int32 Count = FMath::RoundToInt(Stats.A(EYJJSpellFx::Split));
-		for (int32 Index = 0; Index < Count; ++Index)
-		{
-			const int32 Ring = Index / 2 + 1;
-			const float Side = Index % 2 == 0 ? 1.f : -1.f;
-			AddQuake(X + Side * Ring * Stats.B(EYJJSpellFx::Split), T.QuakeDelay + T.QuakeSplitDelay * Ring, Stats.Radius, Damage);
-		}
-	}
-}
-
-void FYJJBattle::AddQuake(float X, float Delay, float HalfWidth, float Damage)
-{
-	if (X < CampEdgeX || X > FieldWidth)
-	{
-		return;
-	}
-	AddEffect(EYJJEffectKind::QuakeHit, FVector2f(X, FieldHeight * Half), Delay, HalfWidth, Damage);
-}
-
-void FYJJBattle::QuakeStrike(float X, float HalfWidth, float Damage)
-{
-	const FYJJTuning& T = YJJData::Tune();
-	const float Step = FMath::Max(HalfWidth * T.QuakeHitStep, 1.f);
-	for (float Y = Step * Half; Y < FieldHeight + Step * Half; Y += Step)
-	{
-		Horde.DamageArea(FVector2f(X, Y), HalfWidth, Damage, T.QuakeKnockback, EYJJTeam::Enemy);
-		RecentCraters.Add(FVector3f(X, Y, HalfWidth * T.QuakeScarScale));
-	}
-	Sounds.Add(SoundQuake);
-	AddEffect(EYJJEffectKind::Quake, FVector2f(X, FieldHeight * Half), T.QuakeEffectTime, HalfWidth);
 }
 
 int32 FYJJBattle::SpellLevel(EYJJSpell Spell) const

@@ -188,6 +188,36 @@ def bgm_boss():
 # ------------------------------------------------------------------------------------------------
 # 효과음
 
+def meteor_fall():
+    """떨어지는 운석: 높은 휘파람이 내려가며 바람 소리가 커진다 (Tuning MeteorFallTime 0.6초와 같은 길이)"""
+    whistle = tone(1500, 0.6, "sine", 0.22, end_freq=380, release=0.05)
+    n = len(whistle)
+    wind = noise(0.6, 0.35, 0.5, 0.2, 7)
+    wind = [s * (i / max(n - 1, 1)) ** 2 for i, s in enumerate(wind[:n])]
+    return mix(whistle, wind)
+
+
+def explosion():
+    """운석 폭발: 쿵 (낮은 사인) + 퍼지는 잡음 + 튀는 파편 소리"""
+    thump = tone(90, 0.55, "sine", 0.95, end_freq=28, attack=0.002, release=0.35)
+    body = noise(1.1, 0.85, 3.5, 0.06, 8)
+    crackle = []
+    rng = random.Random(21)
+    for k in range(14):
+        crackle = mix(crackle, silence(rng.uniform(0.05, 0.6)) + noise(0.03, 0.35, 60, 0.6, 30 + k))
+    return mix(thump, body, crackle)
+
+
+def crowd_shout():
+    """돌격 함성: 졸병 스무 명이 저마다 다른 높이로 "와아아!" (조금씩 늦게 시작)"""
+    rng = random.Random(42)
+    out = []
+    for k in range(22):
+        voice = silence(rng.uniform(0.0, 0.18)) + syllable(rng.uniform(170, 330), rng.choice("aao"), rng.uniform(0.55, 0.85), rise=rng.uniform(1.05, 1.25), breath=0.25, seed=100 + k)
+        out = mix(out, [s * 0.55 for s in voice])
+    return out
+
+
 def sfx():
     return {
         "SFX_Hit1": mix(noise(0.09, 0.6, 30, 0.35, 1), tone(160, 0.07, "sine", 0.5, end_freq=80)),
@@ -195,9 +225,9 @@ def sfx():
         "SFX_Hit3": mix(noise(0.1, 0.55, 28, 0.3, 4), tone(140, 0.08, "sine", 0.5, end_freq=70)),
         "SFX_Arrow": mix(noise(0.18, 0.35, 12, 0.08, 6), tone(1400, 0.12, "sine", 0.06, end_freq=700)),
         "SFX_Death": seq(tone(520, 0.05, "square", 0.3, end_freq=900), tone(300, 0.1, "triangle", 0.3, end_freq=120)),
-        "SFX_MeteorFall": mix(tone(1800, 0.6, "sine", 0.25, end_freq=300), noise(0.6, 0.2, 1, 0.05, 7)),
-        "SFX_MeteorBoom": mix(noise(0.9, 0.9, 4, 0.12, 8), tone(70, 0.6, "sine", 0.9, end_freq=30, release=0.4)),
-        "SFX_Rally": seq(tone(note("G3"), 0.18, "saw", 0.45, vibrato=0.01), tone(note("C4"), 0.5, "saw", 0.5, vibrato=0.015, release=0.25)),
+        "SFX_MeteorFall": meteor_fall(),
+        "SFX_MeteorBoom": explosion(),
+        "SFX_Rally": crowd_shout(),
         "SFX_Build": seq(mix(noise(0.05, 0.6, 40, 0.5, 10), tone(900, 0.06, "square", 0.25)), silence(0.06),
                          mix(noise(0.05, 0.6, 40, 0.5, 11), tone(1100, 0.08, "square", 0.25))),
         "SFX_Upgrade": seq(*[tone(note(n), 0.07, "pulse", 0.3) for n in ("C5", "E5", "G5", "C6")]),

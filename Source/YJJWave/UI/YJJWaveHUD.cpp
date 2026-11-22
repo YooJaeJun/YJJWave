@@ -14,6 +14,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/KismetRenderingLibrary.h"
+#include "Meta/YJJOptions.h"
 #include "Misc/Paths.h"
 #include "Render/YJJTextureLoader.h"
 #include "Rendering/SlateRenderer.h"
@@ -111,6 +112,7 @@ void AYJJWaveHUD::ResetBattleView()
 	TalkUsed.Reset();
 	TalkUsed.AddZeroed(YJJData::Talks().Num());
 	TalkNow = FYJJTalkPlay();
+	CoinPops.Reset();
 	NextMilestone = UI().MilestoneFirst;
 	KillWindow = 0.f;
 	KillsAtWindow = 0;
@@ -225,6 +227,7 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 	}
 	ResultAge = Battle()->bGameOver ? ResultAge + DeltaSeconds : 0.f;
 	ComboTimer -= DeltaSeconds;
+	UpdateCoinPops(DeltaSeconds);
 	ComboPop = FMath::Max(ComboPop - DeltaSeconds * UI().ComboPopSpeed, 0.f);
 	if (ComboTimer <= 0.f)
 	{
@@ -257,7 +260,7 @@ void AYJJWaveHUD::DrawHUD()
 
 	// 화면 흔들림: 전장만 흔든다 (UI는 그대로)
 	ShakeOffset = ShakeLeft > 0.f
-		? FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * UI().ShakePixels * ViewScale * (ShakeLeft / FMath::Max(UI().ShakeTime, KINDA_SMALL_NUMBER))
+		? FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * UI().ShakePixels * FYJJOptions::Get().Shake * ViewScale * (ShakeLeft / FMath::Max(UI().ShakeTime, KINDA_SMALL_NUMBER))
 		: FVector2f::ZeroVector;
 	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
 	const EYJJScreen Screen = Mode ? Mode->GetScreen() : EYJJScreen::Battle;
@@ -278,10 +281,11 @@ void AYJJWaveHUD::DrawHUD()
 		return;
 	}
 	DrawWorld();
+	DrawCoinPops();
+	DrawWavePreview();
 	DrawTalks();
 	DrawBanners();
 	DrawCombo();
-	DrawSmackCharges();
 	if (Battle()->bCardPending && !Battle()->bGameOver)
 	{
 		DrawCardPick();
@@ -299,6 +303,7 @@ void AYJJWaveHUD::DrawHUD()
 	if (!bTreeOpen)
 	{
 		DrawPotTooltip();
+		DrawSeasoningTooltip();
 	}
 	DrawCutscene();
 	DrawGameOver();
@@ -408,13 +413,19 @@ void AYJJWaveHUD::TakeDeaths()
 	const int32 MaxDying = FMath::RoundToInt(UI().MaxDying);
 	for (const FYJJDeath& Death : Current->RecentDeaths)
 	{
+		const FYJJUnitDef& Def = YJJData::Unit(Death.Type);
 		if (Death.Team == EYJJTeam::Enemy)
 		{
 			++ComboCount;
 			ComboTimer = UI().ComboWindow;
 			ComboPop = 1.f;
+			// 금화가 튀어 오른다 (초당 몇 개까지만)
+			if (Def.Bounty > 0 && CoinBudget >= 1.f)
+			{
+				CoinBudget -= 1.f;
+				CoinPops.Add({ Death.Pos, Def.Bounty, 0.f, static_cast<float>(Random.FRandRange(-1.f, 1.f)) });
+			}
 		}
-		const FYJJUnitDef& Def = YJJData::Unit(Death.Type);
 		if (Dying.Num() >= MaxDying)
 		{
 			// 너무 많으면 날지 않고 바로 눕는다
@@ -440,7 +451,8 @@ void AYJJWaveHUD::TakeDeaths()
 	}
 	Current->RecentDeaths.Reset();
 
-	if (Current->RecentCraters.Num() > 0 || Current->ShakeRequests > 0)
+	// 화면 흔들림은 보스 등장·쓰러짐에만
+	if (Current->ShakeRequests > 0)
 	{
 		Shake();
 		Current->ShakeRequests = 0;

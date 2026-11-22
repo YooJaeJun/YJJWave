@@ -11,7 +11,7 @@
 float* AYJJWaveHUD::OptionVolume(int32 Row)
 {
 	FYJJOptions& Options = FYJJOptions::Get();
-	return Row == 0 ? &Options.Music : Row == 1 ? &Options.Sfx : &Options.Voice;
+	return Row == 0 ? &Options.Music : Row == 1 ? &Options.Sfx : Row == 2 ? &Options.Voice : &Options.Shake;
 }
 
 void AYJJWaveHUD::DrawOptions()
@@ -25,7 +25,7 @@ void AYJJWaveHUD::DrawOptions()
 	const float H = Pad * 3.f + L.TitleText + RowH * NumRows + RowH;
 	const float X = WorldCenterVirtualX() - W * Half;
 	const float Y = (VirtualHeight - H) * Half;
-	DrawBox(L.SidePanelW, 0.f, VirtualW - L.SidePanelW, VirtualHeight, YJJUI::Shade);
+	DrawBox(0.f, 0.f, VirtualW, VirtualHeight, YJJUI::Shade);
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanel));
 	DrawLabelCentered(YJJLoc::Get(TEXT("UI.OptionsTitle")), X + W * Half, Y + Pad + L.TitleText * Half, L.TitleText, YJJUI::Highlight);
 

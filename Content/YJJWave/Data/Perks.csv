@@ -43,7 +43,7 @@ Forge_SmithGrit,Notable,896.2,-82.8,,,0,,,0,LastStand,Forge,0.3,0.6,Forge4,Perk.
 Spells0,Small,232.3,189.8,SpellPower,,0.1,,,0,,,0,0,Inner5 Spells1,,,-1
 Spells1,Small,296.5,297.5,SpellCooldown,,0.05,,,0,,,0,0,Bridge4 Bridge5 Spell_Meteor Spell_Rally Spells0 Spells_MeteorChain,,,-1
 Spells_MeteorChain,Notable,341.2,418.5,,,0,,,0,MeteorTwice,,0.35,0,Spells1 Spells3,Perk.MeteorChain,,28
-Spells3,Small,441.6,490.5,SpellPower,,0.1,,,0,,,0,0,Spell_Quake Spells4 Spells_MeteorChain,,,-1
+Spells3,Small,441.6,490.5,SpellPower,,0.1,,,0,,,0,0,Spell_Ladle Spells4 Spells_MeteorChain,,,-1
 Spells4,Small,590.4,509.7,SpellCooldown,,0.05,,,0,,,0,0,Spells3 Spells_HealingCry,,,-1
 Spells_HealingCry,Notable,692.0,575.5,,,0,,,0,RallyHeal,,0.3,0,Spells4,Perk.HealingCry,,29
 Shield0,Small,8.8,299.9,HP,ShieldHall,0.15,,,0,,,0,0,Inner6 Shield1,,,-1
@@ -69,4 +69,4 @@ Bridge6,Small,-160.7,388.0,Damage,,0.04,,,0,,,0,0,Army1 Shield1,,,-1
 Bridge7,Small,-388.0,160.7,HP,,0.04,,,0,,,0,0,Army1 Barracks1,,,-1
 Spell_Meteor,Spell,489.4,228.2,,,0,,,0,,,0,0,Spells1,Spell.Meteor,Meteor,-1
 Spell_Rally,Spell,228.2,489.4,,,0,,,0,,,0,0,Spells1,Spell.Rally,Rally,-1
-Spell_Quake,Spell,668.6,401.7,,,0,,,0,,,0,0,Spells3,Spell.Quake,Quake,-1
+Spell_Ladle,Spell,668.6,401.7,,,0,,,0,,,0,0,Spells3,Spell.Ladle,Ladle,-1

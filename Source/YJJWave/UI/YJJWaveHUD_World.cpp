@@ -24,6 +24,7 @@ void AYJJWaveHUD::DrawWorld()
 
 	DrawGround();
 	DrawCamp();
+	DrawWall();
 	DrawPot();
 	DrawUnits();
 	DrawDying();
@@ -33,33 +34,119 @@ void AYJJWaveHUD::DrawWorld()
 	DrawUnitBars();
 }
 
-void AYJJWaveHUD::DrawSmackCharges()
+void AYJJWaveHUD::DrawWall()
 {
-	// 전장 위 커서 오른쪽 아래에 국자 아이콘: 찬 것은 밝게, 차오르는 것은 아래부터
+	// 진지 오른쪽 끝을 따라 돌 성벽을 세로로 잇고, 가운데는 열린 성문 (아군이 지나 나간다)
 	const FYJJBattle* Current = Battle();
 	const FYJJUILayout& L = UI();
-	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
-	if (Current->bGameOver || bTreeOpen || bOptionsOpen || IsMouseOverUI() || AimingSpell != INDEX_NONE || HoverPlot != INDEX_NONE || bPotHover || (Mode && Mode->CutsceneLine()))
+	if (!BuildingAtlas.Texture)
 	{
 		return;
 	}
-	const FVector2f Mouse = ToVirtual(MouseScreen());
-	if (ScreenToWorld(MouseScreen()).X <= Current->CampEdgeX)
+	const float Gate = YJJData::Tune().GateHalf;
+	const float GateY = Current->FieldHeight * Half;
+	const float Seg = L.WallSegment;
+	const int32 Count = FMath::CeilToInt(Current->FieldHeight / Seg) + 1;
+	const FLinearColor Tint = Current->WallFlash > 0.f ? FMath::Lerp(FLinearColor::White, YJJUI::HitTint, Current->WallFlash / FMath::Max(YJJData::Tune().WallFlashTime, KINDA_SMALL_NUMBER)) : FLinearColor::White;
+	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, Count + 2);
+	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		return;
-	}
-	const int32 Max = FMath::RoundToInt(YJJData::Tune().SmackCharges);
-	const float Size = L.SmackIconSize;
-	for (int32 Index = 0; Index < Max; ++Index)
-	{
-		const float Fill = FMath::Clamp(Current->SmackCharges() - Index, 0.f, 1.f);
-		const float X = Mouse.X + L.SmackIconOffset + Index * (Size + L.SmackIconGap);
-		const float Y = Mouse.Y + L.SmackIconOffset;
-		DrawIcon(FMath::RoundToInt(L.UiLadle), X, Y, Size, Fill >= 1.f ? FLinearColor::White : YJJUI::WithAlpha(YJJUI::Ink, L.SmackEmptyAlpha));
-		if (Fill > 0.f && Fill < 1.f)
+		const float Y = Index * Seg;
+		if (FMath::Abs(Y - GateY) < Gate)
 		{
-			DrawBox(X, Y + Size * (1.f - Fill), Size, Size * Fill, YJJUI::WithAlpha(YJJUI::Highlight, L.SmackFillAlpha));
+			continue;
 		}
+		const FVector2f Feet = WorldToScreen(FVector2f(Current->CampEdgeX, Y));
+		const float Size = L.WallDrawSize * Zoom;
+		AddQuad(Batch, FVector2f(Feet.X - Size * Half, Feet.Y - Size * L.WallAnchor), FVector2f(Size), BuildingAtlas.UV(FMath::RoundToInt(L.WallCol), FMath::RoundToInt(L.WallRow)), BuildingAtlas.CellUV, Tint, false);
+	}
+	// 성문 양쪽 탑
+	for (const float Side : { -1.f, 1.f })
+	{
+		const FVector2f Feet = WorldToScreen(FVector2f(Current->CampEdgeX, GateY + Side * Gate));
+		const float Size = L.GateTowerSize * Zoom;
+		AddQuad(Batch, FVector2f(Feet.X - Size * Half, Feet.Y - Size * L.WallAnchor), FVector2f(Size), BuildingAtlas.UV(FMath::RoundToInt(L.GateCol), FMath::RoundToInt(L.WallRow)), BuildingAtlas.CellUV, Tint, Side > 0.f);
+	}
+	// 성문 위 체력
+	const FVector2f Top = WorldToVirtual(FVector2f(Current->CampEdgeX, GateY - Gate)) - FVector2f(0.f, L.GateTowerSize * Zoom / ViewScale * L.WallAnchor + L.WallBarGap);
+	const float W = L.WallBarW;
+	DrawBar(Top.X - W * Half, Top.Y - L.TextBarH, W, L.TextBarH, Current->WallHP / FMath::Max(Current->WallMaxHP, KINDA_SMALL_NUMBER), YJJUI::Ally);
+	DrawBarLabel(YJJLoc::Format(TEXT("UI.WallHP"), { FormatCount(FMath::CeilToFloat(Current->WallHP)), FormatCount(Current->WallMaxHP) }), Top.X - W * Half, Top.Y - L.TextBarH, W, L.TextBarH);
+}
+
+void AYJJWaveHUD::UpdateCoinPops(float Dt)
+{
+	CoinBudget = FMath::Min(CoinBudget + UI().CoinPopsPerSecond * Dt, UI().CoinPopsPerSecond);
+	for (int32 Index = CoinPops.Num() - 1; Index >= 0; --Index)
+	{
+		CoinPops[Index].Age += Dt;
+		if (CoinPops[Index].Age >= UI().CoinPopTime)
+		{
+			CoinPops.RemoveAtSwap(Index, EAllowShrinking::No);
+		}
+	}
+}
+
+void AYJJWaveHUD::DrawCoinPops()
+{
+	// 위로 튀었다가 떨어지며 사라진다, 옆에 +금액
+	const FYJJUILayout& L = UI();
+	for (const FYJJCoinPop& Pop : CoinPops)
+	{
+		const float T = Pop.Age / FMath::Max(L.CoinPopTime, KINDA_SMALL_NUMBER);
+		const float Rise = L.CoinPopJump * (4.f * T * (1.f - T)) + L.CoinPopFloat * T;
+		const FVector2f At = WorldToVirtual(Pop.Pos + FVector2f(Pop.Side * L.CoinPopDrift * T, -Rise));
+		const float Alpha = FMath::Clamp((1.f - T) / FMath::Max(L.CoinPopFade, KINDA_SMALL_NUMBER), 0.f, 1.f);
+		const float Size = L.CoinPopSize;
+		DrawIcon(FMath::RoundToInt(L.UiCoin), At.X - Size, At.Y - Size * Half, Size, YJJUI::WithAlpha(FLinearColor::White, Alpha));
+		DrawLabelLeftMiddle(YJJLoc::Format(TEXT("UI.CoinPop"), { Pop.Value }), At.X + L.CoinPopGap, At.Y, L.SmallText, YJJUI::WithAlpha(YJJUI::Gold, Alpha), 0.f);
+	}
+}
+
+void AYJJWaveHUD::DrawWavePreview()
+{
+	// 화면 위 가운데 판: "다음 웨이브 2/3 · 12초" + 올 적 그림과 마리 수 (보스는 붉게)
+	const FYJJBattle* Current = Battle();
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	if (Current->bGameOver || bTreeOpen || (Mode && Mode->CutsceneLine()))
+	{
+		return;
+	}
+	const FYJJUILayout& L = UI();
+	const int32 Next = Current->Level;   // 0부터: 다음 웨이브 번호
+	const bool bLast = !Current->StageDef().Waves.IsValidIndex(Next);
+	const float Pad = L.TextPad;
+	const int32 Seconds = FMath::CeilToInt(FMath::Max(Current->LevelDuration() - Current->LevelTime, 0.f));
+	const FString Title = bLast ? YJJLoc::Get(TEXT("UI.LastWave")) : YJJLoc::Format(TEXT("UI.NextWave"), { Next + 1, Current->NumWaves(), Seconds });
+	TArray<TPair<int32, int32>> Comers;
+	if (!bLast)
+	{
+		for (const FYJJWaveSpawn& Spawn : Current->StageDef().Waves[Next].Spawns)
+		{
+			const int32 Count = FMath::RoundToInt(Spawn.Rate * Current->StageDef().Waves[Next].Duration) + Spawn.Burst;
+			if (Count > 0)
+			{
+				Comers.Emplace(Spawn.Unit, Count);
+			}
+		}
+	}
+	float TitleW = 0.f;
+	MakeFont(Title, L.SmallText, 1.f, 0.f, TitleW);
+	const float Item = L.PreviewIcon + L.PreviewCountW;
+	const float W = FMath::Max(TitleW, Comers.Num() * Item) + Pad * 2.f;
+	const float H = Pad * 2.f + L.SmallText + (Comers.Num() > 0 ? L.PreviewIcon + L.PreviewGap : 0.f);
+	const float X = WorldCenterVirtualX() - W * Half;
+	const float Y = L.PreviewY;
+	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
+	DrawLabel(Title, X + W * Half, Y + Pad, L.SmallText, bLast ? YJJUI::Bad : YJJUI::Paper, Half);
+	const float RowY = Y + Pad + L.SmallText + L.PreviewGap;
+	const float Left = X + (W - Comers.Num() * Item) * Half;
+	for (int32 Index = 0; Index < Comers.Num(); ++Index)
+	{
+		const FYJJUnitDef& Def = YJJData::Unit(Comers[Index].Key);
+		const float IX = Left + Index * Item;
+		DrawUnitSprite(Comers[Index].Key, IX + L.PreviewIcon * Half, RowY + L.PreviewIcon * L.FootAnchor, L.PreviewIcon, true);
+		DrawLabelLeftMiddle(YJJLoc::Format(TEXT("UI.PreviewCount"), { Comers[Index].Value }), IX + L.PreviewIcon, RowY + L.PreviewIcon * Half, L.SmallText, Def.bBoss ? YJJUI::BossText : YJJUI::Paper, 0.f);
 	}
 }
 
@@ -133,9 +220,11 @@ void AYJJWaveHUD::DrawCamp()
 		const float Size = UI().PlotDrawSize * Zoom * (bHover ? UI().PlotHoverScale : 1.f);
 		const FVector2f Feet = WorldToScreen(Plot.Pos);
 		const int32 Column = Plot.Building == INDEX_NONE ? FMath::RoundToInt(UI().EmptyPlotCol) : YJJData::Building(Plot.Building).AtlasCol;
+		// 강화 단계마다 다른 그림 (줄 = Lv-1): 돌 기단 → 망루·문장 → 왕관
+		const int32 Row = Plot.Building == INDEX_NONE ? 0 : FMath::Clamp(Plot.Level - 1, 0, FMath::RoundToInt(UI().BuildingTiers) - 1);
 		const FVector2f QuadSize(Size, Size * Bounce);
 		const FVector2f TopLeft(Feet.X - QuadSize.X * Half, Feet.Y - QuadSize.Y * UI().PlotAnchor);
-		AddQuad(Batch, TopLeft, QuadSize, BuildingAtlas.UV(Column, 0), BuildingAtlas.CellUV, bHover ? YJJUI::Highlight : FLinearColor::White, false);
+		AddQuad(Batch, TopLeft, QuadSize, BuildingAtlas.UV(Column, Row), BuildingAtlas.CellUV, bHover ? YJJUI::Highlight : FLinearColor::White, false);
 	}
 
 	// 병영 레벨 글자
@@ -431,17 +520,6 @@ void AYJJWaveHUD::DrawEffects()
 			AddQuad(Batch, Ground - FVector2f(Size * Half, Size * UI().PlotAnchor), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxDust)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::PerkKeystone, 1.f - T), false);
 			break;
 		}
-		case EYJJEffectKind::QuakeHit:
-		{
-			// 곧 갈라질 줄: 점점 진해진다 (여진·옆 줄 예고)
-			AddQuakeLine(Batch, Effect.Pos.X, Effect.Radius, YJJUI::WithAlpha(YJJUI::Bad, T * UI().QuakeWarnAlpha));
-			break;
-		}
-		case EYJJEffectKind::Quake:
-		{
-			AddQuakeLine(Batch, Effect.Pos.X, Effect.Radius * FMath::Lerp(1.f, UI().QuakeEndScale, T), FLinearColor(1.f, 1.f, 1.f, 1.f - T));
-			break;
-		}
 		case EYJJEffectKind::Burn:
 		{
 			// 불꽃 몇 개가 원 안에서 일렁인다. 끝날 즈음 사그라진다
@@ -511,27 +589,8 @@ void AYJJWaveHUD::DrawSpellAim()
 	const FYJJSpellStats Stats = Battle()->SpellNow(Spell);
 	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, FxAtlas.Texture, EffectQuadsGuess);
 	const FLinearColor Color = YJJUI::WithAlpha(YJJUI::Highlight, UI().AimAlpha);
-	if (Spell == EYJJSpell::Quake)
-	{
-		AddQuakeLine(Batch, ScreenToWorld(MouseScreen()).X, Stats.Radius, Color);
-		return;
-	}
 	const float Size = Stats.Radius * 2.f * Zoom;
 	AddQuad(Batch, MouseScreen() - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, Color, false);
-}
-
-void AYJJWaveHUD::AddQuakeLine(const FYJJQuadBatch& Batch, float WorldX, float HalfWidth, const FLinearColor& Color) const
-{
-	// 갈라진 땅 그림을 전장 위에서 아래까지 세로로 잇는다
-	const FYJJBattle* Current = Battle();
-	const float Size = HalfWidth * UI().QuakeCrackScale;
-	const float Step = FMath::Max(Size * UI().QuakeCrackStep, 1.f);
-	int32 Piece = 0;
-	for (float Y = 0.f; Y < Current->FieldHeight + Step; Y += Step, ++Piece)
-	{
-		const FVector2f Center = WorldToScreen(FVector2f(WorldX, Y));
-		AddQuad(Batch, Center - FVector2f(Size * Zoom * Half), FVector2f(Size * Zoom), FxAtlas.UV(FMath::RoundToInt(UI().FxCrack)), FxAtlas.CellUV, Color, (Piece % 2) != 0);
-	}
 }
 
 // ---------------------------------------------------------------------------------------------

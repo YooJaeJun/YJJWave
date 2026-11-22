@@ -47,6 +47,18 @@ void AYJJWaveHUD::DrawSidePanel()
 		Y += H + L.SectionGap;
 	}
 
+	// ---- 성벽 체력 (0이 되면 패배) ----
+	{
+		const float H = L.TextBarH + Pad * 2.f;
+		DrawPanel(X, Y, W, H, YJJUI::PanelTint, DarkCell);
+		DrawLabelLeftMiddle(YJJLoc::Get(TEXT("UI.Wall")), X + Pad, Y + H * Half, L.SmallText, YJJUI::Paper, 0.f);
+		const float BarX = X + Pad + L.WallLabelW;
+		const float BarW = X + W - Pad - BarX;
+		DrawBar(BarX, Y + Pad, BarW, L.TextBarH, Current->WallHP / FMath::Max(Current->WallMaxHP, KINDA_SMALL_NUMBER), YJJUI::Ally);
+		DrawBarLabel(YJJLoc::Format(TEXT("UI.WallHP"), { FormatCount(FMath::CeilToFloat(Current->WallHP)), FormatCount(Current->WallMaxHP) }), BarX, Y + Pad, BarW, L.TextBarH);
+		Y += H + L.SectionGap;
+	}
+
 	// ---- 금화 · 영혼 (한 줄에 나란히) ----
 	{
 		const float H = L.ResRowH + Pad * 2.f;
@@ -115,7 +127,20 @@ void AYJJWaveHUD::DrawSidePanel()
 			{
 				const float Fraction = Current->CooldownLeft(Spell) / FMath::Max(Current->CooldownMax(Spell), KINDA_SMALL_NUMBER);
 				DrawBox(SX + Pad, Y + Pad + L.CardIcon * (1.f - Fraction), SlotW - Pad * 2.f, L.CardIcon * Fraction, YJJUI::Shade);
-				DrawLabelCentered(FString::FromInt(FMath::CeilToInt(Current->CooldownLeft(Spell))), SX + SlotW * Half, Y + Pad + L.CardIcon * Half, L.MidText, YJJUI::Paper);
+				if (Spell != EYJJSpell::Ladle)
+				{
+					DrawLabelCentered(FString::FromInt(FMath::CeilToInt(Current->CooldownLeft(Spell))), SX + SlotW * Half, Y + Pad + L.CardIcon * Half, L.MidText, YJJUI::Paper);
+				}
+			}
+			if (Spell == EYJJSpell::Ladle)
+			{
+				// 국자는 횟수: 그림 위에 "남은 수", 다음 하나가 차오르는 막대는 그림 아래
+				DrawLabelCentered(YJJLoc::Format(TEXT("Spell.Charges"), { FMath::FloorToInt(Current->SmackCharges()), Current->SmackMax() }), SX + SlotW * Half, Y + Pad + L.CardIcon * Half, L.MidText, YJJUI::Highlight);
+				const float Next = FMath::Frac(Current->SmackCharges());
+				if (Current->SmackCharges() < Current->SmackMax())
+				{
+					DrawBar(SX + Pad, Y + Pad + L.CardIcon - L.SkillChargeBarH, SlotW - Pad * 2.f, L.SkillChargeBarH, Next, YJJUI::Highlight);
+				}
 			}
 			AddButton(EButton::Spell, Index, SX, Y, SlotW, H);
 		}
@@ -133,17 +158,10 @@ void AYJJWaveHUD::DrawSidePanel()
 		Y += TH + L.SectionGap;
 	}
 
-	// ---- 냄비 (게이지 + 열기) ----
+	// ---- 냄비 (게이지 + 열기) + 넣은 양념 ----
 	Y += DrawPotPanel(X, Y, W) + L.SectionGap;
+	Y += DrawSeasonings(X, Y, W) + L.SectionGap;
 
-	// ---- 옵션 (맨 아래, 성능 줄 위) ----
-	{
-		const float H = L.OptionsOpenH;
-		const float OY = VirtualHeight - Pad - L.TinyText * 2.f - L.DebugLineGap - Pad - H;
-		DrawPanel(X, OY, W, H, bOptionsOpen ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
-		DrawLabelCentered(YJJLoc::Get(TEXT("UI.Options")), X + W * Half, OY + H * Half, L.MidText, YJJUI::Paper);
-		AddButton(EButton::OpenOptions, 0, X, OY, W, H);
-	}
 
 	DrawBuyPopup(X, W);
 	DrawSpeedButton();
@@ -158,6 +176,12 @@ void AYJJWaveHUD::DrawSpeedButton()
 	const float H = L.SpeedButtonH;
 	const float X = VirtualW - L.PanelPad - W;
 	const float Y = L.PanelPad;
+	// 옵션 버튼은 배속 왼쪽
+	const float OptionsW = L.OptionsButtonTopW;
+	const float OptionsX = X - L.CardGap - OptionsW;
+	DrawPanel(OptionsX, Y, OptionsW, H, bOptionsOpen ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
+	DrawLabelCentered(YJJLoc::Get(TEXT("UI.Options")), OptionsX + OptionsW * Half, Y + H * Half, L.MidText, YJJUI::Paper, OptionsW - L.PanelPad);
+	AddButton(EButton::OpenOptions, 0, OptionsX, Y, OptionsW, H);
 	const FString Speed = Mode && Mode->IsPaused() ? YJJLoc::Get(TEXT("UI.Paused")) : YJJLoc::Format(TEXT("UI.Speed"), { Mode ? FMath::RoundToInt(Mode->GetSpeed()) : 1 });
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
 	DrawLabelCentered(Speed, X + W * Half, Y + H * Half, L.MidText, YJJUI::Paper, W - L.PanelPad);

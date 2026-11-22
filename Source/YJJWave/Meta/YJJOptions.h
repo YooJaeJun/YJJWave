@@ -14,6 +14,7 @@ public:
 	UPROPERTY() float Music = 1.f;
 	UPROPERTY() float Sfx = 1.f;
 	UPROPERTY() float Voice = 1.f;
+	UPROPERTY() float Shake = 1.f;
 	UPROPERTY() FString Language;
 	UPROPERTY() int32 Resolution = INDEX_NONE;
 };
@@ -27,6 +28,8 @@ public:
 	float Music = 1.f;
 	float Sfx = 1.f;
 	float Voice = 1.f;
+	/** 카메라 진동 세기 (0 = 끔) */
+	float Shake = 1.f;
 	FString Language;
 	int32 Resolution = INDEX_NONE;   // Resolutions() 번호, INDEX_NONE이면 지금 그대로
 

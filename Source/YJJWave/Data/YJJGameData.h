@@ -65,7 +65,7 @@ private:
 	void LoadBroth();
 	void LoadDialogues();
 	bool ParseTrigger(const FString& Name, EYJJTalkTrigger& Out);
-	/** Voice 열: 비우면 Voice_<Speaker> */
+	/** Voice 열: 비우면 소리 없음 (대사는 글로만) */
 	static FName VoiceFor(const FString& Voice, const FString& Speaker);
 	bool ParseSpell(const FString& Name, int32& Out);
 	bool ParseSpellFx(const FString& Name, EYJJSpellFx& Out);

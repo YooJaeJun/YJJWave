@@ -225,7 +225,7 @@ void FYJJGameDatabase::LoadUnits()
 
 FName FYJJGameDatabase::VoiceFor(const FString& Voice, const FString& Speaker)
 {
-	return FName(*(Voice.IsEmpty() ? FString(TEXT("Voice_")) + Speaker : Voice));
+	return Voice.IsEmpty() ? NAME_None : FName(*Voice);
 }
 
 void FYJJGameDatabase::LoadRegions()
@@ -379,6 +379,7 @@ void FYJJGameDatabase::LoadStages()
 		Def.HPScale = Row.HPScale;
 		Def.MapPos = FVector2f(Row.MapX, Row.MapY);
 		Def.Ground = Row.Ground;
+		Def.WallHP = Row.WallHP;
 		TArray<FString> Builds;
 		Row.StartBuild.ParseIntoArrayWS(Builds);
 		for (const FString& Build : Builds)
@@ -539,6 +540,8 @@ void FYJJGameDatabase::LoadCards()
 		FYJJPerkDef& Def = Cards.AddDefaulted_GetRef();
 		Def.Id = Name;
 		Def.Kind = EYJJPerkKind::Notable;
+		Def.Icon = Row.Icon;
+		Def.FlavorKey = Row.FlavorKey;
 		ReadEffects(TEXT("Cards.csv"), Name, Row, Def);
 	});
 }
@@ -721,7 +724,7 @@ const TCHAR* YJJData::SpellKey(EYJJSpell Spell)
 	{
 	case EYJJSpell::Meteor: return TEXT("Meteor");
 	case EYJJSpell::Rally: return TEXT("Rally");
-	case EYJJSpell::Quake: return TEXT("Quake");
+	case EYJJSpell::Ladle: return TEXT("Ladle");
 	default: return TEXT("");
 	}
 }
@@ -734,8 +737,6 @@ const TCHAR* YJJData::SpellFxKey(EYJJSpellFx Fx)
 	case EYJJSpellFx::Shower: return TEXT("Shower");
 	case EYJJSpellFx::Heal: return TEXT("Heal");
 	case EYJJSpellFx::Reinforce: return TEXT("Reinforce");
-	case EYJJSpellFx::Aftershock: return TEXT("Aftershock");
-	case EYJJSpellFx::Split: return TEXT("Split");
 	default: return TEXT("");
 	}
 }

@@ -17,7 +17,7 @@ UI.PlotTitle,{0} Lv{1},{0} Lv{1},
 UI.PlotSpawn,{1}초마다 {0}명,{0} every {1}s,
 UI.PlotUpgrade,클릭: 강화 (금화 {0}),Click: upgrade ({0} gold),
 UI.PlotMax,최대 레벨,Max level,
-UI.GameOver,영웅이 쓰러졌다!,Your hero has fallen!,
+UI.GameOver,스테이지 실패,Stage Failed,
 UI.Victory,스테이지 돌파!,Stage cleared!,
 UI.GameOverStats,{0} · 처치 {1} · {2}초 · 영혼 +{3},{0} · {1} kills · {2}s · souls +{3},
 UI.Restart,R: 다시,R: Retry,
@@ -31,14 +31,11 @@ Key.Rally,F2,F2,
 Key.Tree,T,T,
 Spell.Meteor,유성 낙하,Meteor,
 Spell.Rally,돌격 함성,War Cry,
-Key.Quake,F3,F3,
-Spell.Quake,대지 가르기,Earthsplitter,주문 F3
-Perk.KindSpell,주문,Spell,성좌 설명창 종류
-Spell.Lv,Lv{0},Lv{0},좌측 패널 주문 칸
-Spell.LvOf,Lv {0}/{1},Lv {0}/{1},주문 별
+Perk.KindSpell,스킬,Skill,성좌 설명창 종류
+Spell.Lv,Lv{0},Lv{0},좌측 패널 스킬 칸
+Spell.LvOf,Lv {0}/{1},Lv {0}/{1},스킬 별
 SpellStat.Meteor,피해 {0} · 반경 {1} · 대기 {2}초,Damage {0} · Radius {1} · Cooldown {2}s,{0} 위력 {1} 반경 {2} 대기 {3} 지속 {4} 폭
 SpellStat.Rally,공격 속도 x{0} · {3}초 · 대기 {2}초,Attack speed x{0} · {3}s · Cooldown {2}s,
-SpellStat.Quake,피해 {0} · 폭 {4} · 대기 {2}초,Damage {0} · Width {4} · Cooldown {2}s,
 Spell.Next,다음 Lv {0}: {1},Next Lv {0}: {1},
 Spell.FxOn,[Lv{0}] {1},[Lv{0}] {1},열린 특수 효과
 Spell.FxLocked,[Lv{0} 잠김] {1},[Lv{0} locked] {1},아직 안 열린 특수 효과
@@ -48,8 +45,6 @@ SpellFx.Burn,불바다: {1}초 동안 초당 유성 피해의 {2}%,Firestorm: {2
 SpellFx.Shower,유성우: 작은 운석 {0}개 더 (피해 {3}%),Meteor shower: {0} more small meteors ({3}% damage),
 SpellFx.Heal,함성 때 아군 전체 체력 {2}% 회복,War Cry heals all troops {2}%,
 SpellFx.Reinforce,지원군: 지어 둔 병영마다 병사 {0}명 바로 출전,Reinforcements: {0} troops from each built barracks,
-SpellFx.Aftershock,여진: {0}초 뒤 한 번 더 (피해 {3}%),Aftershock: strikes again after {0}s ({3}% damage),
-SpellFx.Split,세 갈래: 양옆으로 {0}줄 더 갈라짐,Trident: {0} more fissures on the sides,
 Building.Barracks,졸병 막사,Barracks,
 Building.BarracksDesc,싸고 많다. 물량의 기본,Cheap and many,
 Building.ArcherPost,궁수 초소,Archer Post,
@@ -79,8 +74,8 @@ Stat.Splash,{1} 범위 {0},{1} area {0},
 Stat.Gold,처치 금화 {0},Kill gold {0},
 Stat.Souls,처치 영혼 {0},Kill souls {0},
 Stat.HeroHP,영웅 체력 {0},Hero health {0},
-Stat.SpellPower,스펠 위력 {0},Spell power {0},
-Stat.SpellCooldown,스펠 대기 감소 {0},Spell cooldown -{0},
+Stat.SpellPower,스펠 위력 {0},Skill power {0},
+Stat.SpellCooldown,스펠 대기 감소 {0},Skill cooldown -{0},
 Perk.Start,시작 별,Origin,
 Perk.Small,작은 별,Minor star,
 Perk.Taken,찍은 별,Taken,
@@ -127,20 +122,20 @@ Special.Thorns,{0}(이)가 근접으로 맞은 피해의 {1}%를 되돌려줌,{0
 Special.Lifesteal,{0}(이)가 준 피해의 {1}%만큼 회복,{0} heal {1}% of damage dealt,
 Unit.Necro,강령술사,Necromancer,시체를 해골로 일으킨다
 UI.FrontBonus,전선 보너스 x{0},Front bonus x{0},금화·영혼 배율
-UI.CardTitle,카드 고르기 (1 · 2 · 3),Pick a card (1 · 2 · 3),웨이브가 바뀔 때
+UI.CardTitle,양념 고르기 (1 · 2 · 3),Pick a seasoning (1 · 2 · 3),웨이브가 바뀔 때
 UI.Milestone,아군 {0} 돌파!,{0} troops!,물량 배너
 UI.Massacre,학살! {0}마리,Massacre! {0},1초에 많이 잡으면
 UI.BossDown,보스 처치!,Boss down!,
-Card.Flood,물량 폭주,Flood,
-Card.QuickFeet,날쌘 다리,Quick Feet,
-Card.ThickArmor,두꺼운 갑옷,Thick Armor,
-Card.SharpBlades,날 선 무기,Sharp Blades,
-Card.FireArrows,불화살,Fire Arrows,
-Card.BloodRite,피의 의식,Blood Rite,
-Card.SecondWind,다시 일어나라,Second Wind,
-Card.GoldRain,금화 비,Gold Rain,
-Card.CaptainRage,대장의 분노,Captain's Rage,
-Card.BigSwing,대회전,Big Swing,
+Card.Flood,쌀 한 가마니,Sack of Rice,
+Card.QuickFeet,고춧가루,Chili Powder,
+Card.ThickArmor,사골 뼈,Marrow Bone,
+Card.SharpBlades,마늘,Garlic,
+Card.FireArrows,통후추,Black Pepper,
+Card.BloodRite,선지,Blood Pudding,
+Card.SecondWind,인삼,Ginseng,
+Card.GoldRain,금가루,Gold Flakes,
+Card.CaptainRage,청양고추,Hot Pepper,
+Card.BigSwing,대파 한 단,Green Onions,
 UI.BuyCount,x{0},x{0},병사 즉시 구매 버튼
 UI.Options,옵션 (ESC),Options (ESC),좌측 패널 버튼
 UI.OptionsTitle,옵션,Options,
@@ -200,7 +195,7 @@ Talk.Boss1,내 뼈로는 국 못 끓인다.,My bones will make no broth.,말풍�
 Talk.Boss2,끓여 보면 안다.,We'll find out.,
 Talk.Deep1,끝이 안 보입니다.,There's no end to them.,말풍선 (Dialogues.csv Deep)
 Talk.Deep2,냄비 바닥도 안 보인다. 계속 넣어라.,Nor to the pot. Keep them coming.,
-Talk.HeroLow1,아직 간도 안 봤다.,I haven't even tasted it yet.,말풍선 (Dialogues.csv HeroLow)
+Talk.HeroLow1,성벽이 흔들린다! 버텨라!,The wall is shaking! Hold!,말풍선 (Dialogues.csv HeroLow)
 Font.File,DoHyeon-Regular.ttf,LilitaOne-Regular.ttf,언어별 글꼴 (Content/YJJWave/Fonts). en = Lilita One (OFL). 그 글꼴에 없는 한글은 DoHyeon으로
 Title.Name,국거리 디펜스,Soup Fodder Defense,"게임 제목 (국거리 = 냄비에 들어갈 운명, cannon fodder 말장난)"
 Title.Tagline,이긴 쪽이 끓인다,The winners do the cooking.,
@@ -231,3 +226,28 @@ Talk.PotReady2,기다리면 더 진해집니다. 넘치지만 않으면요.,Wait
 Talk.BossDown1,…뼈는 냄비로.,...Bones to the pot.,말풍선 (Dialogues.csv BossDown)
 Talk.Start4,전장을 눌러라. 국자로 내려친다!,Click the field. The ladle comes down!,
 UI.Combo,연속 처치!,Combo!,화면 오른쪽 연속 처치 숫자 아래
+Card.FloodFlavor,밥심이 든든하니 한 번에 하나 더 나온다.,Well fed: one more per batch.,양념 맛 한 줄
+Card.QuickFeetFlavor,매운맛에 발이 저절로 빨라진다.,So spicy their feet move by themselves.,
+Card.ThickArmorFlavor,푹 고아 먹으면 뼈가 튼튼해진다.,"Simmered long, bones grow strong.",
+Card.SharpBladesFlavor,마늘 한 접이면 힘이 솟는다.,"A braid of garlic, a surge of strength.",
+Card.FireArrowsFlavor,화살촉에 후추를 바른다. 맞으면 맵다.,Peppered arrowheads. They sting.,
+Card.BloodRiteFlavor,피가 피를 부른다.,Blood calls for blood.,
+Card.SecondWindFlavor,쓰러져도 한 번은 일어난다.,"Fall once, rise once.",
+Card.GoldRainFlavor,국에 금가루를 뿌리니 적도 금을 흘린다.,"Gold in the broth, gold from the foe.",
+Card.CaptainRageFlavor,대장이 매워서 화가 났다.,The captain bit a hot pepper. He is angry.,
+Card.BigSwingFlavor,망치 대장이 대파를 휘두른다.,The hammer bosses swing green onions.,
+UI.CardSub,보급 수레가 양념 셋을 가져왔다. 냄비에 넣을 하나를 고르자.,The supply cart brought three seasonings. Pick one for the pot.,
+UI.Seasonings,넣은 양념,In the pot,좌측 패널
+UI.SeasoningsNone,웨이브를 버티면 보급 수레가 온다,Hold a wave and the supply cart comes,
+Card.Added,{0}(을)를 냄비에 넣었다!,{0} went into the pot!,배너
+Key.Ladle,F3,F3,
+Spell.Ladle,국자 내려치기,Ladle Smash,스킬 F3 (전장 클릭으로도)
+SpellStat.Ladle,피해 {0} · 범위 {1} · 최대 {3}번 · {2}초마다 1번,Damage {0} · Radius {1} · Up to {3} · +1 every {2}s,
+Spell.Charges,{0}/{1},{0}/{1},국자 칸 남은 횟수
+Option.Shake,카메라 진동,Screen shake,
+UI.Wall,성벽,Wall,좌측 패널
+UI.WallHP,{0} / {1},{0} / {1},성벽 체력
+UI.CoinPop,+{0},+{0},처치 금화
+UI.NextWave,다음 웨이브 {0}/{1} · {2}초,Next wave {0}/{1} · {2}s,웨이브 예고
+UI.LastWave,마지막 웨이브! 남은 적을 쓰러뜨려라,Final wave! Defeat the rest,
+UI.PreviewCount,×{0},×{0},

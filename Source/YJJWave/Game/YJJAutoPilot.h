@@ -49,7 +49,6 @@ private:
 	bool bOptionsShot = false;
 	bool bCutShot = false;
 	bool bBuyShot = false;
-	bool bQuakeShot = false;
 	bool bBurnShot = false;
 	bool bPotShot = false;
 	bool bTalkShot = false;
@@ -100,7 +99,7 @@ private:
 	/** 메뉴 화면이 그려질 때까지 기다리는 실제 시간 */
 	static constexpr float MenuShotWait = 0.6f;
 	/** 결과 창 별 연출이 다 나올 때까지 (실제 시간) */
-	static constexpr float ResultShotDelay = 2.8f;
+	static constexpr float ResultShotDelay = 4.0f;
 	/** 그다음 옵션 화면 */
 	static constexpr float OptionsShotAt = 0.25f;
 	/** 컷씬 첫 줄이 이만큼 지나면 찍는다 */
