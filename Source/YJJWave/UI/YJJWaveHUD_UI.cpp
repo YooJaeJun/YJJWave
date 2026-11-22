@@ -273,7 +273,7 @@ void AYJJWaveHUD::DrawPlotTooltip()
 	}
 
 	const FVector2f Mouse = ToVirtual(MouseScreen());
-	const float Pad = UI().PanelPad;
+	const float Pad = UI().TextPad;
 	const float LineH = UI().TipLineH;
 	const float W = UI().TipW;
 	const float H = Pad * 2.f + LineH * Lines.Num();
@@ -456,7 +456,7 @@ void AYJJWaveHUD::DrawTree()
 	}
 
 	// 머리글
-	const float Pad = UI().PanelPad;
+	const float Pad = UI().TextPad;
 	// 머리글은 성좌 위 가운데 (영혼·닫기 버튼은 좌측 패널)
 	DrawLabel(YJJLoc::Get(TEXT("UI.TreeTitle")), WorldCenterVirtualX(), UI().TreeTitleY, UI().TitleText, YJJUI::Highlight, Half);
 	DrawLabel(YJJLoc::Format(TEXT("UI.TreeNext"), { FormatCount(Current->PerkCost()), Current->NumAllocated() }), WorldCenterVirtualX(), UI().TreeTitleY + UI().TitleText + Pad, UI().SmallText, YJJUI::Paper, Half);
@@ -763,7 +763,7 @@ void AYJJWaveHUD::DrawCardPick()
 {
 	const FYJJBattle* Current = Battle();
 	const FYJJUILayout& L = UI();
-	const float Pad = L.PanelPad;
+	const float Pad = L.TextPad;
 	DrawBox(L.SidePanelW, 0.f, VirtualW - L.SidePanelW, VirtualHeight, YJJUI::Shade);
 	DrawLabel(YJJLoc::Get(TEXT("UI.CardTitle")), WorldCenterVirtualX(), L.CardTitleY, L.TitleText, YJJUI::Highlight, Half);
 
