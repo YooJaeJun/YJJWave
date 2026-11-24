@@ -161,11 +161,11 @@ Cut.M4,이긴 쪽이 끓인다.,The winners do the cooking.,
 Cut.M5,…진 쪽은요?,...And the losers?,
 Cut.M6,국거리.,Go in the pot.,
 Cut.S1,"제2장 · 뼈의 언덕\n천 년 전, 진 쪽이 묻힌 곳.","Chapter 2 · Hill of Bones\nWhere the losers were buried, a thousand years ago.","장 제목 카드: 첫 줄 제목, \n 뒤 한 줄"
-Cut.S2,해골들이 왜 저리 반질반질합니까?,Why are those skeletons so... polished?,
-Cut.S3,천 년을 푹 고아진 뼈다.,Simmered for a thousand years.,
-Cut.S4,뼈는 기억한다. 몇 시간 끓였는지.,Bones remember. Every hour in the pot.,
-Cut.S5,국물 값을 받으러 왔다.,We have come to collect for the broth.,
-Cut.S6,"전군, 뚜껑 닫아라. 돌격!","All troops, lids on. Charge!",
+Cut.S2,"대장님, 저것들은 살이 없습니다.","Captain, those have no flesh.",
+Cut.S3,그래서 해골이다.,That is why they are skeletons.,
+Cut.S4,나는 강령술사. 죽은 자를 부른다. 산 자는 안 부른다.,I am the necromancer. I summon the dead. Not the living.,
+Cut.S5,나는 해골왕. 해골들의 왕이다.,I am the Bone King. King of the bones.,
+Cut.S6,"전군, 뚜껑 닫아라. 돌격은 앞으로 한다!","All troops, lids on. We charge forward!",
 Unit.Veteran,베테랑,Veteran,졸병 진급 1단계
 Unit.General,장군,General,진급 2단계
 Unit.GruntHero,영웅,Hero,진급 3단계 (내 영웅 '대장 졸병'과 다름)
@@ -184,18 +184,16 @@ Key.Q,Q,Q,
 Talk.Start1,불 지펴라. 오늘 냄비는 비지 않는다.,Light the fire. The pot will not stay empty today.,말풍선 (Dialogues.csv Start)
 Talk.Start2,뭘로 채웁니까?,Fill it with what?,
 Talk.Start3,저기 걸어오고 있다.,It's walking toward us.,
-Talk.FirstPot1,…뼈 맛이 진합니다.,...It tastes of bone.,말풍선 (Dialogues.csv FirstPot)
-Talk.FirstPot2,천 년 묵은 맛이다.,A thousand years of flavor.,
-Talk.Overflow1,"대장님, 국이…!","Captain, the broth...!",말풍선 (Dialogues.csv Overflow)
-Talk.Overflow2,…다시 끓인다.,...We boil again.,
-Talk.Veteran1,국자를 받았다. 이제 물러서지 않는다.,I've been given the ladle. No more retreating.,말풍선 (Dialogues.csv Veteran)
-Talk.General1,솥을 입은 자는 끓지 않는다.,One who wears the cauldron does not boil.,말풍선 (Dialogues.csv General)
-Talk.GruntHero1,어제는 졸병. 오늘은 전설.,"Yesterday, a grunt. Today, a legend.",말풍선 (Dialogues.csv GruntHero)
-Talk.Boss1,내 뼈로는 국 못 끓인다.,My bones will make no broth.,말풍선 (Dialogues.csv Boss)
+Talk.Overflow1,"대장님, 국이 냄비 밖에 있습니다!","Captain, the broth is outside the pot!",말풍선 (Dialogues.csv Overflow)
+Talk.Overflow2,"넘친 국은, 냄비에 없다.",Spilled broth is not in the pot.,
+Talk.Veteran1,나는 국자를 든 자. 국을 푸는 자다.,I hold the ladle. I am the one who ladles.,말풍선 (Dialogues.csv Veteran)
+Talk.General1,솥을 썼다. 이제 내 머리는 솥 안에 있다.,I wear the cauldron. My head is now inside the cauldron.,말풍선 (Dialogues.csv General)
+Talk.GruntHero1,나는 영웅. 어제까지는 아니었다.,"I am a hero. Until yesterday, I was not.",말풍선 (Dialogues.csv GruntHero)
+Talk.Boss1,왕이 왔다. 왕은 원래 나중에 온다.,The king has come. Kings always come last.,말풍선 (Dialogues.csv Boss)
 Talk.Boss2,끓여 보면 안다.,We'll find out.,
-Talk.Deep1,끝이 안 보입니다.,There's no end to them.,말풍선 (Dialogues.csv Deep)
-Talk.Deep2,냄비 바닥도 안 보인다. 계속 넣어라.,Nor to the pot. Keep them coming.,
-Talk.HeroLow1,성벽이 흔들린다! 버텨라!,The wall is shaking! Hold!,말풍선 (Dialogues.csv HeroLow)
+Talk.Deep1,적이 계속 옵니다.,They keep coming.,말풍선 (Dialogues.csv Deep)
+Talk.Deep2,아직 덜 왔기 때문이다.,Because they have not all arrived yet.,
+Talk.HeroLow1,"성벽이 무너지면, 성벽이 없다! 버텨라!","If the wall falls, there is no wall! Hold!",말풍선 (Dialogues.csv HeroLow)
 Font.File,DoHyeon-Regular.ttf,LilitaOne-Regular.ttf,언어별 글꼴 (Content/YJJWave/Fonts). en = Lilita One (OFL). 그 글꼴에 없는 한글은 DoHyeon으로
 Title.Name,국거리 디펜스,Soup Fodder Defense,"게임 제목 (국거리 = 냄비에 들어갈 운명, cannon fodder 말장난)"
 Title.Tagline,이긴 쪽이 끓인다,The winners do the cooking.,
@@ -222,9 +220,9 @@ Pot.Warn,곰탕은 {0}초 안에 열지 않으면 끓어 넘친다!,Open the Bon
 Pot.Open,뚜껑 열기!,Lift the lid!,냄비 위 안내
 Pot.Button,열기 Q,Open Q,좌측 패널 냄비 칸 버튼
 Talk.PotReady1,국이 끓는다! 냄비를 눌러 먹여라.,The broth is ready! Click the pot to serve it.,말풍선 (Dialogues.csv PotReady)
-Talk.PotReady2,기다리면 더 진해집니다. 넘치지만 않으면요.,Wait and it gets richer. Just don't let it boil over.,
-Talk.BossDown1,…뼈는 냄비로.,...Bones to the pot.,말풍선 (Dialogues.csv BossDown)
-Talk.Start4,전장을 눌러라. 국자로 내려친다!,Click the field. The ladle comes down!,
+Talk.PotReady2,"오래 끓이면, 오래 끓인 맛이 납니다.","Boil it longer, and it tastes boiled longer.",
+Talk.BossDown1,…왕도 뼈였다.,"...The king was bones, too.",말풍선 (Dialogues.csv BossDown)
+Talk.Start4,전장을 눌러라. 누른 곳에 국자가 떨어진다.,Click the field. The ladle falls where you click.,
 UI.Combo,연속 처치!,Combo!,화면 오른쪽 연속 처치 숫자 아래
 Card.FloodFlavor,밥심이 든든하니 한 번에 하나 더 나온다.,Well fed: one more per batch.,양념 맛 한 줄
 Card.QuickFeetFlavor,매운맛에 발이 저절로 빨라진다.,So spicy their feet move by themselves.,
