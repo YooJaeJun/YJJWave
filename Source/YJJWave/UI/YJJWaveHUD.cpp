@@ -228,6 +228,7 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 	ResultAge = Battle()->bGameOver ? ResultAge + DeltaSeconds : 0.f;
 	ComboTimer -= DeltaSeconds;
 	UpdateCoinPops(DeltaSeconds);
+	UpdatePotPops(DeltaSeconds);
 	ComboPop = FMath::Max(ComboPop - DeltaSeconds * UI().ComboPopSpeed, 0.f);
 	if (ComboTimer <= 0.f)
 	{

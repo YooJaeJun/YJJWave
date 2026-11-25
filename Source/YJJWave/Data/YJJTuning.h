@@ -95,15 +95,11 @@ struct FYJJTuning
 	UPROPERTY() float PromoteEffectTime = 0.f;   // 진급 빛줄기 연출 시간
 	UPROPERTY() float PromoteEffectScale = 0.f;   // 진급 빛줄기 크기 (진급한 유닛 DrawSize 배율)
 	// ---- 왕국의 마지막 냄비 (국물 단계는 Broth.csv, 적이 주는 뼈는 Units.csv Bones) ----
-	UPROPERTY() float PotX = 0.f;   // 냄비 자리 x (진지 오른쪽 아래)
-	UPROPERTY() float PotY = 0.f;   // 냄비 자리 y
 	UPROPERTY() float PotOverflowTime = 0.f;   // 마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다
-	UPROPERTY() float BoneFlyTime = 0.f;   // 뼈가 냄비까지 날아가는 시간
-	UPROPERTY() float BoneFlyPerSecond = 0.f;   // 날아가는 뼈 그림은 초당 이만큼까지 (뼈 자체는 다 들어간다)
 	UPROPERTY() float PotSteamTime = 0.f;   // 뚜껑 열 때 김 연출 시간
-	UPROPERTY() float PotSteamSize = 0.f;   // 뚜껑 열 때 김 크기
+	UPROPERTY() float SlashTime = 0.f;   // 영웅·보스 휘두르기 붓 초승달 시간
+	UPROPERTY() float PotSteamSize = 0.f;   // 뚜껑 열 때 김 크기 (화면 UI)
 	UPROPERTY() float PotOverflowSteamScale = 0.f;   // 끓어 넘칠 때 김 크기 배율
-	UPROPERTY() float PotServeRing = 0.f;   // 국을 나눠 줄 때 퍼지는 고리 크기
 	// ---- 말풍선 대화 (Dialogues.csv) ----
 	UPROPERTY() float HeroLowShare = 0.f;   // 영웅 체력이 이 비율 아래면 HeroLow 대화
 	// ---- 국자 내려치기 (전장 클릭) ----
@@ -145,7 +141,6 @@ struct FYJJTuning
 	UPROPERTY() float BotRallyRatio = 0.f;   // 적 수가 아군의 이 배를 넘으면 함성
 	UPROPERTY() float BotBuyGold = 0.f;   // 봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 	UPROPERTY() int32 BotPotStage = 0;   // 봇: 냄비가 이 단계(0부터) 이상이면 뚜껑을 연다
-	UPROPERTY() float BotPotZoom = 0.f;   // 봇: 냄비 스크린샷 확대
 	UPROPERTY() float BotSmackSpread = 0.f;   // 봇 국자: 전장 가운데에서 위아래로 이만큼 안
 	UPROPERTY() float BotExitDelay = 0.f;   // 끝나고 종료까지 기다리는 실제 시간
 	UPROPERTY() float BenchDepth = 0.f;   // 벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
@@ -165,13 +160,11 @@ struct FYJJUILayout
 	UPROPERTY() float PotCell = 0.f;   // Buildings 칸: 솥과 장작불
 	UPROPERTY() float PotLidCell = 0.f;   // Buildings 칸: 뚜껑
 	UPROPERTY() float FxBroth = 0.f;   // Fx 칸: 흰 타원 (국물 면·거품)
-	UPROPERTY() float FxBone = 0.f;   // Fx 칸: 뼈
 	UPROPERTY() float FxSteam = 0.f;   // Fx 칸: 김
 	UPROPERTY() float FxPromote = 0.f;   // Fx 칸: 진급 빛줄기
 	UPROPERTY() float UiBadge = 0.f;   // UI 칸: 중간·주문 별 바탕 원
 	UPROPERTY() float UiBone = 0.f;   // UI 칸: 뼈
 	UPROPERTY() float UiPot = 0.f;   // UI 칸: 냄비
-	UPROPERTY() float PotDrawSize = 0.f;   // 냄비 그릴 크기 (월드)
 	UPROPERTY() float PotAnchorY = 0.f;   // 냄비 그림에서 바닥 자리 (칸 높이 비율)
 	UPROPERTY() float PotRimY = 0.f;   // 솥 아가리 가운데 높이 (칸 비율, generate_art POT_RIM_Y/256)
 	UPROPERTY() float PotRimW = 0.f;   // 솥 아가리 너비 (칸 비율)
@@ -181,18 +174,24 @@ struct FYJJUILayout
 	UPROPERTY() float PotBubbleSize = 0.f;   // 거품 크기 (아가리 너비 비율)
 	UPROPERTY() float PotBubbleSpeed = 0.f;   // 거품 박자
 	UPROPERTY() float PotSteamPuffs = 0.f;   // 늘 피어오르는 김 수
-	UPROPERTY() float PotSteamRise = 0.f;   // 김이 올라가는 높이 (월드)
-	UPROPERTY() float PotSteamPuffSize = 0.f;   // 김 하나 크기 (월드)
+	UPROPERTY() float PotSteamRise = 0.f;   // 김이 올라가는 높이 (화면 UI)
+	UPROPERTY() float PotSteamPuffSize = 0.f;   // 김 하나 크기 (화면 UI)
 	UPROPERTY() float PotSteamAlpha = 0.f;   // 김 진하기
-	UPROPERTY() float PotLidLift = 0.f;   // 뚜껑 열 때 들리는 높이 (월드)
+	UPROPERTY() float PotLidLift = 0.f;   // 뚜껑 열 때 들리는 높이 (화면 UI)
 	UPROPERTY() float PotLidTime = 0.f;   // 뚜껑이 들렸다 내려오는 시간
-	UPROPERTY() float PotRattle = 0.f;   // 넘치기 직전 뚜껑 덜컹 크기 (월드)
+	UPROPERTY() float PotRattle = 0.f;   // 넘치기 직전 뚜껑 덜컹 크기 (화면 UI)
 	UPROPERTY() float PotRattleSpeed = 0.f;   // 뚜껑 덜컹 빠르기
 	UPROPERTY() float PotLabelGap = 0.f;   // 냄비 위 글자 간격
 	UPROPERTY() float PotHoverScale = 0.f;   // 냄비에 마우스를 올리면 커지는 배율
-	UPROPERTY() float BoneDrawSize = 0.f;   // 날아가는 뼈 크기 (월드)
-	UPROPERTY() float BoneArc = 0.f;   // 뼈가 날아가는 포물선 높이 (월드)
-	UPROPERTY() float BoneSpin = 0.f;   // 뼈 회전 빠르기
+	UPROPERTY() float BoneSpin = 0.f;   // 진급 빛 회전 빠르기
+	UPROPERTY() float FxSlash = 0.f;   // Fx 칸: 붓 초승달 (영웅·보스 휘두르기)
+	UPROPERTY() float FxImpact = 0.f;   // Fx 칸: 먹 튀김 (맞은 자리)
+	UPROPERTY() float SlashScale = 0.f;   // 초승달 크기 (휘두르기 반경 배율)
+	UPROPERTY() float SlashStartScale = 0.f;   // 초승달이 펼쳐지기 시작하는 크기
+	UPROPERTY() float SlashLift = 0.f;   // 초승달 높이 (반경 배율, 몸통께)
+	UPROPERTY() float SlashSweep = 0.f;   // 초승달이 휘둘러지며 도는 각도 (라디안)
+	UPROPERTY() float ImpactScale = 0.f;   // 먹 튀김 크기 (반경 배율)
+	UPROPERTY() float ImpactSpin = 0.f;   // 먹 튀김 도는 각도
 	UPROPERTY() float PromoteRise = 0.f;   // 진급 빛이 떠오르는 높이 (월드)
 	UPROPERTY() float PromoteBannerTier = 0.f;   // 이 진급 단계 이상이면 화면 배너 (2 = 장군)
 	// ---- 국자 · 연속 처치 ----
@@ -283,9 +282,26 @@ struct FYJJUILayout
 	UPROPERTY() float StageNameGap = 0.f;   // 자리와 이름 사이
 	UPROPERTY() float StageStarSize = 0.f;   // 월드맵 별 크기
 	UPROPERTY() float MapHeaderW = 0.f;   // 월드맵 머리글 판 너비
-	// ---- 냄비 칸 (좌측 패널) ----
-	UPROPERTY() float PotPanelH = 0.f;   // 냄비 칸 높이
-	UPROPERTY() float PotButtonW = 0.f;   // 열기 버튼 너비
+	// ---- 솥 판 (전장 왼쪽 아래 화면 UI) ----
+	UPROPERTY() float PotUiMargin = 0.f;   // 좌측 패널·화면 아래와 솥 판 사이
+	UPROPERTY() float PotUiW = 0.f;   // 솥 판 너비
+	UPROPERTY() float PotUiH = 0.f;   // 솥 판 높이 (솥 그림은 위로 삐져나온다)
+	UPROPERTY() float PotUiPad = 0.f;   // 솥 판 안쪽 여백
+	UPROPERTY() float PotUiSize = 0.f;   // 솥 그림 크기
+	UPROPERTY() float PotUiCol = 0.f;   // 솥 그림 칸 너비 (글자는 그 오른쪽)
+	UPROPERTY() float PotUiFeet = 0.f;   // 솥 발이 칸 바닥에서 떨어진 거리
+	UPROPERTY() float PotUiGlow = 0.f;   // 열 수 있을 때 판이 반짝이는 세기
+	UPROPERTY() float PotUiLineGap = 0.f;   // 단계 이름과 숫자 사이
+	UPROPERTY() float PotUiBoneIcon = 0.f;   // 숫자 앞 뼈 그림 크기
+	UPROPERTY() float PotUiNextGap = 0.f;   // 숫자와 '/ 다음 단계' 사이
+	UPROPERTY() float PotNumberText = 0.f;   // 뼈 숫자 글자 크기
+	UPROPERTY() float PotNumberPopScale = 0.f;   // 뼈가 들어오면 숫자가 툭 커지는 비율
+	UPROPERTY() float PotNumberPopSpeed = 0.f;   // 툭 커진 숫자가 돌아오는 빠르기
+	UPROPERTY() float PotPlusInterval = 0.f;   // +뼈를 이만큼 모아서 한 번에 튀긴다 (초)
+	UPROPERTY() float PotPlusMax = 0.f;   // 한꺼번에 떠 있는 +뼈 수
+	UPROPERTY() float PotPlusTime = 0.f;   // +뼈가 떠올라 사라지는 시간
+	UPROPERTY() float PotPlusRise = 0.f;   // +뼈가 떠오르는 높이
+	UPROPERTY() float PotPlusW = 0.f;   // +뼈 글자 자리 (칸 오른쪽 끝에서)
 	UPROPERTY() float PotTickW = 0.f;   // 단계 눈금 두께
 	UPROPERTY() float PotTickOver = 0.f;   // 눈금이 게이지 위아래로 삐져나오는 길이
 	UPROPERTY() float PotPromptSpeed = 0.f;   // 냄비 위 '뚜껑 열기!' 튀는 빠르기

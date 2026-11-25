@@ -217,8 +217,7 @@ Pot.Desc1,쓰러진 적의 뼈가 모여 국이 끓는다.,Fallen enemies' bones
 Pot.Desc2,뚜껑 열기 (클릭·Q): 이번 판 내내 체력·공격력이 오르고 바로 회복,"Lift the lid (Click/Q): HP and damage up for the rest of the run, plus an instant heal",
 Pot.Row,{0}  뼈 {1}  체력·공격력 +{2}%  회복 {3}%,{0}  Bones {1}  HP/DMG +{2}%  Heal {3}%,단계 표 한 줄
 Pot.Warn,곰탕은 {0}초 안에 열지 않으면 끓어 넘친다!,Open the Bone-Deep Broth within {0}s or it boils over!,
-Pot.Open,뚜껑 열기!,Lift the lid!,냄비 위 안내
-Pot.Button,열기 Q,Open Q,좌측 패널 냄비 칸 버튼
+Pot.Open,뚜껑 열기! (Q),Lift the lid! (Q),솥 위 안내
 Talk.PotReady1,국이 끓는다! 냄비를 눌러 먹여라.,The broth is ready! Click the pot to serve it.,말풍선 (Dialogues.csv PotReady)
 Talk.PotReady2,"오래 끓이면, 오래 끓인 맛이 납니다.","Boil it longer, and it tastes boiled longer.",
 Talk.BossDown1,…왕도 뼈였다.,"...The king was bones, too.",말풍선 (Dialogues.csv BossDown)
@@ -249,3 +248,7 @@ UI.CoinPop,+{0},+{0},처치 금화
 UI.NextWave,다음 웨이브 {0}/{1} · {2}초,Next wave {0}/{1} · {2}s,웨이브 예고
 UI.LastWave,마지막 웨이브! 남은 적을 쓰러뜨려라,Final wave! Defeat the rest,
 UI.PreviewCount,×{0},×{0},
+Pot.Raw,맹물,Plain water,솥 판: 아직 국이 안 됨
+Pot.Next,/ {0},/ {0},솥 판: 다음 단계 뼈
+Pot.Plus,+{0},+{0},솥 판: 들어온 뼈
+Pot.Ready,{0} · 뚜껑 열기 (Q),{0} · Lift the lid (Q),솥 칸: 열 수 있을 때

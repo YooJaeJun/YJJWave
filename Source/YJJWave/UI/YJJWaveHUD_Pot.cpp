@@ -1,4 +1,4 @@
-﻿// 왕국의 마지막 냄비: 적의 뼈가 날아와 국이 끓는다. 오래 끓일수록 진해지고, 곰탕은 넘치기 전에 열어야 한다
+﻿// 왕국의 마지막 냄비: 좌측 패널 솥 칸. 적을 쓰러뜨리면 뼈 숫자가 오르고, 오래 끓일수록 진해지고, 곰탕은 넘치기 전에 열어야 한다
 #include "CanvasTypes.h"
 #include "Data/YJJGameData.h"
 #include "Data/YJJLoc.h"
@@ -6,19 +6,6 @@
 #include "Sim/YJJBattle.h"
 #include "UI/YJJUIStyle.h"
 #include "UI/YJJWaveHUD.h"
-
-bool AYJJWaveHUD::IsOverPot(const FVector2f& World) const
-{
-	const FYJJBattle* Current = Battle();
-	if (!Current || YJJData::Broth().Num() == 0)
-	{
-		return false;
-	}
-	// 냄비 발밑에서 그림 높이만큼 위까지, 그림 너비의 절반
-	const FVector2f Feet = Current->PotPos();
-	const float Size = UI().PotDrawSize;
-	return FMath::Abs(World.X - Feet.X) <= Size * Half && World.Y <= Feet.Y && World.Y >= Feet.Y - Size * UI().PotAnchorY;
-}
 
 void AYJJWaveHUD::OpenPot()
 {
@@ -28,30 +15,87 @@ void AYJJWaveHUD::OpenPot()
 	}
 }
 
-void AYJJWaveHUD::DrawPot()
+void AYJJWaveHUD::UpdatePotPops(float Dt)
+{
+	const FYJJBattle* Current = Battle();
+	if (!Current)
+	{
+		return;
+	}
+	const FYJJUILayout& L = UI();
+	// 뼈가 늘면 모아 두었다가 조금씩 끊어 +N으로 튀긴다 (줄면 = 열었거나 넘침: 그냥 맞춘다)
+	const float Bones = Current->PotBones();
+	if (Bones > LastPotBones)
+	{
+		PotPending += Bones - LastPotBones;
+	}
+	LastPotBones = Bones;
+	PotPopTimer -= Dt;
+	if (PotPopTimer <= 0.f && PotPending >= 1.f)
+	{
+		const int32 Value = FMath::FloorToInt(PotPending);
+		PotPending -= Value;
+		PotPopTimer = L.PotPlusInterval;
+		PotNumberPop = 1.f;
+		if (PotPops.Num() >= FMath::RoundToInt(L.PotPlusMax))
+		{
+			PotPops.RemoveAt(0);
+		}
+		PotPops.Add({ Value, 0.f });
+	}
+	for (FYJJPotPop& Pop : PotPops)
+	{
+		Pop.Age += Dt;
+	}
+	PotPops.RemoveAll([&L](const FYJJPotPop& Pop) { return Pop.Age >= L.PotPlusTime; });
+	PotNumberPop = FMath::Max(PotNumberPop - Dt * L.PotNumberPopSpeed, 0.f);
+}
+
+float AYJJWaveHUD::DrawPotPanel(float X, float Y, float W)
 {
 	const FYJJBattle* Current = Battle();
 	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
 	if (!BuildingAtlas.Texture || !FxAtlas.Texture || Broth.Num() == 0)
 	{
-		return;
+		return 0.f;
 	}
 	const FYJJUILayout& L = UI();
-	const float Size = L.PotDrawSize * Zoom * (bPotHover ? L.PotHoverScale : 1.f);
-	const FVector2f Feet = WorldToScreen(Current->PotPos());
-	const FVector2f TopLeft(Feet.X - Size * Half, Feet.Y - Size * L.PotAnchorY);
+	const FYJJTuning& T = YJJData::Tune();
+	const float Pad = L.PotUiPad;
+	const float H = L.PotUiH;
 	const int32 Stage = Current->PotStage();
 	const float OverflowLeft = Current->PotOverflowLeft();
+	const bool bCan = Current->CanOpenPot() && !Current->bCardPending;
+
+	// 솥 그림 자리: 칸 왼쪽에 발을 붙인다 (김·뚜껑만 위로 살짝)
+	const float BaseSize = L.PotUiSize;
+	const FVector2f Feet(X + Pad + L.PotUiCol * Half, Y + H - L.PotUiFeet);
+	const float Top = FMath::Min(Y, Feet.Y - BaseSize * L.PotAnchorY);
+	if (!Current->bCardPending)
+	{
+		AddButton(EButton::Pot, 0, X, Top, W, Y + H - Top);
+	}
+	const bool bHover = HoverButton(EButton::Pot);
+
+	const float Glow = bCan ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
+	DrawPanel(X, Y, W, H, FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow * L.PotUiGlow), FMath::RoundToInt(L.UiPanelDark));
+
+	// 여기부터 솥 그림은 화면 픽셀로 (가상 좌표 × ViewScale)
+	const float Scale = ViewScale;
+	const float Size = BaseSize * (bHover ? L.PotHoverScale : 1.f);
+	const FVector2f TopLeftV(Feet.X - Size * Half, Feet.Y - Size * L.PotAnchorY);
+	const FVector2f TopLeft = ViewOffset + TopLeftV * Scale;
+	const float SizePx = Size * Scale;
 
 	// 솥과 장작불
 	{
 		const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, 1);
-		AddQuad(Batch, TopLeft, FVector2f(Size), BuildingAtlas.UV(FMath::RoundToInt(L.PotCell), 0), BuildingAtlas.CellUV, bPotHover ? YJJUI::Highlight : FLinearColor::White, false);
+		AddQuad(Batch, TopLeft, FVector2f(SizePx), BuildingAtlas.UV(FMath::RoundToInt(L.PotCell), 0), BuildingAtlas.CellUV, bHover ? YJJUI::Highlight : FLinearColor::White, false);
 	}
 
 	// 국물 면: 뼈가 들어갈수록 차오르고, 단계마다 색이 진해진다. 거품과 김은 단계가 오를수록 많이
-	const FVector2f Rim = TopLeft + FVector2f(Size * Half, Size * L.PotRimY);
-	const FVector2f RimSize(Size * L.PotRimW, Size * L.PotRimH);
+	const FVector2f Rim = TopLeft + FVector2f(SizePx * Half, SizePx * L.PotRimY);
+	const FVector2f RimSize(SizePx * L.PotRimW, SizePx * L.PotRimH);
 	const float FirstBones = FMath::Max(Broth[0].Bones, KINDA_SMALL_NUMBER);
 	const float Fill = FMath::Clamp(Current->PotBones() / FirstBones, 0.f, 1.f);
 	const int32 NumStages = Broth.Num();
@@ -59,7 +103,10 @@ void AYJJWaveHUD::DrawPot()
 	{
 		const int32 Bubbles = FMath::RoundToInt(L.PotBubbles * Heat);
 		const int32 Puffs = FMath::Min(Stage + 1, FMath::RoundToInt(L.PotSteamPuffs));
-		const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, FxAtlas.Texture, 1 + Bubbles + Puffs);
+		// 뚜껑을 열거나 끓어 넘칠 때 크게 한 번 (넘칠 땐 더 크게)
+		const float Ages[] = { Current->PotLidAge(), Current->PotOverflowAge() };
+		const float BurstScales[] = { 1.f, T.PotOverflowSteamScale };
+		const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, FxAtlas.Texture, 1 + Bubbles + Puffs + static_cast<int32>(UE_ARRAY_COUNT(Ages)));
 		if (Current->PotBones() > 0.f)
 		{
 			const FLinearColor Color = Stage == INDEX_NONE ? YJJUI::WithAlpha(Broth[0].Color, Fill) : Broth[Stage].Color;
@@ -78,9 +125,20 @@ void AYJJWaveHUD::DrawPot()
 		for (int32 Index = 0; Index < Puffs; ++Index)
 		{
 			const float Phase = FMath::Frac(AnimClock * Half + static_cast<float>(Index) / FMath::Max(Puffs, 1));
-			const float Puff = L.PotSteamPuffSize * Zoom * FMath::Lerp(Half, 1.f, Phase);
-			const FVector2f Spot = Rim + FVector2f(FMath::Sin(Phase * FullTurn + Index) * RimSize.X * PotSteamSpread, -L.PotSteamRise * Zoom * Phase);
+			const float Puff = L.PotSteamPuffSize * Scale * FMath::Lerp(Half, 1.f, Phase);
+			const FVector2f Spot = Rim + FVector2f(FMath::Sin(Phase * FullTurn + Index) * RimSize.X * PotSteamSpread, -L.PotSteamRise * Scale * Phase);
 			AddQuad(Batch, Spot - FVector2f(Puff * Half), FVector2f(Puff), FxAtlas.UV(FMath::RoundToInt(L.FxSteam)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, L.PotSteamAlpha * FMath::Sin(Phase * UE_PI)), false);
+		}
+		for (int32 Index = 0; Index < static_cast<int32>(UE_ARRAY_COUNT(Ages)); ++Index)
+		{
+			if (Ages[Index] < 0.f || Ages[Index] >= T.PotSteamTime)
+			{
+				continue;
+			}
+			const float Burst = Ages[Index] / FMath::Max(T.PotSteamTime, KINDA_SMALL_NUMBER);
+			const float Puff = T.PotSteamSize * BurstScales[Index] * Scale * FMath::Lerp(L.DustStartScale, L.DustEndScale, Burst);
+			const FVector2f Spot = Rim - FVector2f(0.f, L.PotSteamRise * Scale * Burst);
+			AddQuad(Batch, Spot - FVector2f(Puff * Half), FVector2f(Puff), FxAtlas.UV(FMath::RoundToInt(L.FxSteam)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - Burst), false);
 		}
 	}
 
@@ -91,45 +149,60 @@ void AYJJWaveHUD::DrawPot()
 		const float LidAge = Current->PotLidAge();
 		if (LidAge >= 0.f && LidAge < L.PotLidTime)
 		{
-			const float T = LidAge / FMath::Max(L.PotLidTime, KINDA_SMALL_NUMBER);
-			Lift = FMath::Sin(T * UE_PI) * L.PotLidLift * Zoom;
-			Tilt += T * FullTurn;
+			const float LidT = LidAge / FMath::Max(L.PotLidTime, KINDA_SMALL_NUMBER);
+			Lift = FMath::Sin(LidT * UE_PI) * L.PotLidLift * Scale;
+			Tilt += LidT * FullTurn;
 		}
 		if (OverflowLeft >= 0.f)
 		{
-			const float Danger = 1.f - OverflowLeft / FMath::Max(YJJData::Tune().PotOverflowTime, KINDA_SMALL_NUMBER);
-			Lift += FMath::Abs(FMath::Sin(AnimClock * L.PotRattleSpeed)) * L.PotRattle * Zoom * (1.f + Danger);
+			const float Danger = 1.f - OverflowLeft / FMath::Max(T.PotOverflowTime, KINDA_SMALL_NUMBER);
+			Lift += FMath::Abs(FMath::Sin(AnimClock * L.PotRattleSpeed)) * L.PotRattle * Scale * (1.f + Danger);
 		}
-		const FVector2f Ajar(Size * PotLidAjarX, -Size * PotLidAjarY);
+		const FVector2f Ajar(SizePx * PotLidAjarX, -SizePx * PotLidAjarY);
 		const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, 1);
-		AddQuadRotated(Batch, TopLeft + FVector2f(Size * Half) + Ajar - FVector2f(0.f, Lift), FVector2f(Size), Tilt, BuildingAtlas.UV(FMath::RoundToInt(L.PotLidCell), 0), BuildingAtlas.CellUV, FLinearColor::White, false);
+		AddQuadRotated(Batch, TopLeft + FVector2f(SizePx * Half) + Ajar - FVector2f(0.f, Lift), FVector2f(SizePx), Tilt, BuildingAtlas.UV(FMath::RoundToInt(L.PotLidCell), 0), BuildingAtlas.CellUV, FLinearColor::White, false);
 	}
 
-	// 위 글자: 지금 단계와 뼈 (마지막 단계면 넘치기까지 남은 시간). 열 수 있으면 "뚜껑 열기!"가 통통 튄다
-	const FVector2f Label = WorldToVirtual(Current->PotPos() - FVector2f(0.f, L.PotDrawSize * L.PotAnchorY)) - FVector2f(0.f, L.PotLabelGap + L.SmallText);
-	DrawLabel(PotStatusText(), Label.X, Label.Y, L.SmallText, PotStatusColor(), Half);
-	if (Current->CanOpenPot())
-	{
-		const float Bounce = FMath::Abs(FMath::Sin(AnimClock * L.PotPromptSpeed)) * L.PotPromptBounce;
-		DrawLabel(YJJLoc::Get(TEXT("Pot.Open")), Label.X, Label.Y - L.MidText - L.PotLabelGap - Bounce, L.MidText, YJJUI::Highlight, Half);
-	}
-}
+	// 오른쪽 글자 칸: 단계 이름 (넘치기 직전엔 붉게 남은 초) → 뼈 그림 + 큰 숫자 / 다음 단계 → 단계 눈금 게이지
+	const float TextX = X + Pad + L.PotUiCol + L.IconGap;
+	const float TextW = X + W - Pad - TextX;
+	const FString Name = OverflowLeft >= 0.f
+		? YJJLoc::Format(TEXT("Pot.Full"), { YJJLoc::Get(Broth[Stage].NameKey), FMath::CeilToInt(OverflowLeft) })
+		: Stage == INDEX_NONE ? YJJLoc::Get(TEXT("Pot.Raw")) : YJJLoc::Get(Broth[Stage].NameKey);
+	// 열 수 있으면 이름 옆에 "뚜껑 열기 (Q)"
+	const FString Line = bCan && OverflowLeft < 0.f ? YJJLoc::Format(TEXT("Pot.Ready"), { Name }) : Name;
+	DrawLabel(Line, TextX, Y + Pad, L.SmallText, PotStatusColor(), 0.f, TextW);
 
-FString AYJJWaveHUD::PotStatusText() const
-{
-	const FYJJBattle* Current = Battle();
-	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
-	const int32 Stage = Current->PotStage();
-	const float OverflowLeft = Current->PotOverflowLeft();
-	if (Stage == INDEX_NONE)
+	const float RowY = Y + Pad + L.SmallText + L.PotUiLineGap;
+	const float RowMid = RowY + L.PotNumberText * Half;
+	DrawIcon(FMath::RoundToInt(L.UiBone), TextX, RowMid - L.PotUiBoneIcon * Half, L.PotUiBoneIcon);
+	const float NumX = TextX + L.PotUiBoneIcon + L.IconGap;
+	const FString Count = FString::FromInt(FMath::FloorToInt(Current->PotBones()));
+	float CountW = 0.f;
+	MakeFont(Count, L.PotNumberText, 1.f, 0.f, CountW);
+	const float NumSize = L.PotNumberText * (1.f + PotNumberPop * L.PotNumberPopScale);
+	DrawLabelLeftMiddle(Count, NumX, RowMid, NumSize, FMath::Lerp(YJJUI::Paper, YJJUI::Highlight, PotNumberPop), 0.f);
+	const float Next = Current->PotNextBones();
+	if (Next > 0.f)
 	{
-		return YJJLoc::Format(TEXT("Pot.Empty"), { FMath::FloorToInt(Current->PotBones()), FMath::RoundToInt(Broth[0].Bones) });
+		DrawLabelLeftMiddle(YJJLoc::Format(TEXT("Pot.Next"), { FMath::RoundToInt(Next) }), NumX + CountW + L.PotUiNextGap, RowMid, L.SmallText, YJJUI::Muted, 0.f);
 	}
-	if (OverflowLeft >= 0.f)
+	// +뼈: 칸 오른쪽 끝에서 떠오르며 사라진다 (단계 이름과 겹치지 않게 조금만)
+	for (const FYJJPotPop& Pop : PotPops)
 	{
-		return YJJLoc::Format(TEXT("Pot.Full"), { YJJLoc::Get(Broth[Stage].NameKey), FMath::CeilToInt(OverflowLeft) });
+		const float PopT = Pop.Age / FMath::Max(L.PotPlusTime, KINDA_SMALL_NUMBER);
+		DrawLabelLeftMiddle(YJJLoc::Format(TEXT("Pot.Plus"), { Pop.Value }), TextX + TextW - L.PotPlusW, RowMid - L.PotPlusRise * PopT, L.MidText, YJJUI::WithAlpha(YJJUI::Highlight, 1.f - PopT * PopT), 0.f);
 	}
-	return YJJLoc::Format(TEXT("Pot.Stage"), { YJJLoc::Get(Broth[Stage].NameKey), FMath::FloorToInt(Current->PotBones()), FMath::RoundToInt(Current->PotNextBones()) });
+
+	const float MaxBones = FMath::Max(Broth.Last().Bones, KINDA_SMALL_NUMBER);
+	const float BarY = Y + H - Pad - L.BarH;
+	DrawBar(TextX, BarY, TextW, L.BarH, Current->PotBones() / MaxBones, Stage == INDEX_NONE ? YJJUI::Muted : Broth[Stage].Color);
+	for (const FYJJBrothStage& Mark : Broth)
+	{
+		DrawBox(TextX + TextW * Mark.Bones / MaxBones - L.PotTickW * Half, BarY - L.PotTickOver, L.PotTickW, L.BarH + L.PotTickOver * 2.f, YJJUI::Ink);
+	}
+
+	return H;
 }
 
 FLinearColor AYJJWaveHUD::PotStatusColor() const
@@ -138,51 +211,11 @@ FLinearColor AYJJWaveHUD::PotStatusColor() const
 	return Current->PotStage() == INDEX_NONE ? YJJUI::Paper : Current->PotOverflowLeft() >= 0.f ? YJJUI::Bad : YJJUI::Highlight;
 }
 
-float AYJJWaveHUD::DrawPotPanel(float X, float Y, float W)
-{
-	// 좌측 패널 냄비 칸: 냄비 그림 · 지금 단계 · 단계 눈금이 있는 게이지 · 열기 버튼 (냄비가 화면 밖이어도 보인다)
-	const FYJJBattle* Current = Battle();
-	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
-	if (Broth.Num() == 0)
-	{
-		return 0.f;
-	}
-	const FYJJUILayout& L = UI();
-	const float Pad = L.PanelPad;
-	const float H = L.PotPanelH;
-	const bool bCan = Current->CanOpenPot();
-	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
-	const float Icon = H - Pad * 2.f;
-	DrawIcon(FMath::RoundToInt(L.UiPot), X + Pad, Y + Pad, Icon);
-
-	const float ButtonW = L.PotButtonW;
-	const float ButtonX = X + W - Pad - ButtonW;
-	const float Glow = bCan ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
-	DrawPanel(ButtonX, Y + Pad, ButtonW, Icon, bCan ? FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow) : YJJUI::Muted, FMath::RoundToInt(L.UiCard));
-	DrawLabelCentered(YJJLoc::Get(TEXT("Pot.Button")), ButtonX + ButtonW * Half, Y + Pad + Icon * Half, L.SmallText, YJJUI::Paper, ButtonW - Pad);
-	AddButton(EButton::Pot, 0, ButtonX, Y + Pad, ButtonW, Icon);
-
-	// 글자 + 게이지 (단계 문턱마다 눈금)
-	const float TextX = X + Pad + Icon + L.IconGap;
-	const float BarW = ButtonX - L.IconGap - TextX;
-	DrawLabel(PotStatusText(), TextX, Y + Pad, L.SmallText, PotStatusColor(), 0.f, BarW);
-	const float MaxBones = FMath::Max(Broth.Last().Bones, KINDA_SMALL_NUMBER);
-	const int32 Stage = Current->PotStage();
-	const float BarY = Y + H - Pad - L.BarH;
-	DrawBar(TextX, BarY, BarW, L.BarH, Current->PotBones() / MaxBones, Stage == INDEX_NONE ? YJJUI::Muted : Broth[Stage].Color);
-	for (const FYJJBrothStage& Mark : Broth)
-	{
-		DrawBox(TextX + BarW * Mark.Bones / MaxBones - L.PotTickW * Half, BarY - L.PotTickOver, L.PotTickW, L.BarH + L.PotTickOver * 2.f, YJJUI::Ink);
-	}
-	return H;
-}
-
 void AYJJWaveHUD::DrawPotTooltip()
 {
 	const FYJJBattle* Current = Battle();
 	const TConstArrayView<FYJJBrothStage> Broth = YJJData::Broth();
-	const bool bPanel = HoverButton(EButton::Pot);
-	if ((!bPotHover && !bPanel) || Current->bGameOver || Broth.Num() == 0)
+	if (!HoverButton(EButton::Pot) || Current->bGameOver || Broth.Num() == 0)
 	{
 		return;
 	}
@@ -215,11 +248,12 @@ void AYJJWaveHUD::DrawPotTooltip()
 		Lines.Emplace(YJJLoc::Format(TEXT("Pot.Served"), { Current->BrothServed(), FMath::RoundToInt(Current->BrothHP() * Percent), FMath::RoundToInt(Current->BrothDamage() * Percent) }), YJJUI::Good);
 	}
 
+	// 솥 판 위쪽에 띄운다 (마우스가 아래쪽이라 아래로는 자리가 없다)
 	const FVector2f Mouse = ToVirtual(MouseScreen());
 	const float LineH = L.TipLineH;
 	const float H = Pad * 2.f + LineH * Lines.Num();
 	const float X = FMath::Min(Mouse.X + L.TipOffset, VirtualW - W);
-	const float Y = FMath::Clamp(Mouse.Y - H, 0.f, VirtualHeight - H);
+	const float Y = FMath::Clamp(Mouse.Y - H - L.TipOffset, 0.f, VirtualHeight - H);
 	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
 	for (int32 Line = 0; Line < Lines.Num(); ++Line)
 	{

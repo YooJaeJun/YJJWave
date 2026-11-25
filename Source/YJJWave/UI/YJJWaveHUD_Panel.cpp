@@ -158,7 +158,7 @@ void AYJJWaveHUD::DrawSidePanel()
 		Y += TH + L.SectionGap;
 	}
 
-	// ---- 냄비 (게이지 + 열기) + 넣은 양념 ----
+	// ---- 냄비 + 넣은 양념 ----
 	Y += DrawPotPanel(X, Y, W) + L.SectionGap;
 	Y += DrawSeasonings(X, Y, W) + L.SectionGap;
 

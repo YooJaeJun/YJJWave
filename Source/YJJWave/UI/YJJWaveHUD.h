@@ -79,6 +79,13 @@ struct FYJJTalkPlay
 	bool bVoiced = false;
 };
 
+/** 솥 숫자 옆에 튀어 오르는 +뼈 (모아서 한 번에, 지난 시간) */
+struct FYJJPotPop
+{
+	int32 Value = 0;
+	float Age = 0.f;
+};
+
 /** 처치 금화 튀기 (월드 자리, 금액, 지난 시간) */
 struct FYJJCoinPop
 {
@@ -203,9 +210,9 @@ private:
 	/** 조준 중인 스킬: 범위 고리 */
 	void DrawSpellAim();
 	// 왕국의 마지막 냄비 (솥 → 국물 면·거품·김 → 뚜껑 → 글자)
-	void DrawPot();
+	/** 좌측 패널 솥 칸: 솥 그림 · 단계 · 뼈 숫자(+N) · 단계 눈금 게이지. 누르면(Q) 뚜껑을 연다. 높이를 돌려준다 */
+	float DrawPotPanel(float X, float Y, float W);
 	void DrawPotTooltip();
-	bool IsOverPot(const FVector2f& World) const;
 	/** 냄비 뚜껑 열기 (클릭·Q) */
 	void OpenPot();
 	// 말풍선 대화 (Dialogues.csv): 판 사건을 듣고 조건이 맞는 대화를 한 판에 한 번
@@ -245,6 +252,8 @@ private:
 	/** 처치한 적 자리에서 금화가 튀어 오른다 */
 	void DrawCoinPops();
 	void UpdateCoinPops(float Dt);
+	/** 솥 뼈가 늘면 +N을 모아 튀기고 숫자를 툭 키운다 */
+	void UpdatePotPops(float Dt);
 	/** 화면 위 가운데: 다음 웨이브에 무엇이 몇 마리 오는지 */
 	void DrawWavePreview();
 	// 타이틀 · 월드맵 (YJJWaveHUD_Menu.cpp)
@@ -258,8 +267,6 @@ private:
 	void DrawUnitSprite(int32 Unit, float CenterX, float FootY, float Size, bool bFaceLeft);
 	bool HoverButton(EButton Kind) const;
 	/** 좌측 패널 냄비 칸 (높이를 돌려준다) */
-	float DrawPotPanel(float X, float Y, float W);
-	FString PotStatusText() const;
 	FLinearColor PotStatusColor() const;
 	/** 지금 스테이지 바닥 그림 (Stages.csv Ground, 없으면 Ground.png) */
 	UTexture2D* GroundFor(int32 Stage);
@@ -399,7 +406,6 @@ private:
 	/** 조준 중인 주문 (EYJJSpell 번호, 없으면 INDEX_NONE) */
 	int32 AimingSpell = INDEX_NONE;
 	bool bShowDebug = false;   // F4: 성능 표시
-	bool bPotHover = false;
 	// 말풍선 대화
 	TArray<int32> TalkQueue;
 	TArray<uint8> TalkUsed;
@@ -423,6 +429,12 @@ private:
 	int32 ComboCount = 0;
 	float ComboTimer = 0.f;
 	float ComboPop = 0.f;
+	// 솥 숫자
+	TArray<FYJJPotPop> PotPops;
+	float LastPotBones = 0.f;
+	float PotPending = 0.f;
+	float PotPopTimer = 0.f;
+	float PotNumberPop = 0.f;
 	float ShakeLeft = 0.f;
 	FVector2f ShakeOffset = FVector2f::ZeroVector;
 
@@ -465,8 +477,8 @@ private:
 	static constexpr float PotBubbleSpreadY = 0.25f;
 	static constexpr float PotBubbleTempo = 0.25f;
 	static constexpr float PotSteamSpread = 0.25f;
-	static constexpr float PotLidAjarTilt = -0.6f;
-	static constexpr float PotLidAjarX = 0.4f;
+	static constexpr float PotLidAjarTilt = 0.6f;
+	static constexpr float PotLidAjarX = -0.32f;
 	static constexpr float PotLidAjarY = 0.14f;
 	/** 잠긴 지역 구름을 몇 겹 (겹칠수록 짙다) */
 	static constexpr int32 RegionCloudLayers = 3;

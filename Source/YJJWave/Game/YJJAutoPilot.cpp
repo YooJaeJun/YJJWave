@@ -113,11 +113,10 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	{
 		HUD->SetTreeOpen(false);
 		FollowFront(Battle, HUD, RealDeltaSeconds);
-		// 냄비: 봇이 열 단계가 되면 냄비를 비추고 한 장 (뚜껑은 그다음 판단에서 연다)
+		// 냄비: 봇이 열 단계가 되면 한 장 (솥은 화면 UI, 뚜껑은 그다음 판단에서 연다)
 		if (!bPotShot && Battle.PotStage() >= YJJData::Tune().BotPotStage)
 		{
 			bPotShot = true;
-			HUD->FocusWorld(Battle.PotPos() - FVector2f(0.f, YJJData::Layout().PotDrawSize * Half), YJJData::Tune().BotPotZoom);
 			Mode->TakeShot(FString::Printf(TEXT("%sPot"), ShotPrefix));
 		}
 		// 말풍선 대화: 처음 것이 조금 나온 뒤 한 장

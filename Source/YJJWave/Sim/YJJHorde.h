@@ -99,6 +99,15 @@ enum class EYJJHordePhase : uint8
  * 그리기용 사본. 시뮬은 작업 스레드에서 돌고, HUD는 프레임 시작에 복사해 둔 이 사본만 읽는다
  * (시뮬과 그리기가 동시에 돌 수 있게).
  */
+/** 영웅·보스의 큰 휘두르기 (전투가 가져가 붓 초승달 연출을 띄운다) */
+struct FYJJSlash
+{
+	FVector2f Pos = FVector2f::ZeroVector;
+	float Radius = 0.f;
+	/** 1 = 오른쪽으로 휘두름, -1 = 왼쪽 */
+	float Dir = 1.f;
+};
+
 struct FYJJHordeView
 {
 	int32 HighWater = 0;
@@ -230,6 +239,8 @@ public:
 	TArray<FYJJProjectile> Projectiles;
 	/** 적이 성벽에 준 피해 (FYJJBattle이 가져가 0으로) */
 	float WallDamage = 0.f;
+	/** 이번 걸음의 영웅·보스 휘두르기 (전투가 가져가고 비운다) */
+	TArray<FYJJSlash> Slashes;
 	/** 이번 틱 최후의 저항·부활이 일어난 자리 (FYJJBattle이 연출로 바꾸고 비운다) */
 	TArray<FVector2f> Rescued;
 	/** 적을 잡아 진급한 유닛 (FYJJBattle이 연출로 바꾸고 비운다) */

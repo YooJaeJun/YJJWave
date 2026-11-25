@@ -26,9 +26,8 @@ enum class EYJJEffectKind : uint8
 	Raise,        // 강령술사가 시체를 일으킴 (보라 연기)
 	Burn,         // 불바다 (살아 있는 동안 BurnTick마다 피해)
 	Promote,      // 진급 빛줄기
-	BoneFly,      // 쓰러진 적의 뼈가 냄비로 날아간다 (Pos = 출발)
-	PotSteam,     // 냄비 김 (뚜껑 열기·끓어 넘침)
 	SmackFall,    // 국자가 내려오는 중 (끝나면 쾅)
+	Slash,        // 영웅·보스의 큰 휘두르기 (Power = 방향 1/-1)
 };
 
 /** 화면 연출 + 늦게 터지는 스킬 (MeteorFall·SmackFall 끝, Burn 동안의 피해) */
@@ -126,7 +125,6 @@ public:
 	int32 ShakeRequests = 0;
 
 	// ---- 왕국의 마지막 냄비 (적의 뼈를 고아 군대를 먹인다, 이번 판 한정) ----
-	FVector2f PotPos() const;
 	/** 지금 국물 단계 (Broth.csv 번호, 뼈가 모자라면 INDEX_NONE) */
 	int32 PotStage() const;
 	float PotBones() const { return BonesInPot; }
@@ -139,6 +137,8 @@ public:
 	bool OpenPot();
 	/** 뚜껑을 연 지 (HUD 뚜껑 들썩 연출, 음수면 연 적 없음) */
 	float PotLidAge() const { return LidAge; }
+	/** 끓어 넘친 지 (HUD 김 연출, 음수면 넘친 적 없음) */
+	float PotOverflowAge() const { return OverflowAge; }
 	int32 BrothServed() const { return Served; }
 	float BrothHP() const { return ServedHP; }
 	float BrothDamage() const { return ServedDamage; }
@@ -255,7 +255,7 @@ private:
 	float BonesInPot = 0.f;
 	float OverflowTime = 0.f;
 	float LidAge = -1.f;
-	float BoneFlyBudget = 0.f;
+	float OverflowAge = -1.f;
 	int32 Served = 0;
 	float ServedHP = 0.f;
 	float ServedDamage = 0.f;

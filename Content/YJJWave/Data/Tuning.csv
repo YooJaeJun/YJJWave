@@ -73,15 +73,11 @@ RaiseEffectTime,0.7,되살아나는 연기 연출 시간
 RaiseEffectSize,60,되살아나는 연기 크기
 PromoteEffectTime,1,진급 빛줄기 연출 시간
 PromoteEffectScale,1.6,진급 빛줄기 크기 (진급한 유닛 DrawSize 배율)
-PotX,720,냄비 자리 x (진지 오른쪽 아래)
-PotY,1150,냄비 자리 y
 PotOverflowTime,12,마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다
-BoneFlyTime,0.7,뼈가 냄비까지 날아가는 시간
-BoneFlyPerSecond,10,날아가는 뼈 그림은 초당 이만큼까지 (뼈 자체는 다 들어간다)
 PotSteamTime,1.2,뚜껑 열 때 김 연출 시간
-PotSteamSize,160,뚜껑 열 때 김 크기
+SlashTime,0.3,영웅·보스 휘두르기 붓 초승달 시간
+PotSteamSize,120,뚜껑 열 때 김 크기 (화면 UI)
 PotOverflowSteamScale,2,끓어 넘칠 때 김 크기 배율
-PotServeRing,900,국을 나눠 줄 때 퍼지는 고리 크기
 HeroLowShare,0.35,영웅 체력이 이 비율 아래면 HeroLow 대화
 SmackKnockback,650,밀쳐내기
 SmackDelay,0.16,국자가 내려오는 시간
@@ -115,7 +111,6 @@ BotMeteorLead,60,봇 유성: 적 앞줄보다 이만큼 뒤
 BotRallyRatio,1.2,적 수가 아군의 이 배를 넘으면 함성
 BotBuyGold,500,봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 BotPotStage,1,봇: 냄비가 이 단계(0부터) 이상이면 뚜껑을 연다
-BotPotZoom,1.1,봇: 냄비 스크린샷 확대
 BotSmackSpread,200,봇 국자: 전장 가운데에서 위아래로 이만큼 안
 BotExitDelay,2,끝나고 종료까지 기다리는 실제 시간
 BenchDepth,0.25,벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다

@@ -829,11 +829,7 @@ void AYJJWaveHUD::ClickWorld()
 	BuyPopupFor = INDEX_NONE;
 	if (Plot == INDEX_NONE)
 	{
-		if (IsOverPot(World))
-		{
-			OpenPot();
-		}
-		else if (World.X > Current->CampEdgeX)
+		if (World.X > Current->CampEdgeX)
 		{
 			// 진지 밖 전장: 국자로 내려친다 (스킬 F3과 같은 횟수)
 			Current->Cast(EYJJSpell::Ladle, World);

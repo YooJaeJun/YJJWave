@@ -811,6 +811,10 @@ void FYJJHorde::ApplyAttacks()
 		else if (Splash[Slot] > 0.f)
 		{
 			DamageArea(Pos[Victim], Splash[Slot], AttackDamage(Slot), Def.Knockback * SpecialOf(Slot).KnockbackScale, Opponent(static_cast<EYJJTeam>(Team[Slot])), Slot);
+			if (Def.bBoss || Def.bHero)
+			{
+				Slashes.Add({ Pos[Victim], Splash[Slot], Pos[Victim].X >= Pos[Slot].X ? 1.f : -1.f });
+			}
 		}
 		else
 		{

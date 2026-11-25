@@ -20,12 +20,10 @@ void AYJJWaveHUD::DrawWorld()
 	Canvas->DrawItem(Back);
 
 	HoverPlot = (!bTreeOpen && !IsMouseOverUI()) ? PlotAt(ScreenToWorld(MouseScreen())) : INDEX_NONE;
-	bPotHover = !bTreeOpen && !IsMouseOverUI() && HoverPlot == INDEX_NONE && IsOverPot(ScreenToWorld(MouseScreen()));
 
 	DrawGround();
 	DrawCamp();
 	DrawWall();
-	DrawPot();
 	DrawUnits();
 	DrawDying();
 	DrawProjectiles();
@@ -553,20 +551,16 @@ void AYJJWaveHUD::DrawEffects()
 			AddQuadRotated(Batch, Pivot, FVector2f(Size), Angle, FxAtlas.UV(FMath::RoundToInt(UI().FxLadle)), FxAtlas.CellUV, FLinearColor::White, false);
 			break;
 		}
-		case EYJJEffectKind::BoneFly:
+		case EYJJEffectKind::Slash:
 		{
-			// 쓰러진 자리에서 냄비까지 포물선
-			const FVector2f To = Current->PotPos() - FVector2f(0.f, UI().PotDrawSize * (UI().PotAnchorY - UI().PotRimY));
-			const FVector2f Along = FMath::Lerp(Effect.Pos, To, T) - FVector2f(0.f, UI().BoneArc * 4.f * T * (1.f - T));
-			const float Size = UI().BoneDrawSize * Zoom;
-			AddQuadRotated(Batch, WorldToScreen(Along), FVector2f(Size), T * UI().BoneSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxBone)), FxAtlas.CellUV, FLinearColor::White, false);
-			break;
-		}
-		case EYJJEffectKind::PotSteam:
-		{
-			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);
-			const FVector2f Center = WorldToScreen(Effect.Pos - FVector2f(0.f, UI().PotDrawSize * UI().PotAnchorY + UI().PotSteamRise * T));
-			AddQuad(Batch, Center - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxSteam)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
+			// 붓으로 휙 그은 초승달이 휘두른 쪽으로 펼쳐지고, 맞은 자리에 먹 튀김이 터진다
+			const float Open = FMath::Sqrt(T);
+			const float Size = Effect.Radius * UI().SlashScale * Zoom * FMath::Lerp(UI().SlashStartScale, 1.f, Open);
+			const FVector2f Center = Ground - FVector2f(0.f, Effect.Radius * UI().SlashLift * Zoom);
+			const float Angle = Effect.Power < 0.f ? UE_PI : 0.f;
+			AddQuadRotated(Batch, Center, FVector2f(Size), Angle + (Open - Half) * UI().SlashSweep * Effect.Power, FxAtlas.UV(FMath::RoundToInt(UI().FxSlash)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T * T), false);
+			const float Burst = Effect.Radius * UI().ImpactScale * Zoom * FMath::Lerp(UI().SlashStartScale, 1.f, Open);
+			AddQuadRotated(Batch, Center, FVector2f(Burst), T * UI().ImpactSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
 			break;
 		}
 		case EYJJEffectKind::Build:
