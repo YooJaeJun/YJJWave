@@ -194,6 +194,10 @@ public:
 
 	/** 빈 슬롯이 없으면 INDEX_NONE */
 	int32 Spawn(int32 Type, EYJJTeam Team, const FVector2f& Pos, const FYJJSpawnStats& Stats);
+	/** 길목 지형 (가운데 x, y, 반너비, 반높이: 월드). PassTerrain 유닛 말고는 타원 안으로 못 들어간다 */
+	void SetBlockers(const TArray<FVector4f>& InBlockers) { Blockers = InBlockers; }
+	/** 아군 병사가 멈추는 선 (적 진지가 있으면 끝까지 밀고 간다) */
+	void SetPlayerAdvanceX(float X) { Config.PlayerAdvanceX = X; }
 
 	void Step(float Dt);
 
@@ -327,6 +331,7 @@ private:
 	TArray<int32> Order;
 	FRandomStream Random;
 	FYJJHordeConfig Config;
+	TArray<FVector4f> Blockers;
 	FYJJGrid Grids[static_cast<int32>(EYJJTeam::Count)];
 	TArray<FYJJUnitSpecial> Specials;
 	FYJJUnitSpecial NoSpecial;

@@ -83,6 +83,8 @@ private:
 
 	static FAutoConsoleCommand ReloadCommand;
 	static constexpr const TCHAR* DataFolder = TEXT("YJJWave/Data");
+	/** Stages.csv Blockers 한 칸: x/y/반너비/반높이 */
+	static constexpr int32 BlockerFields = 4;
 	static constexpr const TCHAR* ContextName = TEXT("YJJData");
 	static constexpr const TCHAR* TitleName = TEXT("Title");
 };

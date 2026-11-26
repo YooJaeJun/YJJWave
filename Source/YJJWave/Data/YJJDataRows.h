@@ -50,6 +50,10 @@ struct FYJJUnitRow : public FTableRowBase
 	UPROPERTY() FString PromoteTo;
 	UPROPERTY() int32 PromoteKills = 0;
 	UPROPERTY() float Bones = 0.f;
+	/** 1이면 길목 지형(Stages.csv Blockers)을 지나간다 (영웅·보스급) */
+	UPROPERTY() int32 PassTerrain = 0;
+	/** 1이면 적 진지: 움직이지 않고, 다 부수면 이긴다 (적은 살아 있는 진지에서 나온다) */
+	UPROPERTY() int32 Camp = 0;
 };
 
 /** Buildings.csv */
@@ -93,6 +97,10 @@ struct FYJJStageRow : public FTableRowBase
 	UPROPERTY() float WallHP = 0.f;
 	/** 처음부터 지어져 있는 병영 (빈칸으로 여럿) */
 	UPROPERTY() FString StartBuild;
+	/** 적 진지: "유닛@x/y" 빈칸으로 여럿 (전장 비율). 있으면 진지를 다 부숴야 이긴다 */
+	UPROPERTY() FString Camps;
+	/** 길목 지형: "x/y/반너비/반높이" 빈칸으로 여럿 (전장 비율 타원). PassTerrain 유닛만 지나간다 */
+	UPROPERTY() FString Blockers;
 	UPROPERTY() FString Note;
 };
 

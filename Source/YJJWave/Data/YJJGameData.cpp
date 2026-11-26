@@ -175,6 +175,8 @@ void FYJJGameDatabase::LoadUnits()
 		Def.DrawSize = Row.DrawSize;
 		Def.bBoss = Row.Boss != 0;
 		Def.bHero = Row.Hero != 0;
+		Def.bPassTerrain = Row.PassTerrain != 0;
+		Def.bCamp = Row.Camp != 0;
 		Def.BigRow = Row.BigRow;
 		Def.VoiceKey = FName(*(FString(TEXT("Voice_")) + Name.ToString()));
 		Def.Bones = Row.Bones;
@@ -389,6 +391,33 @@ void FYJJGameDatabase::LoadStages()
 			{
 				Def.StartBuild.Add(Building);
 			}
+		}
+		TArray<FString> Camps;
+		Row.Camps.ParseIntoArrayWS(Camps);
+		for (const FString& Token : Camps)
+		{
+			FString UnitName, Where, X, Y;
+			if (!Token.Split(TEXT("@"), &UnitName, &Where) || !Where.Split(TEXT("/"), &X, &Y))
+			{
+				Problem(FString::Printf(TEXT("Stages.csv Camps: '%s' 는 유닛@x/y 꼴이어야 한다"), *Token));
+				continue;
+			}
+			FYJJCampSpot& Spot = Def.Camps.AddDefaulted_GetRef();
+			Spot.Unit = FindUnit(UnitName, TEXT("Stages.csv Camps"));
+			Spot.Pos = FVector2f(FCString::Atof(*X), FCString::Atof(*Y));
+		}
+		TArray<FString> Blockers;
+		Row.Blockers.ParseIntoArrayWS(Blockers);
+		for (const FString& Token : Blockers)
+		{
+			TArray<FString> Parts;
+			Token.ParseIntoArray(Parts, TEXT("/"));
+			if (Parts.Num() != BlockerFields)
+			{
+				Problem(FString::Printf(TEXT("Stages.csv Blockers: '%s' 는 x/y/반너비/반높이 꼴이어야 한다"), *Token));
+				continue;
+			}
+			Def.Blockers.Emplace(FCString::Atof(*Parts[0]), FCString::Atof(*Parts[1]), FCString::Atof(*Parts[2]), FCString::Atof(*Parts[3]));
 		}
 		Def.Region = Regions.IndexOfByPredicate([&Row](const FYJJRegionDef& Region) { return Region.Id == FName(*Row.Region); });
 		if (Def.Region == INDEX_NONE)

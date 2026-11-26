@@ -104,6 +104,26 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 		Plots[Index].Level = 1;
 		Plots[Index].SpawnTimer = SpawnInterval(Index);
 	}
+	// 적 진지: 전장 비율 자리에 세운다. 있으면 아군은 멈추지 않고 끝까지 밀고 간다
+	CampSpots.Reset();
+	for (const FYJJCampSpot& Camp : StageDef().Camps)
+	{
+		const FVector2f At(Camp.Pos.X * FieldWidth, Camp.Pos.Y * FieldHeight);
+		if (Camp.Unit != INDEX_NONE && SpawnEnemyAt(Camp.Unit, At) != INDEX_NONE)
+		{
+			CampSpots.Add(At);
+		}
+	}
+	if (CampSpots.Num() > 0)
+	{
+		Horde.SetPlayerAdvanceX(FieldWidth);
+	}
+	TArray<FVector4f> Blockers;
+	for (const FVector4f& Block : StageDef().Blockers)
+	{
+		Blockers.Emplace(Block.X * FieldWidth, Block.Y * FieldHeight, Block.Z * FieldWidth, Block.W * FieldHeight);
+	}
+	Horde.SetBlockers(Blockers);
 	SmackCharge = SmackMax();
 	ShakeRequests = 0;
 	WallMaxHP = WallHP = StageDef().WallHP;
@@ -372,9 +392,11 @@ void FYJJBattle::PostStep(float Dt)
 
 void FYJJBattle::CheckVictory()
 {
-	// 마지막 웨이브가 끝났고 남은 적이 없으면 돌파: 별을 매기고 쓰러지는 연출을 조금 보여 준 뒤 결과
+	// 돌파: 적 진지가 있는 판은 진지를 다 부수면, 없는 판은 마지막 웨이브가 끝나고 남은 적이 없으면. 별을 매기고 쓰러지는 연출을 조금 보여 준 뒤 결과
 	const FYJJTuning& T = YJJData::Tune();
-	if (!bGameOver && !bEnding && Level >= NumWaves() && LevelTime >= LevelDuration() && Horde.Num(EYJJTeam::Enemy) == 0)
+	const bool bCampStage = StageDef().Camps.Num() > 0;
+	const bool bCleared = bCampStage ? CampSpots.Num() == 0 : Level >= NumWaves() && LevelTime >= LevelDuration() && Horde.Num(EYJJTeam::Enemy) == 0;
+	if (!bGameOver && !bEnding && bCleared)
 	{
 		bEnding = true;
 		EndTimer = T.VictoryDelay;
@@ -463,6 +485,13 @@ void FYJJBattle::SpawnEnemy(int32 Unit)
 {
 	const FYJJTuning& T = YJJData::Tune();
 	// 전장 가운데 띠에서 나온다 (위아래로 다 퍼지면 아군 시야 밖으로 빠져나간다)
+	if (CampSpots.Num() > 0)
+	{
+		// 적은 살아 있는 진지에서 나온다
+		const FVector2f& Camp = CampSpots[Random.RandRange(0, CampSpots.Num() - 1)];
+		SpawnEnemyAt(Unit, Camp + FVector2f(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f)) * T.CampSpawnScatter);
+		return;
+	}
 	const float Band = FieldHeight * T.EnemySpawnBand * 0.5f;
 	const FVector2f Pos(FieldWidth - T.EnemySpawnInset - Random.FRand() * T.SpawnScatter, FieldHeight * 0.5f + Random.FRandRange(-Band, Band));
 	SpawnEnemyAt(Unit, Pos);
@@ -684,6 +713,20 @@ void FYJJBattle::CollectRewards()
 			Souls += Def.Souls * SoulScale * SoulMult;
 			SoulsEarned += Def.Souls * SoulScale * SoulMult;
 			++Kills;
+			if (Def.bCamp && CampSpots.Num() > 0)
+			{
+				// 진지가 무너졌다: 그 자리에서는 더 이상 적이 나오지 않는다
+				int32 Nearest = 0;
+				for (int32 Spot = 1; Spot < CampSpots.Num(); ++Spot)
+				{
+					if (FVector2f::DistSquared(CampSpots[Spot], Death.Pos) < FVector2f::DistSquared(CampSpots[Nearest], Death.Pos))
+					{
+						Nearest = Spot;
+					}
+				}
+				CampSpots.RemoveAtSwap(Nearest);
+				UE_LOG(LogYJJWave, Display, TEXT("[Battle] 적 진지 무너짐 (남은 진지 %d)"), CampSpots.Num());
+			}
 		}
 		else if (Def.bHero && !bGameOver)
 		{

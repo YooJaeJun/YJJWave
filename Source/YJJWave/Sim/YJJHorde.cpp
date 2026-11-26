@@ -575,6 +575,21 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	FVector2f Next = P + (NewVel + Kick) * Dt + Separation(Slot);
 	Next.X = FMath::Clamp(Next.X, Config.FieldMargin, Field.X - Config.FieldMargin);
 	Next.Y = FMath::Clamp(Next.Y, Config.FieldMargin, Field.Y - Config.FieldMargin);
+	// 길목 지형: 못 지나가는 유닛은 타원 가장자리로 밀려나 옆으로 미끄러진다
+	if (!Def.bPassTerrain)
+	{
+		for (const FVector4f& Block : Blockers)
+		{
+			const float NX = (Next.X - Block.X) / FMath::Max(Block.Z + Def.Radius, NearZero);
+			const float NY = (Next.Y - Block.Y) / FMath::Max(Block.W + Def.Radius, NearZero);
+			const float Inside = NX * NX + NY * NY;
+			if (Inside < 1.f && Inside > NearZero)
+			{
+				const float Out = FMath::InvSqrt(Inside);
+				Next = FVector2f(Block.X + (Next.X - Block.X) * Out, Block.Y + (Next.Y - Block.Y) * Out);
+			}
+		}
+	}
 	// 성벽: 적은 넘지 못하고, 아군은 성문으로만 드나든다
 	if (MyTeam == EYJJTeam::Enemy)
 	{

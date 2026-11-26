@@ -97,6 +97,7 @@ struct FYJJTuning
 	// ---- 왕국의 마지막 냄비 (국물 단계는 Broth.csv, 적이 주는 뼈는 Units.csv Bones) ----
 	UPROPERTY() float PotOverflowTime = 0.f;   // 마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다
 	UPROPERTY() float PotSteamTime = 0.f;   // 뚜껑 열 때 김 연출 시간
+	UPROPERTY() float CampSpawnScatter = 0.f;   // 적 진지에서 나오는 적이 퍼지는 거리
 	UPROPERTY() float SlashTime = 0.f;   // 영웅·보스 휘두르기 붓 초승달 시간
 	UPROPERTY() float PotSteamSize = 0.f;   // 뚜껑 열 때 김 크기 (화면 UI)
 	UPROPERTY() float PotOverflowSteamScale = 0.f;   // 끓어 넘칠 때 김 크기 배율

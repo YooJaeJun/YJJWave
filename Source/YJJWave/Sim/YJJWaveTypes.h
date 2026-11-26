@@ -175,6 +175,8 @@ struct FYJJUnitDef
 	float DrawSize = 0.f;       // 그릴 크기 (월드)
 	bool bBoss = false;
 	bool bHero = false;         // 내 영웅 (중심, 쓰러지면 패배)
+	bool bPassTerrain = false;  // 길목 지형을 지나간다
+	bool bCamp = false;         // 적 진지 (다 부수면 승리)
 	int32 RaiseUnit = INDEX_NONE; // 강령술사: 시체를 이 유닛으로 일으킨다
 	int32 BigRow = INDEX_NONE;
 	/** 진급: 적을 PromoteKills 마리 잡으면 PromoteTo 가 된다 (졸병 → 베테랑 → 장군 → 영웅) */
@@ -248,6 +250,13 @@ struct FYJJRegionDef
 };
 
 /** Stages.csv 한 줄 + 그 스테이지의 웨이브들 (Waves.csv) */
+/** 적 진지 하나: 어떤 유닛을 전장 어디(비율)에 */
+struct FYJJCampSpot
+{
+	int32 Unit = INDEX_NONE;
+	FVector2f Pos = FVector2f::ZeroVector;
+};
+
 struct FYJJStageDef
 {
 	FName Id;
@@ -258,6 +267,8 @@ struct FYJJStageDef
 	FString Ground;                              // 바닥 그림 파일 (Content/YJJWave/Art)
 	TArray<int32> StartBuild;                    // 처음부터 지어져 있는 병영 (시작하자마자 병사가 쏟아진다)
 	float WallHP = 0.f;                          // 성벽 체력 (0이 되면 패배)
+	TArray<FYJJCampSpot> Camps;                  // 적 진지 (있으면 다 부숴야 이긴다)
+	TArray<FVector4f> Blockers;                  // 길목 지형 타원 (가운데 x, y, 반너비, 반높이: 전장 비율)
 	TArray<FYJJWaveLevel> Waves;   // 0번 = 1웨이브
 	TArray<FYJJCutLine> Cutscene;  // 시작 컷씬 (Cutscenes.csv, Order 순서)
 };

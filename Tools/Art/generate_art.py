@@ -17,6 +17,8 @@ import sys
 
 from PIL import ImageChops, Image, ImageDraw, ImageFilter
 
+import rig   # AI 원화 유닛 애니메이션 (영웅·베테랑·해골왕)
+
 SS = 4                       # 크게 그린 뒤 줄인다
 INK = (46, 28, 22, 255)      # 먹선
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "..", "Content", "YJJWave", "Art")
@@ -730,7 +732,9 @@ def big_atlas():
                 continue
             for sub in range(BIG_SUB):
                 phase = (frame - first + sub / BIG_SUB) / count
-                if action == "corpse":
+                if name in rig.RIGS:
+                    img = rig.frame(name, action, phase, BIG_CELL)
+                elif action == "corpse":
                     img = corpse(u, BIG_CELL)
                 else:
                     img = draw_unit(u, old_pose(action, phase), out=BIG_CELL)
@@ -742,6 +746,14 @@ def big_atlas():
 def units_atlas():
     atlas = Image.new("RGBA", (UNIT_CELL * UNIT_COLS, UNIT_CELL * UNIT_ROWS), (0, 0, 0, 0))
     for row, u in enumerate(UNITS):
+        if u["name"] in rig.RIGS:
+            # AI 원화 리그 유닛: 칸마다 동작·위상으로 (작은 칸은 중간 프레임 없음)
+            for frame in range(BIG_LOGICAL):
+                action, first, count = action_of(frame)
+                if action is not None:
+                    img = rig.frame(u["name"], action, (frame - first) / count, UNIT_CELL)
+                    atlas.alpha_composite(img, (frame * UNIT_CELL, row * UNIT_CELL))
+            continue
         for col, pose in enumerate(FRAME_LAYOUT):
             atlas.alpha_composite(draw_unit(u, pose), (col * UNIT_CELL, row * UNIT_CELL))
         atlas.alpha_composite(corpse(u), (CORPSE_COL * UNIT_CELL, row * UNIT_CELL))

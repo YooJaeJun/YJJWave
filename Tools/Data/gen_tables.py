@@ -96,6 +96,7 @@ TUNING = [
     ("# 왕국의 마지막 냄비 (국물 단계는 Broth.csv, 적이 주는 뼈는 Units.csv Bones)", None, False, ""),
     ("PotOverflowTime", 12, False, "마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다"),
     ("PotSteamTime", 1.2, False, "뚜껑 열 때 김 연출 시간"),
+    ("CampSpawnScatter", 60, False, "적 진지에서 나오는 적이 퍼지는 거리"),
     ("SlashTime", 0.3, False, "영웅·보스 휘두르기 붓 초승달 시간"),
     ("PotSteamSize", 120, False, "뚜껑 열 때 김 크기 (화면 UI)"),
     ("PotOverflowSteamScale", 2, False, "끓어 넘칠 때 김 크기 배율"),

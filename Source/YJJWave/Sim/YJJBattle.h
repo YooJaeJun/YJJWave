@@ -256,6 +256,8 @@ private:
 	float OverflowTime = 0.f;
 	float LidAge = -1.f;
 	float OverflowAge = -1.f;
+	// 적 진지: 살아 있는 진지 자리 (적은 여기서 나온다, 비면 승리)
+	TArray<FVector2f> CampSpots;
 	int32 Served = 0;
 	float ServedHP = 0.f;
 	float ServedDamage = 0.f;
