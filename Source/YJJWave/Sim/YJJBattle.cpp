@@ -726,6 +726,7 @@ void FYJJBattle::CollectRewards()
 				}
 				CampSpots.RemoveAtSwap(Nearest);
 				UE_LOG(LogYJJWave, Display, TEXT("[Battle] 적 진지 무너짐 (남은 진지 %d)"), CampSpots.Num());
+				AddEvent(EYJJTalkTrigger::CampDown, CampSpots.Num());
 			}
 		}
 		else if (Def.bHero && !bGameOver)

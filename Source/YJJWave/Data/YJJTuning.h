@@ -185,6 +185,10 @@ struct FYJJUILayout
 	UPROPERTY() float PotLabelGap = 0.f;   // 냄비 위 글자 간격
 	UPROPERTY() float PotHoverScale = 0.f;   // 냄비에 마우스를 올리면 커지는 배율
 	UPROPERTY() float BoneSpin = 0.f;   // 진급 빛 회전 빠르기
+	UPROPERTY() float RockAspect = 0.f;   // Props.png 바위 무더기 칸 가로/세로
+	UPROPERTY() float RockRowOverlap = 0.f;   // 바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)
+	UPROPERTY() float RockWidthPad = 0.f;   // 바위 그림을 타원 너비보다 이만큼 넓게
+	UPROPERTY() float RockJitter = 0.f;   // 바위 줄마다 옆으로 어긋나는 비율
 	UPROPERTY() float BigFrameMul = 0.f;   // BigUnits.png: 논리 칸 하나를 이만큼 중간 프레임으로 쪼갰다 (generate_art BIG_SUB)
 	UPROPERTY() float BigLogicalCols = 0.f;   // BigUnits.png: 유닛 한 줄의 논리 칸 수 (generate_art BIG_LOGICAL)
 	UPROPERTY() float FxSlash = 0.f;   // Fx 칸: 붓 초승달 (영웅·보스 휘두르기)

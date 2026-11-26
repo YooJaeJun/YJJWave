@@ -257,6 +257,7 @@ private:
 	float ResultStep(float Start) const;
 	/** 성벽과 성문 (진지 오른쪽 끝, 세로로 길게) + 성문 위 체력 */
 	void DrawWall();
+	void DrawBlockers();
 	/** 처치한 적 자리에서 금화가 튀어 오른다 */
 	void DrawCoinPops();
 	void UpdateCoinPops(float Dt);
@@ -354,6 +355,8 @@ private:
 	UPROPERTY() TObjectPtr<UTexture2D> FxTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> BuildingTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> UiTexture;
+	/** 길목 지형 그림 (Props.png) */
+	UPROPERTY() TObjectPtr<UTexture2D> PropTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> GroundTexture;
 	/** 스테이지별 바닥 (파일 이름 → 텍스처) */
 	UPROPERTY() TMap<FString, TObjectPtr<UTexture2D>> GroundTextures;
@@ -478,6 +481,8 @@ private:
 	static constexpr int32 NumLanguages = 2;
 	/** 연출 하나가 그리는 사각형 수 어림 (대지 가르기 줄·불꽃이 여러 개) */
 	static constexpr int32 EffectQuadsGuess = 12;
+	/** 길목 하나를 채우는 바위 줄 수 어림 (배치 예약용) */
+	static constexpr int32 BlockerRowsGuess = 16;
 	// 냄비 거품·김·뚜껑 모양 (자리를 번호로 흩는 씨앗과 퍼지는 비율)
 	static constexpr float PotBubbleSeedX = 2.1f;
 	static constexpr float PotBubbleSeedY = 1.7f;

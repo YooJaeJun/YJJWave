@@ -329,7 +329,7 @@ void FYJJHorde::CopyTo(FYJJHordeView& View) const
 	for (const int32 Big : BigUnits)
 	{
 		const FYJJUnitDef& Def = YJJData::Unit(Type[Big]);
-		if (Alive[Big] && (Def.bBoss || Def.bHero))
+		if (Alive[Big] && (Def.bBoss || Def.bHero || Def.bCamp))
 		{
 			View.Bars.Add({ Pos[Big], Type[Big], HP[Big], MaxHP[Big] });
 		}
@@ -573,6 +573,11 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	WalkPhase[Slot] += NewVel.Size() * Dt / FMath::Max(Stride, NearZero);
 
 	FVector2f Next = P + (NewVel + Kick) * Dt + Separation(Slot);
+	if (Def.bCamp)
+	{
+		// 진지는 밀려나지 않는다
+		Next = P;
+	}
 	Next.X = FMath::Clamp(Next.X, Config.FieldMargin, Field.X - Config.FieldMargin);
 	Next.Y = FMath::Clamp(Next.Y, Config.FieldMargin, Field.Y - Config.FieldMargin);
 	// 길목 지형: 못 지나가는 유닛은 타원 가장자리로 밀려나 옆으로 미끄러진다

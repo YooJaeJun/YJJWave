@@ -24,12 +24,42 @@ void AYJJWaveHUD::DrawWorld()
 	DrawGround();
 	DrawCamp();
 	DrawWall();
+	DrawBlockers();
 	DrawUnits();
 	DrawDying();
 	DrawProjectiles();
 	DrawEffects();
 	DrawSpellAim();
 	DrawUnitBars();
+}
+
+void AYJJWaveHUD::DrawBlockers()
+{
+	// 길목 지형: 타원을 위에서 아래로 바위 무더기 줄로 채운다 (아래 줄이 위 줄을 덮는다)
+	const FYJJBattle* Current = Battle();
+	if (!PropTexture || Current->StageDef().Blockers.Num() == 0)
+	{
+		return;
+	}
+	const FYJJUILayout& L = UI();
+	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, PropTexture, Current->StageDef().Blockers.Num() * BlockerRowsGuess);
+	for (const FVector4f& Share : Current->StageDef().Blockers)
+	{
+		const FVector2f Center(Share.X * Current->FieldWidth, Share.Y * Current->FieldHeight);
+		const FVector2f Radius(Share.Z * Current->FieldWidth, Share.W * Current->FieldHeight);
+		const float RowH = Radius.X * 2.f * L.RockWidthPad / FMath::Max(L.RockAspect, 1.f);
+		const int32 Rows = FMath::Max(1, FMath::CeilToInt(Radius.Y * 2.f / FMath::Max(RowH * L.RockRowOverlap, 1.f)));
+		for (int32 Row = 0; Row < Rows; ++Row)
+		{
+			const float Y = Center.Y - Radius.Y + (Row + Half) * Radius.Y * 2.f / Rows;
+			const float Across = FMath::Sqrt(FMath::Max(1.f - FMath::Square((Y - Center.Y) / FMath::Max(Radius.Y, 1.f)), 0.f));
+			const float W = FMath::Max(Radius.X * 2.f * L.RockWidthPad * Across, RowH);
+			const float Shift = (Row % 2 == 0 ? 1.f : -1.f) * Radius.X * L.RockJitter;
+			const FVector2f Feet = WorldToScreen(FVector2f(Center.X + Shift, Y + RowH * Half));
+			const FVector2f Size = FVector2f(W, W / FMath::Max(L.RockAspect, 1.f)) * Zoom;
+			AddQuad(Batch, Feet - FVector2f(Size.X * Half, Size.Y), Size, FVector2f::ZeroVector, FVector2f::UnitVector, FLinearColor::White, Row % 2 == 1);
+		}
+	}
 }
 
 void AYJJWaveHUD::DrawWall()
@@ -177,8 +207,8 @@ void AYJJWaveHUD::DrawUnitBars()
 		const float H = L.UnitBarH;
 		const float X = Top.X - W * Half;
 		const float Y = Top.Y - H;
-		DrawBar(X, Y, W, H, Bar.HP / FMath::Max(Bar.MaxHP, KINDA_SMALL_NUMBER), Def.bBoss ? YJJUI::BossBar : YJJUI::HeroBar);
-		if (Def.bBoss)
+		DrawBar(X, Y, W, H, Bar.HP / FMath::Max(Bar.MaxHP, KINDA_SMALL_NUMBER), Def.Team == EYJJTeam::Enemy ? YJJUI::BossBar : YJJUI::HeroBar);
+		if (Def.bBoss || Def.bCamp)
 		{
 			DrawLabel(YJJLoc::Get(Def.NameKey), Top.X, Y - L.UnitBarNameGap - L.SmallText, L.SmallText, YJJUI::BossText, Half);
 		}

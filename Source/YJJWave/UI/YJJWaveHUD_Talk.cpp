@@ -38,6 +38,10 @@ void AYJJWaveHUD::TakeEvents()
 		{
 			AddBanner(YJJLoc::Format(TEXT("Pot.OpenBanner"), { YJJLoc::Get(YJJData::Broth()[Event.Unit].NameKey) }), YJJUI::Good);
 		}
+		else if (Event.Trigger == EYJJTalkTrigger::CampDown)
+		{
+			AddBanner(Event.Unit > 0 ? YJJLoc::Format(TEXT("UI.CampDown"), { Event.Unit }) : YJJLoc::Get(TEXT("UI.CampsAllDown")), YJJUI::Highlight);
+		}
 		else if (Event.Trigger == EYJJTalkTrigger::PotOverflow)
 		{
 			AddBanner(YJJLoc::Get(TEXT("Pot.OverflowBanner")), YJJUI::Bad);

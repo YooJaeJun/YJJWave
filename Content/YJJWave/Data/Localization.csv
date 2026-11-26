@@ -4,7 +4,7 @@ UI.LevelShort,Lv{0},Lv{0},병영 아래 레벨
 UI.Timer,{0}:{1},{0}:{1},레벨 남은 시간 (분:초)
 UI.VS,VS,VS,
 UI.HeroHP,{0} / {1},{0} / {1},영웅 체력
-UI.Speed,x{0},x{0},배속 버튼
+UI.Speed,▶▶ {0}배속,▶▶ x{0},배속 버튼
 UI.Paused,멈춤,Paused,일시정지
 UI.Owned,x{0},x{0},지은 수
 UI.Tree,특성 (T),Perks (T),특성 성좌 버튼
@@ -252,3 +252,7 @@ Pot.Raw,맹물,Plain water,솥 판: 아직 국이 안 됨
 Pot.Next,/ {0},/ {0},솥 판: 다음 단계 뼈
 Pot.Plus,+{0},+{0},솥 판: 들어온 뼈
 Pot.Ready,{0} · 뚜껑 열기 (Q),{0} · Lift the lid (Q),솥 칸: 열 수 있을 때
+Unit.BoneTent,뼈 천막,Bone Tent,적 진지
+Unit.BoneTower,해골 망루,Skull Tower,큰 적 진지
+UI.CampDown,적 진지를 무너뜨렸다! (남은 진지 {0}),Enemy camp destroyed! ({0} left),배너
+UI.CampsAllDown,적 진지를 모두 무너뜨렸다!,All enemy camps destroyed!,배너

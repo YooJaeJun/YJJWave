@@ -1,7 +1,7 @@
 ﻿Name,Value,Note
 SimStep,0.0333333,시뮬 고정 틱 (초)
 MaxStepsPerFrame,8,한 프레임에 도는 최대 틱 (배속 포함)
-SpeedSteps,3,배속 단계 수 (x1 x2 x4)
+SpeedSteps,2,배속 단계 수 (x1 x2 x4)
 SpeedFactor,2,단계마다 곱하는 배속
 UnitCapacity,40000,유닛 슬롯 수 (양 팀 합)
 MaxUnitsPerTeam,18000,편마다 최대 유닛 (넘으면 생산을 쉰다)

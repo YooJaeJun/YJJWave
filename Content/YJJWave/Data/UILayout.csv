@@ -26,6 +26,10 @@ PotRattleSpeed,30,뚜껑 덜컹 빠르기
 PotLabelGap,8,냄비 위 글자 간격
 PotHoverScale,1.06,냄비에 마우스를 올리면 커지는 배율
 BoneSpin,9,진급 빛 회전 빠르기
+RockAspect,4,Props.png 바위 무더기 칸 가로/세로
+RockRowOverlap,0.5,"바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)"
+RockWidthPad,1.2,바위 그림을 타원 너비보다 이만큼 넓게
+RockJitter,0.08,바위 줄마다 옆으로 어긋나는 비율
 BigFrameMul,4,BigUnits.png: 논리 칸 하나를 이만큼 중간 프레임으로 쪼갰다 (generate_art BIG_SUB)
 BigLogicalCols,24,BigUnits.png: 유닛 한 줄의 논리 칸 수 (generate_art BIG_LOGICAL)
 FxSlash,17,Fx 칸: 붓 초승달 (영웅·보스 휘두르기)
@@ -163,7 +167,7 @@ BigUnitCell,256,BigUnits.png 칸 크기 (보스·영웅)
 FxCell,128,Fx.png 칸 크기
 BuildingCell,256,Buildings.png 칸 크기
 UiCell,128,UI.png 칸 크기
-ProjectileRow,15,Units.png 투사체 줄
+ProjectileRow,17,Units.png 투사체 줄
 AnimWalkFirst,0,Units.png 걷기 첫 칸
 AnimWalkFrames,8,걷기 칸 수 (그림 크기만큼 걸을 때 한 바퀴)
 AnimAttackFirst,8,공격 첫 칸
@@ -295,7 +299,7 @@ BarShineHeight,0.35,막대 반짝 띠 높이 비율
 BarShineAlpha,0.25,막대 반짝 띠 진하기
 TextBarH,28,숫자가 들어가는 게이지 높이 (영웅·보스)
 BarTextScale,0.8,게이지 안 글자 크기 = 게이지 높이 x 이 비율
-SpeedButtonW,110,배속 버튼 너비 (화면 오른쪽 위)
+SpeedButtonW,170,배속 버튼 너비 (화면 오른쪽 위)
 SpeedButtonH,54,배속 버튼 높이
 OptionsButtonTopW,160,화면 오른쪽 위 옵션 버튼 너비 (배속 왼쪽)
 SkillChargeBarH,6,국자 칸: 다음 한 번이 차오르는 막대 두께

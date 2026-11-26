@@ -28,8 +28,8 @@ UNIT_COLS = 32
 BIG_CELL = 256          # 보스·영웅처럼 크게 그려지는 유닛 (Units.csv BigRow)
 BIG_ROWS = 4
 BIG_UNITS = ["BoneKing", "Hero"]   # BigUnits.png 줄 순서 = Units.csv BigRow
-UNIT_ROWS = 16
-PROJECTILE_ROW = 15
+UNIT_ROWS = 18
+PROJECTILE_ROW = 17
 FOOT = 0.92
 
 
@@ -133,6 +133,10 @@ UNITS.append(dict(name="General", body="#5E636E", head="#FFFFFF", hat="lidhelm",
 UNITS.append(dict(name="GruntHero", body="#FFFFFF", head="#FFFFFF", hat="flamecrown", weapon="potflail", scale=1.0, faces=HOTBLOOD_FACES,
                   build="muscle", cape="#F2C230", extras=("halo",)))
 BIG_UNITS += ["General", "GruntHero"]
+# 14~15: 적 진지 (AI 원화: 뼈 천막 = 일반, 해골 망루 = 큰 진지). 움직이지 않고, 부서지면 납작한 잔해
+UNITS.append(dict(name="BoneTent", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
+UNITS.append(dict(name="BoneTower", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
+BIG_UNITS += ["BoneTent", "BoneTower"]
 
 
 # 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다). kind는 표정 고르기에 쓴다 (UNITS faces)
@@ -605,7 +609,11 @@ ART_UNITS = {
     "Hero": dict(file="Hero.png", flip=False),
     "BoneKing": dict(file="BossBlonde.png", flip=True),
     "Veteran": dict(file="Veteran1.png", flip=False),
+    "BoneTent": dict(file="CampTent.png", flip=False, building=True),
+    "BoneTower": dict(file="CampTower.png", flip=False, building=True),
 }
+RUBBLE_HEIGHT = 0.35     # 무너진 진지: 높이를 이만큼으로 납작하게
+RUBBLE_TINT = (150, 140, 135)   # 잔해 색 (곱하기)
 ART_FILL = 0.84          # 칸 높이 중 그림이 차지하는 비율 (발은 FOOT)
 ART_LEAN = 0.8           # 자세 lean 1당 기울기 (도)
 ART_SWING = 6.0          # 공격 swing 1당 앞으로 숙이는 각도 (도)
@@ -635,6 +643,13 @@ def art_source(name):
             continue
         px[x, y] = (0, 0, 0, 0)
         q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+    if spec.get("clear_all_white"):
+        # 흰 부분이 없는 그림(바위 등): 가시 사이에 갇힌 흰 바탕까지 지운다
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = px[x, y]
+                if a and min(r, g, b) >= ART_BG_MIN and max(r, g, b) - min(r, g, b) <= ART_BG_CHROMA:
+                    px[x, y] = (0, 0, 0, 0)
     img = img.crop(img.getbbox())
     if spec["flip"]:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -658,7 +673,16 @@ def draw_art_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
 
 
 def corpse(u, out=UNIT_CELL):
-    """시체: 쓰러진 모습 (눈 X) + 바닥에 붙게 아래로"""
+    """시체: 쓰러진 모습 (눈 X) + 바닥에 붙게 아래로. 진지는 납작한 잔해"""
+    if ART_UNITS.get(u["name"], {}).get("building"):
+        whole = draw_art_unit(u, IDLE_POSES[0], out=out)
+        box = whole.getbbox()
+        part = whole.crop(box)
+        flat = part.resize((part.size[0], max(1, int(part.size[1] * RUBBLE_HEIGHT))), Image.LANCZOS)
+        flat = ImageChops.multiply(flat, Image.new("RGBA", flat.size, RUBBLE_TINT + (255,)))
+        rubble = Image.new("RGBA", (out, out), (0, 0, 0, 0))
+        rubble.paste(flat, (box[0], box[3] - flat.size[1]), flat)
+        return rubble
     img = draw_unit(u, IDLE_POSES[0], dead=True, out=out)
     img = img.rotate(90, resample=Image.BICUBIC, expand=False)
     lying = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -740,6 +764,20 @@ def big_atlas():
                     img = draw_unit(u, old_pose(action, phase), out=BIG_CELL)
                 index = (row * BIG_LOGICAL + frame) * BIG_SUB + sub
                 atlas.alpha_composite(img, ((index % UNIT_COLS) * BIG_CELL, (index // UNIT_COLS) * BIG_CELL))
+    return atlas
+
+
+PROP_W, PROP_H = 1024, 256   # Props.png 한 칸 (길목 바위: 가로로 긴 무더기)
+
+
+def props_atlas():
+    """길목 지형 그림 (AI 원화 Approved/Rocks.png, 바탕 지움): 0 = 바위 덤불"""
+    ART_UNITS.setdefault("Rocks", dict(file="Rocks.png", flip=False, clear_all_white=True))
+    rocks = art_source("Rocks")
+    scale = min(PROP_W / rocks.size[0], PROP_H / rocks.size[1])
+    fig = rocks.resize((round(rocks.size[0] * scale), round(rocks.size[1] * scale)), Image.LANCZOS)
+    atlas = Image.new("RGBA", (PROP_W, PROP_H), (0, 0, 0, 0))
+    atlas.paste(fig, ((PROP_W - fig.size[0]) // 2, PROP_H - fig.size[1]), fig)
     return atlas
 
 
@@ -1428,7 +1466,7 @@ def ground(P=GROUND_FOREST):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    jobs = [("Units.png", units_atlas), ("BigUnits.png", big_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
+    jobs = [("Props.png", props_atlas), ("Units.png", units_atlas), ("BigUnits.png", big_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
             ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", lambda: __import__("world_map").world_map())]
     for name, make in jobs:
         make().save(os.path.join(OUT, name))

@@ -97,6 +97,7 @@ void AYJJWaveHUD::LoadArt()
 	FxTexture = FYJJTextureLoader::Load(TEXT("Fx.png"), true);
 	BuildingTexture = FYJJTextureLoader::Load(TEXT("Buildings.png"), true);
 	UiTexture = FYJJTextureLoader::Load(TEXT("UI.png"), true);
+	PropTexture = FYJJTextureLoader::Load(TEXT("Props.png"), true);
 	GroundTexture = GroundFor(0);
 	WorldMapTexture = FYJJTextureLoader::Load(WorldMapFile, false);
 	UnitAtlas.Init(UnitTexture, UI().UnitCell);
