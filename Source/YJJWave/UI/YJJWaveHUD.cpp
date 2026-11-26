@@ -26,14 +26,16 @@
 // ---------------------------------------------------------------------------------------------
 // 아틀라스
 
-void FYJJAtlas::Init(UTexture2D* InTexture, float CellPixels)
+void FYJJAtlas::Init(UTexture2D* InTexture, float CellPixels, int32 InFrameMul, int32 LogicalColumns)
 {
 	Texture = InTexture;
 	if (!Texture)
 	{
 		return;
 	}
-	Columns = FMath::Max(1, FMath::RoundToInt(Texture->GetSizeX() / CellPixels));
+	SheetColumns = FMath::Max(1, FMath::RoundToInt(Texture->GetSizeX() / CellPixels));
+	Columns = LogicalColumns > 0 ? LogicalColumns : SheetColumns;
+	FrameMul = FMath::Max(1, InFrameMul);
 	CellUV = FVector2f(CellPixels / Texture->GetSizeX(), CellPixels / Texture->GetSizeY());
 }
 
@@ -42,9 +44,11 @@ FVector2f FYJJAtlas::UV(int32 Cell) const
 	return UV(Cell % Columns, Cell / Columns);
 }
 
-FVector2f FYJJAtlas::UV(int32 Column, int32 Row) const
+FVector2f FYJJAtlas::UV(int32 Column, int32 Row, int32 Sub) const
 {
-	return FVector2f(Column * CellUV.X, Row * CellUV.Y);
+	// 논리 칸 (줄, 칸, 중간) → 그림 파일에서 줄줄이 이어 놓은 칸
+	const int32 Index = (Row * Columns + Column) * FrameMul + FMath::Clamp(Sub, 0, FrameMul - 1);
+	return FVector2f((Index % SheetColumns) * CellUV.X, (Index / SheetColumns) * CellUV.Y);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -96,7 +100,7 @@ void AYJJWaveHUD::LoadArt()
 	GroundTexture = GroundFor(0);
 	WorldMapTexture = FYJJTextureLoader::Load(WorldMapFile, false);
 	UnitAtlas.Init(UnitTexture, UI().UnitCell);
-	BigAtlas.Init(BigUnitTexture, UI().BigUnitCell);
+	BigAtlas.Init(BigUnitTexture, UI().BigUnitCell, FMath::RoundToInt(UI().BigFrameMul), FMath::RoundToInt(UI().BigLogicalCols));
 	FxAtlas.Init(FxTexture, UI().FxCell);
 	BuildingAtlas.Init(BuildingTexture, UI().BuildingCell);
 	UiAtlas.Init(UiTexture, UI().UiCell);

@@ -73,3 +73,6 @@ DevLog/Output/
 ### 아트용 파이썬 가상환경, 검토용 모음 시트
 Tools/Art/.venv/
 Tools/Art/Generated/_sheet*.png
+
+# AI 원화 생성 원본 (승인된 것만 Tools/Art/AI/Approved 에)
+Tools/Art/AI/Raw/

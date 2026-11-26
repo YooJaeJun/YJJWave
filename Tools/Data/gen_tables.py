@@ -175,6 +175,8 @@ LAYOUT = [
     ("PotLabelGap", 8, False, "냄비 위 글자 간격"),
     ("PotHoverScale", 1.06, False, "냄비에 마우스를 올리면 커지는 배율"),
     ("BoneSpin", 9, False, "진급 빛 회전 빠르기"),
+    ("BigFrameMul", 4, False, "BigUnits.png: 논리 칸 하나를 이만큼 중간 프레임으로 쪼갰다 (generate_art BIG_SUB)"),
+    ("BigLogicalCols", 24, False, "BigUnits.png: 유닛 한 줄의 논리 칸 수 (generate_art BIG_LOGICAL)"),
     ("FxSlash", 17, False, "Fx 칸: 붓 초승달 (영웅·보스 휘두르기)"),
     ("FxImpact", 18, False, "Fx 칸: 먹 튀김 (맞은 자리)"),
     ("SlashScale", 2.4, False, "초승달 크기 (휘두르기 반경 배율)"),

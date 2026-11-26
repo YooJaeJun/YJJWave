@@ -371,7 +371,9 @@ void AYJJWaveHUD::DrawUnits()
 			const FYJJUnitDef& Def = Defs[Horde.Type[Slot]];
 			const float Size = Def.DrawSize * Zoom;
 			const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
-			const FVector2f UV0 = BigAtlas.UV(PickFrame(Horde, Slot), Def.BigRow);
+			float Sub = 0.f;
+			const int32 Frame = PickFrame(Horde, Slot, &Sub);
+			const FVector2f UV0 = BigAtlas.UV(Frame, Def.BigRow, FMath::Min(FMath::FloorToInt(Sub * BigAtlas.FrameMul), BigAtlas.FrameMul - 1));
 			const bool bFlip = Horde.FaceLeft[Slot] != 0;
 			FYJJSpriteInstance& Sprite = Bigs[Index];
 			Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half, Size * Half, Size * Half);
@@ -384,34 +386,51 @@ void AYJJWaveHUD::DrawUnits()
 	UnitDrawMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);
 }
 
-int32 AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot) const
+int32 AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot, float* OutSub) const
 {
 	const FYJJUILayout& L = UI();
 	const FYJJTuning& T = YJJData::Tune();
-	auto Step = [](float Fraction, float Frames) { return FMath::Clamp(FMath::FloorToInt(Fraction * Frames), 0, FMath::Max(FMath::RoundToInt(Frames) - 1, 0)); };
+	// 동작 하나 = 첫 칸 + 칸 수 + 진행(0~1). 칸 안에서 남은 진행은 OutSub (큰 유닛 중간 프레임)
+	float First = L.AnimIdleFirst;
+	float Frames = L.AnimIdleFrames;
+	float Fraction = 0.f;
 	if (Horde.Knock[Slot] >= L.AnimDazedImpulse)
 	{
 		// 세게 밀려 휘청 (헤벌레)
-		const float Wobble = FMath::Frac(AnimClock * L.AnimDazedFps / FMath::Max(L.AnimDazedFrames, 1.f) + Horde.WalkPhase[Slot]);
-		return FMath::RoundToInt(L.AnimDazedFirst) + Step(Wobble, L.AnimDazedFrames);
+		First = L.AnimDazedFirst;
+		Frames = L.AnimDazedFrames;
+		Fraction = FMath::Frac(AnimClock * L.AnimDazedFps / FMath::Max(L.AnimDazedFrames, 1.f) + Horde.WalkPhase[Slot]);
 	}
-	if (Horde.AttackAnim[Slot] > 0.f)
+	else if (Horde.AttackAnim[Slot] > 0.f)
 	{
-		const float Done = 1.f - Horde.AttackAnim[Slot] / FMath::Max(Horde.AttackLen[Slot], KINDA_SMALL_NUMBER);
-		return FMath::RoundToInt(L.AnimAttackFirst) + Step(Done, L.AnimAttackFrames);
+		First = L.AnimAttackFirst;
+		Frames = L.AnimAttackFrames;
+		Fraction = 1.f - Horde.AttackAnim[Slot] / FMath::Max(Horde.AttackLen[Slot], KINDA_SMALL_NUMBER);
 	}
-	if (Horde.Flash[Slot] > 0.f)
+	else if (Horde.Flash[Slot] > 0.f)
 	{
-		const float Done = 1.f - Horde.Flash[Slot] / FMath::Max(T.HitFlashTime, KINDA_SMALL_NUMBER);
-		return FMath::RoundToInt(L.AnimHitFirst) + Step(Done, L.AnimHitFrames);
+		First = L.AnimHitFirst;
+		Frames = L.AnimHitFrames;
+		Fraction = 1.f - Horde.Flash[Slot] / FMath::Max(T.HitFlashTime, KINDA_SMALL_NUMBER);
 	}
-	if (Horde.MoveSpeed[Slot] >= L.AnimIdleSpeed)
+	else if (Horde.MoveSpeed[Slot] >= L.AnimIdleSpeed)
 	{
-		return FMath::RoundToInt(L.AnimWalkFirst) + Step(FMath::Frac(Horde.WalkPhase[Slot]), L.AnimWalkFrames);
+		First = L.AnimWalkFirst;
+		Frames = L.AnimWalkFrames;
+		Fraction = FMath::Frac(Horde.WalkPhase[Slot]);
 	}
-	// 숨쉬기: 유닛마다 박자를 조금씩 어긋나게 (걷기 위상을 씨앗으로)
-	const float Breath = FMath::Frac(AnimClock * L.AnimIdleFps / FMath::Max(L.AnimIdleFrames, 1.f) + Horde.WalkPhase[Slot]);
-	return FMath::RoundToInt(L.AnimIdleFirst) + Step(Breath, L.AnimIdleFrames);
+	else
+	{
+		// 숨쉬기: 유닛마다 박자를 조금씩 어긋나게 (걷기 위상을 씨앗으로)
+		Fraction = FMath::Frac(AnimClock * L.AnimIdleFps / FMath::Max(L.AnimIdleFrames, 1.f) + Horde.WalkPhase[Slot]);
+	}
+	const float Scaled = FMath::Clamp(Fraction, 0.f, 1.f) * Frames;
+	const int32 Step = FMath::Clamp(FMath::FloorToInt(Scaled), 0, FMath::Max(FMath::RoundToInt(Frames) - 1, 0));
+	if (OutSub)
+	{
+		*OutSub = FMath::Clamp(Scaled - Step, 0.f, 1.f);
+	}
+	return FMath::RoundToInt(First) + Step;
 }
 
 void AYJJWaveHUD::DrawDying()

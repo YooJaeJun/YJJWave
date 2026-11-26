@@ -170,8 +170,8 @@ IDLE_COL = 19
 
 def draw_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
     """오른쪽을 보는 졸라맨. pose: step(뒷발,앞발 x), lean(앞으로 기울기), swing(-0.5 들어 올림 ~ 1 때림), bob, eyes, mouth"""
-    if u["name"] in DETAILED_UNITS:   # 영웅·보스는 따로 자세히
-        return DETAILED_UNITS[u["name"]](u, pose, dead, out, face)
+    if u["name"] in ART_UNITS:   # AI 원화 유닛 (영웅·해골왕·베테랑)
+        return draw_art_unit(u, pose, dead, out, face)
     p = Pen(UNIT_CELL, UNIT_CELL, lw=3.2)
     k = u["scale"]
     cx = 64
@@ -596,328 +596,63 @@ def draw_boss_face(p, hx, hy, hr, pose):
 
 
 # ------------------------------------------------------------------------------------------------
-# 영웅·보스: 졸병보다 훨씬 자세히 (같은 128 좌표, 가는 선으로 갑옷·뼈·망토 주름까지)
+# AI 원화 유닛 (Tools/Art/AI/Approved, 사용자 승인 시안): 흰 바탕을 지우고, 동작 칸마다 기울기·들썩임만 준다
+#   flip: 원화가 왼쪽을 보면 True (아틀라스는 모두 오른쪽을 본다)
 
-HERO_STEEL = rgba("#CDD5E0")
-HERO_STEEL_D = rgba("#8E9AAB")
-HERO_STEEL_L = rgba("#F7FAFD")
-HERO_GOLD = rgba("#F2C230")
-HERO_GOLD_D = rgba("#C48A1C")
-HERO_GOLD_L = rgba("#FFEC9A")
-HERO_RED = rgba("#D9453A")
-HERO_RED_D = rgba("#8E2A22")
-HERO_RED_L = rgba("#FF6A4A")
-HERO_LEATHER = rgba("#7A4A2A")
-HERO_LEATHER_D = rgba("#4E2E1A")
-KING_BONE = rgba("#E9E4D4")
-KING_BONE_D = rgba("#BFB49A")
-KING_BONE_L = rgba("#FFFDF2")
-KING_PURPLE = rgba("#6B3FA0")
-KING_PURPLE_D = rgba("#43226B")
-KING_IRON = rgba("#5E636E")
-KING_IRON_D = rgba("#3A3D46")
-KING_RUST = rgba("#8A4B2A", 200)
-KING_RUNE = rgba("#D08CFF")
-KING_FUR = rgba("#F4F1E8")
-KING_CAVITY = rgba("#2A1830")
-DETAIL_LW = 2.0
-MAIN_LW = 3.0
+ART_UNITS = {
+    "Hero": dict(file="Hero.png", flip=False),
+    "BoneKing": dict(file="BossBlonde.png", flip=True),
+    "Veteran": dict(file="Veteran1.png", flip=False),
+}
+ART_FILL = 0.84          # 칸 높이 중 그림이 차지하는 비율 (발은 FOOT)
+ART_LEAN = 0.8           # 자세 lean 1당 기울기 (도)
+ART_SWING = 6.0          # 공격 swing 1당 앞으로 숙이는 각도 (도)
+ART_BG_MIN = 200         # 이보다 밝고
+ART_BG_CHROMA = 24       # 채도가 이보다 낮으면 바탕 (가장자리에서 이어진 곳만)
+_art_cache = {}
 
 
-def sword_angle(swing):
-    """칼 각도: 들어 올림(-0.6)이면 머리 뒤로, 평소엔 앞 위로 겨눔, 때리면 앞 아래로"""
-    if swing < 0:
-        return math.radians(-45 + 190 * swing)
-    return math.radians(-45 + 65 * swing)
+def art_source(name):
+    """원화를 읽어 바탕을 지우고 그림 둘레로 잘라 둔다"""
+    if name in _art_cache:
+        return _art_cache[name]
+    from collections import deque
+    spec = ART_UNITS[name]
+    img = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "AI", "Approved", spec["file"])).convert("RGBA")
+    w, h = img.size
+    px = img.load()
+    seen = bytearray(w * h)
+    q = deque([(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)] + [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)])
+    while q:
+        x, y = q.popleft()
+        if x < 0 or y < 0 or x >= w or y >= h or seen[y * w + x]:
+            continue
+        seen[y * w + x] = 1
+        r, g, b, _ = px[x, y]
+        if min(r, g, b) < ART_BG_MIN or max(r, g, b) - min(r, g, b) > ART_BG_CHROMA:
+            continue
+        px[x, y] = (0, 0, 0, 0)
+        q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+    img = img.crop(img.getbbox())
+    if spec["flip"]:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    _art_cache[name] = img
+    return img
 
 
-def sword_hand(tx, shoulder_y, swing):
-    return (tx + 8 + 6 * max(swing, 0) - 6 * max(-swing, 0), shoulder_y + 9 + 3 * max(swing, 0) - 10 * max(-swing, 0))
+def draw_art_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
+    src = art_source(u["name"])
+    scale = min(out * ART_FILL / src.size[1], out * 0.96 / src.size[0])
+    fig = src.resize((max(1, round(src.size[0] * scale)), max(1, round(src.size[1] * scale))), Image.LANCZOS)
+    tilt = pose.get("lean", 0) * ART_LEAN + max(pose.get("swing", 0), 0) * ART_SWING
+    cell = Image.new("RGBA", (out, out), (0, 0, 0, 0))
+    foot = out * FOOT - pose.get("bob", 0) * out / UNIT_CELL
+    cell.paste(fig, (round((out - fig.size[0]) / 2), round(foot - fig.size[1])), fig)
+    if tilt:
+        cell = cell.rotate(-tilt, resample=Image.BICUBIC, center=(out / 2, out * FOOT))
+    return cell
 
 
-def x_eyes(p, hx, hy, hr):
-    ex, ey, gap = hx + hr * 0.18, hy + hr * 0.18, hr * 0.46
-    for ox in (-gap, gap):
-        p.stick(ex + ox - 3, ey - 3, ex + ox + 3, ey + 3, 2)
-        p.stick(ex + ox - 3, ey + 3, ex + ox + 3, ey - 3, 2)
-
-
-def draw_hero(u, pose, dead=False, out=UNIT_CELL, face=None):
-    """졸병 출신 대장: 금빛 기사 투구 + 붉은 깃털 셋, 판금 흉갑(문장 = 냄비), 어깨받이, 빨간 망토(주름·안감), 큰 칼(홈·날빛·금 손잡이)"""
-    p = Pen(UNIT_CELL, UNIT_CELL, lw=MAIN_LW)
-    cx = 64
-    foot = UNIT_CELL * FOOT
-    step, lean, swing, bob = pose["step"], pose["lean"], pose["swing"], pose.get("bob", 0)
-    hip_y = foot - 15 - bob
-    bh = 22
-    top = hip_y - bh
-    tx = cx + lean * 0.5
-    shoulder_y = top + 3
-    hr = 23
-    hx = cx + lean * 0.8
-    head_cy = top - hr * 0.62
-    sway = bob * 1.6 + (step[1] - step[0]) * 0.25
-
-    # 망토: 어깨에서 뒤로 흘러내린다 (안감은 어둡게, 주름 셋)
-    cape = [(tx + 7, top + 1), (tx - 12, top), (tx - 31 - sway, foot - 7), (tx - 24 - sway, foot - 1), (tx - 16 - sway * 0.6, foot - 6),
-            (tx - 8, foot - 1), (tx + 2, foot - 5)]
-    p.poly(cape, HERO_RED)
-    p.poly([(tx - 12, top + 2), (tx - 31 - sway, foot - 7), (tx - 24 - sway, foot - 1), (tx - 18, top + 14)], HERO_RED_D, line=False)
-    p.lw = DETAIL_LW
-    for i, (x0, x1) in enumerate(((-4, -14), (-8, -22), (0, -6))):
-        p.stick(tx + x0, top + 8 + i * 2, tx + x1 - sway * 0.6, foot - 8, 0.9, HERO_RED_D, line=False)
-
-    # 다리: 정강이 갑옷 + 무릎 덮개 + 가죽 장화 (뒷다리는 어둡게)
-    for i, (dx, st, steel) in enumerate(((-5, step[0], HERO_STEEL_D), (5, step[1], HERO_STEEL))):
-        hx0, fx = tx + dx * 0.7, tx + dx + st
-        p.lw = MAIN_LW
-        p.stick(hx0, hip_y, fx, foot - 5, 6, steel)
-        p.lw = DETAIL_LW
-        p.ellipse((hx0 + fx) * 0.5, (hip_y + foot - 5) * 0.5, 3.6, 3, HERO_STEEL_L if i else HERO_STEEL)
-        p.rect(fx - 4, foot - 6, fx + 7, foot + 1, HERO_LEATHER if i else HERO_LEATHER_D, radius=2.5)
-
-    # 뒷 어깨받이
-    p.lw = DETAIL_LW
-    p.ellipse(tx - 11, shoulder_y + 1, 7, 5.5, HERO_STEEL_D)
-
-    # 허리 아래 천 (냄비 문장 군복 자락)
-    p.poly([(tx - 11, hip_y - 4), (tx + 11, hip_y - 4), (tx + 10, hip_y + 7), (tx + 1, hip_y + 5), (tx - 9, hip_y + 7)], HERO_RED)
-    p.stick(tx - 9, hip_y + 5.5, tx + 9.5, hip_y + 5.5, 1.2, HERO_GOLD, line=False)
-
-    # 흉갑: 뒤쪽 그늘, 가운데 능선, 날빛, 금 목둘레, 냄비 문장
-    p.lw = MAIN_LW
-    plate = [(tx - 12, top + 2), (tx + 12, top + 2), (tx + 11.5, hip_y - 7), (tx + 6, hip_y - 2), (tx - 6, hip_y - 2), (tx - 11.5, hip_y - 7)]
-    p.poly(plate, HERO_STEEL)
-    p.poly([(tx - 11.5, top + 3), (tx - 5, top + 3), (tx - 5.5, hip_y - 3), (tx - 11, hip_y - 7)], HERO_STEEL_D, line=False)
-    p.rect(tx + 4.5, top + 6, tx + 6.5, hip_y - 9, HERO_STEEL_L, radius=1, line=False)
-    p.lw = DETAIL_LW
-    p.stick(tx + 0.5, top + 5, tx + 0.5, hip_y - 4, 0.9, HERO_STEEL_D, line=False)
-    p.rect(tx - 10, top - 0.5, tx + 10, top + 3.5, HERO_GOLD, radius=2)
-    p.ellipse(tx + 1, top + 12, 4.2, 3.2, HERO_GOLD)
-    p.rect(tx - 4, top + 8, tx + 6, top + 9.6, HERO_GOLD_D, radius=0.8)
-    p.ellipse(tx + 2.2, top + 11.2, 1.2, 0.9, HERO_GOLD_L, line=False)
-    # 허리띠 + 금 버클
-    p.rect(tx - 12, hip_y - 7, tx + 12, hip_y - 3, HERO_LEATHER, radius=1.5)
-    p.rect(tx + 0.5, hip_y - 7.5, tx + 5.5, hip_y - 2.5, HERO_GOLD, radius=1)
-    p.rect(tx + 2, hip_y - 6, tx + 4, hip_y - 4, HERO_LEATHER_D, radius=0.5, line=False)
-
-    # 큰 칼: 날(홈·날빛) → 금 십자 손잡이 → 가죽 손잡이 → 둥근 끝
-    ang = sword_angle(swing)
-    hand = sword_hand(tx, shoulder_y, swing)
-    ux, uy = math.cos(ang), math.sin(ang)
-    nx, ny = -uy, ux
-    at = lambda d, w=0.0: (hand[0] + ux * d + nx * w, hand[1] + uy * d + ny * w)
-    p.lw = DETAIL_LW
-    p.poly([at(5, 3.6), at(38, 3.6), at(44), at(38, -3.6), at(5, -3.6)], HERO_STEEL)
-    p.poly([at(6, 3.4), at(38, 3.4), at(43), at(38, 1.2), at(6, 1.2)], HERO_STEEL_L, line=False)
-    p.stick(*at(8), *at(34), 1.3, HERO_STEEL_D, line=False)
-    p.stick(*at(-6), *at(3), 3.2, HERO_LEATHER)
-    p.stick(*at(4, 8), *at(4, -8), 3, HERO_GOLD)
-    p.ellipse(*at(4, 8.5), 2, 2, HERO_GOLD_D)
-    p.ellipse(*at(4, -8.5), 2, 2, HERO_GOLD_D)
-    p.ellipse(*at(-7.5), 3, 3, HERO_GOLD)
-
-    # 앞팔: 팔 갑옷 → 팔꿈치 → 쇠장갑, 앞 어깨받이 (금 테)
-    sx, sy = tx + 8, shoulder_y + 2
-    ex, ey = (sx + hand[0]) * 0.5 + 2, (sy + hand[1]) * 0.5 + 3
-    p.stick(sx, sy, ex, ey, 5.5, HERO_STEEL)
-    p.stick(ex, ey, hand[0], hand[1], 5, HERO_STEEL)
-    p.ellipse(ex, ey, 2.8, 2.8, HERO_STEEL_L)
-    p.ellipse(hand[0], hand[1], 4, 4, HERO_STEEL_D)
-    p.ellipse(sx + 1, sy - 1, 8, 6, HERO_STEEL)
-    p.d.arc([p.s(sx - 7), p.s(sy - 7), p.s(sx + 9), p.s(sy + 5)], 200, 340, fill=HERO_GOLD, width=int(p.s(1.6)))
-    p.ellipse(sx + 3, sy - 3, 2, 1.4, HERO_STEEL_L, line=False)
-
-    # 머리
-    p.lw = MAIN_LW
-    p.ellipse(hx, head_cy, hr, hr * 0.92, rgba(u["head"]))
-    if dead:
-        x_eyes(p, hx, head_cy, hr)
-    else:
-        draw_face(p, hx, head_cy, hr, face or u["faces"].get(pose.get("kind", "idle"), "hotblood"), pose)
-
-    # 투구: 깃털 셋 (뒤로 나부낌) → 볼 가리개 → 돔(그늘·날빛) → 챙(리벳) → 가운데 볏
-    flutter = bob * 0.6 + swing * 1.2
-    for i, (color, dy, length) in enumerate(((HERO_RED_D, 2, 30), (HERO_RED, -2, 34), (HERO_RED_L, -6, 27))):
-        root = (hx - 2, head_cy - hr * 1.05)
-        tip = (hx - length, head_cy - hr * 1.05 + dy - 6 - flutter)
-        mid = ((root[0] + tip[0]) * 0.5, (root[1] + tip[1]) * 0.5 - 7)
-        p.lw = DETAIL_LW
-        p.poly([root, (mid[0] + 2, mid[1] - 4), tip, (mid[0], mid[1] + 5), (root[0] - 2, root[1] + 5)], color)
-        p.stick(root[0] - 1, root[1] + 1, tip[0] + 3, tip[1] + 1, 0.8, HERO_RED_D if i else HERO_RED, line=False)
-    p.poly([(hx - hr * 1.02, head_cy - hr * 0.16), (hx - hr * 0.6, head_cy - hr * 0.16), (hx - hr * 0.66, head_cy + hr * 0.55),
-            (hx - hr * 0.94, head_cy + hr * 0.42)], HERO_GOLD)
-    p.poly([(hx - hr * 0.98, head_cy - hr * 0.1), (hx - hr * 0.82, head_cy - hr * 0.1), (hx - hr * 0.86, head_cy + hr * 0.44),
-            (hx - hr * 0.92, head_cy + hr * 0.4)], HERO_GOLD_D, line=False)
-    box = [p.s(hx - hr * 1.04), p.s(head_cy - hr * 1.14), p.s(hx + hr * 1.04), p.s(head_cy + hr * 0.7)]
-    o = p.s(MAIN_LW)
-    p.d.chord([box[0] - o, box[1] - o, box[2] + o, box[3] + o], 180, 360, fill=INK)
-    p.d.chord(box, 180, 360, fill=HERO_GOLD_D)
-    p.d.chord([box[0] + p.s(5), box[1] + p.s(1.5), box[2], box[3]], 180, 360, fill=HERO_GOLD)
-    p.d.arc([p.s(hx - hr * 0.6), p.s(head_cy - hr * 1.0), p.s(hx + hr * 0.9), p.s(head_cy + hr * 0.3)], 250, 320, fill=HERO_GOLD_L, width=int(p.s(2.2)))
-    p.lw = DETAIL_LW
-    p.rect(hx - hr * 1.06, head_cy - hr * 0.26, hx + hr * 1.06, head_cy - hr * 0.06, HERO_GOLD_D, radius=2)
-    for i in range(5):
-        p.dot(hx - hr * 0.8 + i * hr * 0.4, head_cy - hr * 0.16, 1.1, HERO_GOLD_L)
-    p.rect(hx - 2.4, head_cy - hr * 1.16, hx + 2.4, head_cy - hr * 0.26, HERO_GOLD, radius=1.5)
-    p.stick(hx + 0.6, head_cy - hr * 1.08, hx + 0.6, head_cy - hr * 0.34, 0.8, HERO_GOLD_L, line=False)
-    return p.done(out, out)
-
-
-def draw_bone_king(u, pose, dead=False, out=UNIT_CELL, face=None):
-    """해골왕: 보랏빛 기운, 해진 보라 망토(금 테·흰 모피 깃), 갈비뼈·척추·골반이 보이는 뼈 몸,
-    가시 박힌 쇠 어깨받이, 녹슨 대검(이 빠진 날·보라 문양·해골 손잡이), 보석 박힌 비뚤어진 왕관"""
-    p = Pen(UNIT_CELL, UNIT_CELL, lw=MAIN_LW)
-    cx = 64
-    foot = UNIT_CELL * FOOT
-    step, lean, swing, bob = pose["step"], pose["lean"], pose["swing"], pose.get("bob", 0)
-    hip_y = foot - 17 - bob
-    bh = 24
-    top = hip_y - bh
-    tx = cx + lean * 0.5
-    shoulder_y = top + 3
-    hr = 22
-    hx = cx + lean * 0.8
-    head_cy = top - hr * 0.6
-    sway = bob * 1.6 + (step[1] - step[0]) * 0.25
-    attack = pose.get("kind") == "attack" and pose.get("mouth") == "open"
-
-    # 망토: 아래가 해져 들쭉날쭉, 안감 어둡게, 바깥 가장자리는 금 테
-    edge = [(tx - 14, top - 1)]
-    left = tx - 34 - sway
-    for i in range(7):
-        x = left + i * 6.5
-        edge.append((x, foot - (1 if i % 2 == 0 else 8) + (i % 3)))
-    edge += [(tx + 8, foot - 6), (tx + 9, top + 1)]
-    cape = [edge[0], (left - 2, foot - 10)] + edge[1:]
-    p.poly(cape, KING_PURPLE)
-    p.poly([(tx - 14, top + 1), (left - 2, foot - 10), (left, foot - 1), (left + 6.5, foot - 8), (tx - 18, top + 16)], KING_PURPLE_D, line=False)
-    p.lw = DETAIL_LW
-    p.stick(tx - 14, top + 1, left - 2, foot - 10, 1.4, HERO_GOLD, line=False)
-    for i in range(3):
-        p.stick(tx - 8 - i * 6, top + 10, left + 8 + i * 9 - sway * 0.4, foot - 10, 0.9, KING_PURPLE_D, line=False)
-
-    # 다리: 넓적다리뼈 → 무릎 마디 → 정강이뼈 → 뼈 발 (뒷다리는 그늘)
-    for i, (dx, st) in enumerate(((-5, step[0]), (5, step[1]))):
-        bone = KING_BONE if i else KING_BONE_D
-        h0 = (tx + dx * 0.7, hip_y + 2)
-        f = (tx + dx + st, foot - 3)
-        knee = ((h0[0] + f[0]) * 0.5 + 2, (h0[1] + f[1]) * 0.5)
-        p.lw = DETAIL_LW
-        p.stick(*h0, *knee, 3.4, bone)
-        p.stick(*knee, *f, 3, bone)
-        p.ellipse(*knee, 3.2, 2.8, bone)
-        p.poly([(f[0] - 3, f[1] - 1), (f[0] + 8, f[1] + 0.5), (f[0] + 8, f[1] + 3), (f[0] - 3, f[1] + 3)], bone)
-        for t in range(2):
-            p.stick(f[0] + 3 + t * 2.5, f[1] + 0.5, f[0] + 3 + t * 2.5, f[1] + 3, 0.6, KING_BONE_D, line=False)
-
-    # 골반
-    p.poly([(tx - 9, hip_y - 2), (tx + 9, hip_y - 2), (tx + 6, hip_y + 4), (tx + 1.5, hip_y + 2), (tx - 1.5, hip_y + 2), (tx - 6, hip_y + 4)], KING_BONE)
-    p.ellipse(tx - 3.5, hip_y + 0.5, 1.6, 1.4, KING_CAVITY, line=False)
-    p.ellipse(tx + 3.5, hip_y + 0.5, 1.6, 1.4, KING_CAVITY, line=False)
-
-    # 뒷 어깨받이
-    p.ellipse(tx - 12, shoulder_y + 1, 7, 5.5, KING_IRON_D)
-
-    # 몸: 텅 빈 가슴(어둠) 위로 척추 마디와 갈비뼈 넷, 가운데 가슴뼈
-    p.lw = MAIN_LW
-    p.ellipse(tx, top + 11, 12.5, 12, KING_CAVITY)
-    p.lw = DETAIL_LW
-    for i in range(6):
-        p.ellipse(tx - 3, top + 4 + i * 3.6, 2, 1.6, KING_BONE_D)
-    for i in range(4):
-        r = 11 - i * 0.9
-        p.arc(tx, top + 1 + i * 4.6, r, 25, 155, 1.9, KING_BONE)
-    p.rect(tx + 1, top + 3, tx + 4, top + 15, KING_BONE, radius=1.5)
-    p.stick(tx - 3, top + 22, tx - 3, hip_y - 2, 2.2, KING_BONE_D)   # 허리 척추
-
-    # 녹슨 대검: 이 빠진 날 → 녹·보라 문양 → 뼈 십자 손잡이(가운데 작은 해골) → 해골 끝
-    ang = sword_angle(swing)
-    hand = sword_hand(tx, shoulder_y, swing)
-    ux, uy = math.cos(ang), math.sin(ang)
-    nx, ny = -uy, ux
-    at = lambda d, w=0.0: (hand[0] + ux * d + nx * w, hand[1] + uy * d + ny * w)
-    blade = [at(5, 5), at(14, 5), at(16, 3.4), at(18, 5), at(30, 5), at(33, 3), at(35, 5), at(41, 4.6), at(48), at(41, -4.6),
-             at(26, -5), at(24, -3.2), at(22, -5), at(5, -5)]
-    p.poly(blade, KING_IRON)
-    p.poly([at(6, 4.5), at(14, 4.5), at(16, 3), at(18, 4.5), at(30, 4.5), at(41, 3.8), at(46, 0.6), at(6, 1.5)], rgba("#7C828E"), line=False)
-    for d, w, r in ((12, -2.4, 2.4), (27, 2.2, 1.8), (37, -1.8, 2)):
-        p.ellipse(*at(d, w), r, r * 0.7, KING_RUST, line=False)
-    for d in (10, 18, 26, 34):
-        p.stick(*at(d, -1), *at(d + 3, 1), 1.1, KING_RUNE if not attack else BOSS_GLOW_HOT, line=False)
-    p.stick(*at(-7), *at(3), 3.4, KING_IRON_D)
-    p.stick(*at(4, 9), *at(4, -9), 3, KING_BONE)
-    p.ellipse(*at(4, 9.5), 2.4, 2.4, KING_BONE)
-    p.ellipse(*at(4, -9.5), 2.4, 2.4, KING_BONE)
-    p.ellipse(*at(4), 3.2, 3, KING_BONE)
-    p.dot(*at(4, 1), 0.8, KING_CAVITY)
-    p.dot(*at(4, -1), 0.8, KING_CAVITY)
-    p.ellipse(*at(-8.5), 3.4, 3.2, KING_BONE)
-
-    # 앞팔: 위팔뼈 → 팔꿈치 → 아래팔뼈 둘 → 뼈 손, 가시 박힌 쇠 어깨받이 (금 테)
-    sx, sy = tx + 8, shoulder_y + 2
-    ex, ey = (sx + hand[0]) * 0.5 + 2, (sy + hand[1]) * 0.5 + 3
-    p.stick(sx, sy, ex, ey, 3.4, KING_BONE)
-    p.stick(ex, ey, hand[0], hand[1] - 1.2, 1.8, KING_BONE)
-    p.stick(ex, ey, hand[0], hand[1] + 1.2, 1.8, KING_BONE)
-    p.ellipse(ex, ey, 2.6, 2.6, KING_BONE)
-    p.ellipse(hand[0], hand[1], 3.6, 3.4, KING_BONE)
-    for i in range(3):
-        p.stick(hand[0] - 2 + i * 2, hand[1] - 3, hand[0] - 1 + i * 2, hand[1] + 3.5, 0.7, KING_BONE_D, line=False)
-    for i in range(3):
-        a = math.radians(-150 + i * 40)
-        base = (sx + 1 + math.cos(a) * 6, sy - 1 + math.sin(a) * 4.5)
-        p.poly([(base[0] - 2.4, base[1]), (base[0] + math.cos(a) * 7, base[1] + math.sin(a) * 7), (base[0] + 2.4, base[1])], KING_IRON_D)
-    p.ellipse(sx + 1, sy - 1, 8.5, 6.5, KING_IRON)
-    p.d.arc([p.s(sx - 7.5), p.s(sy - 7.5), p.s(sx + 9.5), p.s(sy + 5.5)], 200, 340, fill=HERO_GOLD, width=int(p.s(1.6)))
-    p.ellipse(sx + 3, sy - 3, 2.2, 1.4, rgba("#8A909C"), line=False)
-
-    # 흰 모피 깃 (검은 점)
-    p.lw = DETAIL_LW
-    p.ellipse(tx - 1, top + 0.5, 13, 4.2, KING_FUR)
-    for i in range(4):
-        p.stick(tx - 9 + i * 5.5, top - 0.5, tx - 9 + i * 5.5, top + 1.8, 1, INK, line=False)
-
-    # 해골 머리 + 얼굴 (보스 얼굴 그대로) + 금 간 자국
-    p.lw = MAIN_LW
-    p.ellipse(hx, head_cy, hr, hr * 0.92, KING_BONE)
-    p.ellipse(hx - hr * 0.45, head_cy - hr * 0.1, hr * 0.42, hr * 0.6, KING_BONE_D, line=False)
-    p.ellipse(hx + hr * 0.35, head_cy - hr * 0.45, hr * 0.28, hr * 0.16, KING_BONE_L, line=False)
-    p.lw = DETAIL_LW
-    if dead:
-        x_eyes(p, hx, head_cy, hr)
-    else:
-        draw_boss_face(p, hx, head_cy, hr, pose)
-
-    # 왕관: 살짝 비뚤어진 금관, 띠의 보석(가운데 붉은 것, 양옆 보라), 뾰족 끝마다 금구슬, 찌그러진 자국
-    tilt = math.radians(-8)
-    cy0 = head_cy - hr * 0.62
-    rot = lambda x, y: (hx + (x - hx) * math.cos(tilt) - (y - cy0) * math.sin(tilt), cy0 + (x - hx) * math.sin(tilt) + (y - cy0) * math.cos(tilt))
-    pts = [rot(hx - hr * 0.85, cy0)]
-    tips = []
-    for i in range(5):
-        x = hx - hr * 0.85 + i * hr * 0.425
-        tip = rot(x + hr * 0.21, cy0 - hr * (0.78 if i % 2 == 0 else 0.62))
-        tips.append(tip)
-        pts += [tip, rot(x + hr * 0.425, cy0 - hr * 0.3)]
-    pts[-1] = rot(hx + hr * 0.85, cy0)
-    p.poly(pts, HERO_GOLD)
-    p.poly([rot(hx - hr * 0.85, cy0), rot(hx - hr * 0.85, cy0 - hr * 0.3), rot(hx - hr * 0.4, cy0 - hr * 0.3), rot(hx - hr * 0.4, cy0)], HERO_GOLD_D, line=False)
-    band = [rot(hx - hr * 0.9, cy0 - hr * 0.08), rot(hx + hr * 0.9, cy0 - hr * 0.08), rot(hx + hr * 0.9, cy0 + hr * 0.16), rot(hx - hr * 0.9, cy0 + hr * 0.16)]
-    p.poly(band, HERO_GOLD_D)
-    for tip in tips:
-        p.ellipse(tip[0], tip[1], 1.8, 1.8, HERO_GOLD_L)
-    for i, color in enumerate((rgba("#9B4DFF"), rgba("#E0303A"), rgba("#9B4DFF"))):
-        g = rot(hx - hr * 0.45 + i * hr * 0.45, cy0 + hr * 0.04)
-        p.ellipse(g[0], g[1], 2.2 if i == 1 else 1.7, 2.2 if i == 1 else 1.7, color)
-        p.dot(g[0] - 0.6, g[1] - 0.6, 0.6, rgba("#FFFFFF"))
-    d0, d1 = rot(hx + hr * 0.3, cy0 - hr * 0.5), rot(hx + hr * 0.42, cy0 - hr * 0.2)
-    p.stick(d0[0], d0[1], d1[0], d1[1], 0.9, HERO_GOLD_D, line=False)
-    p.lw = MAIN_LW
-    return p.done(out, out)
-
-
-DETAILED_UNITS = {"Hero": draw_hero, "BoneKing": draw_bone_king}
 
 
 def corpse(u, out=UNIT_CELL):
@@ -949,16 +684,58 @@ def orb():
     return p.done(UNIT_CELL, UNIT_CELL)
 
 
+BIG_SUB = 4          # 큰 유닛은 한 칸을 4칸으로 쪼갠 중간 프레임까지 (UILayout BigFrameMul)
+BIG_LOGICAL = 24     # 큰 유닛 한 줄의 논리 칸 수 (0~17 동작, 18 시체, 19~22 숨쉬기) (UILayout BigLogicalCols)
+ACTIONS = [("walk", 0, 8), ("attack", 8, 6), ("hit", 14, 2), ("dazed", 16, 2), ("corpse", 18, 1), ("idle", 19, 4)]
+
+
+def action_of(frame):
+    for name, first, count in ACTIONS:
+        if first <= frame < first + count:
+            return name, first, count
+    return None, 0, 1
+
+
+def lerp_pose(a, b, t):
+    q = dict(a)
+    for key in ("lean", "swing", "bob"):
+        q[key] = a.get(key, 0) + (b.get(key, 0) - a.get(key, 0)) * t
+    q["step"] = tuple(x + (y - x) * t for x, y in zip(a["step"], b["step"]))
+    return q
+
+
+def old_pose(name, phase):
+    """코드 그림 유닛: 동작 칸 사이를 섞어 중간 프레임"""
+    keys = {"walk": None, "attack": ATTACK_POSES, "hit": HIT_POSES, "dazed": DAZED_POSES, "idle": IDLE_POSES}[name]
+    if keys is None:
+        return walk_pose(phase * WALK_FRAMES, WALK_FRAMES)
+    x = phase * len(keys)
+    i = min(int(x), len(keys) - 1)
+    loop = name in ("idle", "dazed")
+    j = (i + 1) % len(keys) if loop else min(i + 1, len(keys) - 1)
+    return lerp_pose(keys[i], keys[j], x - int(x))
+
+
 def big_atlas():
-    """보스·영웅: 같은 칸 배치를 256px로 (128px를 늘리면 흐릿해서)"""
-    atlas = Image.new("RGBA", (BIG_CELL * UNIT_COLS, BIG_CELL * BIG_ROWS), (0, 0, 0, 0))
+    """보스·영웅: 256px, 논리 칸마다 BIG_SUB개 중간 프레임 (걷기 32 · 공격 24 · 숨쉬기 16 · 맞음 8).
+    자세는 동작 칸 사이를 섞는다 (AI 원화 유닛은 기울기·들썩임만). 칸 번호 = (줄 × 24 + 논리 칸) × 4 + 중간"""
+    per_row = BIG_LOGICAL * BIG_SUB
+    rows = (len(BIG_UNITS) * per_row + UNIT_COLS - 1) // UNIT_COLS
+    atlas = Image.new("RGBA", (BIG_CELL * UNIT_COLS, BIG_CELL * rows), (0, 0, 0, 0))
     for row, name in enumerate(BIG_UNITS):
         u = next(x for x in UNITS if x["name"] == name)
-        for col, pose in enumerate(FRAME_LAYOUT):
-            atlas.alpha_composite(draw_unit(u, pose, out=BIG_CELL), (col * BIG_CELL, row * BIG_CELL))
-        atlas.alpha_composite(corpse(u, BIG_CELL), (CORPSE_COL * BIG_CELL, row * BIG_CELL))
-        for i, pose in enumerate(IDLE_POSES):
-            atlas.alpha_composite(draw_unit(u, pose, out=BIG_CELL), ((IDLE_COL + i) * BIG_CELL, row * BIG_CELL))
+        for frame in range(BIG_LOGICAL):
+            action, first, count = action_of(frame)
+            if action is None:
+                continue
+            for sub in range(BIG_SUB):
+                phase = (frame - first + sub / BIG_SUB) / count
+                if action == "corpse":
+                    img = corpse(u, BIG_CELL)
+                else:
+                    img = draw_unit(u, old_pose(action, phase), out=BIG_CELL)
+                index = (row * BIG_LOGICAL + frame) * BIG_SUB + sub
+                atlas.alpha_composite(img, ((index % UNIT_COLS) * BIG_CELL, (index // UNIT_COLS) * BIG_CELL))
     return atlas
 
 

@@ -184,6 +184,8 @@ struct FYJJUILayout
 	UPROPERTY() float PotLabelGap = 0.f;   // 냄비 위 글자 간격
 	UPROPERTY() float PotHoverScale = 0.f;   // 냄비에 마우스를 올리면 커지는 배율
 	UPROPERTY() float BoneSpin = 0.f;   // 진급 빛 회전 빠르기
+	UPROPERTY() float BigFrameMul = 0.f;   // BigUnits.png: 논리 칸 하나를 이만큼 중간 프레임으로 쪼갰다 (generate_art BIG_SUB)
+	UPROPERTY() float BigLogicalCols = 0.f;   // BigUnits.png: 유닛 한 줄의 논리 칸 수 (generate_art BIG_LOGICAL)
 	UPROPERTY() float FxSlash = 0.f;   // Fx 칸: 붓 초승달 (영웅·보스 휘두르기)
 	UPROPERTY() float FxImpact = 0.f;   // Fx 칸: 먹 튀김 (맞은 자리)
 	UPROPERTY() float SlashScale = 0.f;   // 초승달 크기 (휘두르기 반경 배율)

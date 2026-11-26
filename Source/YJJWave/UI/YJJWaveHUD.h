@@ -46,12 +46,19 @@ struct FYJJStamp
 struct FYJJAtlas
 {
 	UTexture2D* Texture = nullptr;
+	/** 논리 칸 수 (한 줄 = 한 유닛의 동작 칸들) */
 	int32 Columns = 1;
+	/** 그림 파일의 실제 칸 수 */
+	int32 SheetColumns = 1;
+	/** 논리 칸 하나를 몇 칸의 중간 프레임으로 쪼갰나 (큰 유닛 = 4, 나머지 1) */
+	int32 FrameMul = 1;
 	FVector2f CellUV = FVector2f::UnitVector;
 
-	void Init(UTexture2D* InTexture, float CellPixels);
+	/** LogicalColumns가 0이면 그림 파일 칸 수 그대로 */
+	void Init(UTexture2D* InTexture, float CellPixels, int32 InFrameMul = 1, int32 LogicalColumns = 0);
 	FVector2f UV(int32 Cell) const;
-	FVector2f UV(int32 Column, int32 Row) const;
+	/** Sub = 중간 프레임 (0 ~ FrameMul-1) */
+	FVector2f UV(int32 Column, int32 Row, int32 Sub = 0) const;
 };
 
 /** 캔버스 배치 하나 (텍스처 하나 + 반투명) 에 사각형을 넣는 곳 */
@@ -203,7 +210,8 @@ private:
 	void DrawCamp();
 	void DrawUnits();
 	/** 유닛 그림 칸: 공격 > 맞음 > 걷기 > 숨쉬기 (ParallelFor 안에서 부른다: 읽기만) */
-	int32 PickFrame(const FYJJHordeView& Horde, int32 Slot) const;
+	/** OutSub: 그 칸 안에서 얼마나 진행했나 (0~1, 큰 유닛 중간 프레임용) */
+	int32 PickFrame(const FYJJHordeView& Horde, int32 Slot, float* OutSub = nullptr) const;
 	void DrawDying();
 	void DrawProjectiles();
 	void DrawEffects();
