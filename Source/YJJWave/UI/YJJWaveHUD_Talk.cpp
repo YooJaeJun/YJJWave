@@ -42,6 +42,10 @@ void AYJJWaveHUD::TakeEvents()
 		{
 			AddBanner(Event.Unit > 0 ? YJJLoc::Format(TEXT("UI.CampDown"), { Event.Unit }) : YJJLoc::Get(TEXT("UI.CampsAllDown")), YJJUI::Highlight);
 		}
+		else if (Event.Trigger == EYJJTalkTrigger::ChokePassed)
+		{
+			AddBanner(YJJLoc::Get(TEXT("UI.ChokePassed")), YJJUI::Good);
+		}
 		else if (Event.Trigger == EYJJTalkTrigger::PotOverflow)
 		{
 			AddBanner(YJJLoc::Get(TEXT("Pot.OverflowBanner")), YJJUI::Bad);

@@ -83,6 +83,8 @@ HeroChargeDamageScale,2,한 번 칠 때 피해 = 영웅 공격력 × 이 값
 HeroChargeRadius,120,앞을 쓰는 범위
 HeroChargeKnockback,2600,날려 보내는 힘
 HeroChargeHitInterval,0.1,내달리는 동안 이 간격마다 친다
+ChokeMergeDist,250,길목 바위 오른쪽 끝이 이만큼 안이면 한 줄로 친다 (길목 돌파 알림)
+BotChargeRange,400,봇: 적 앞줄이 영웅에서 이 거리 안이면 돌격
 SparkTime,0.22,근접 타격 불꽃 시간
 SparkSize,34,근접 타격 불꽃 크기 (월드)
 MaxSparksPerStep,24,한 걸음에 불꽃 이만큼까지

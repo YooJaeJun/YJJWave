@@ -259,6 +259,8 @@ private:
 	/** 성벽과 성문 (진지 오른쪽 끝, 세로로 길게) + 성문 위 체력 */
 	void DrawWall();
 	void DrawBlockers();
+	/** 땅 위 전선 띠: 아군 앞줄·적 앞줄 자리, 아군 띠 위에 "전선 +N%" (밀어낸 만큼 금화·영혼) */
+	void DrawFrontLines();
 	/** 전장 아래 가운데: 영웅 돌격 버튼 (E, 쿨다운 막대) */
 	void DrawChargeButton();
 	void TryHeroCharge();

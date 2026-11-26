@@ -124,6 +124,18 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 		Blockers.Emplace(Block.X * FieldWidth, Block.Y * FieldHeight, Block.Z * FieldWidth, Block.W * FieldHeight);
 	}
 	Horde.SetBlockers(Blockers);
+	// 길목 줄: 바위 오른쪽 끝을 가까운 것끼리 묶는다 (아군 앞줄이 넘으면 "길목 돌파!")
+	ChokeXs.Reset();
+	for (const FVector4f& Block : Blockers)
+	{
+		const float Edge = Block.X + Block.Z;
+		if (!ChokeXs.ContainsByPredicate([&](float X) { return FMath::Abs(X - Edge) < YJJData::Tune().ChokeMergeDist; }))
+		{
+			ChokeXs.Add(Edge);
+		}
+	}
+	ChokeXs.Sort();
+	ChokePassed.Init(0, ChokeXs.Num());
 	SmackCharge = SmackMax();
 	ShakeRequests = 0;
 	WallMaxHP = WallHP = StageDef().WallHP;
@@ -310,6 +322,14 @@ void FYJJBattle::PostStep(float Dt)
 	const float PlayerFront = Horde.FrontX(EYJJTeam::Player);
 	const float Pushed = (PlayerFront - T.HeroHomeX) / FMath::Max(FieldWidth * T.PlayerAdvanceShare - T.HeroHomeX, 1.f);
 	FrontBonus = 1.f + T.FrontBonusMax * FMath::Clamp(Pushed, 0.f, 1.f);
+	for (int32 Index = 0; Index < ChokeXs.Num(); ++Index)
+	{
+		if (!ChokePassed[Index] && PlayerFront > ChokeXs[Index])
+		{
+			ChokePassed[Index] = 1;
+			AddEvent(EYJJTalkTrigger::ChokePassed, Index);
+		}
+	}
 
 	TickEffects(Dt);
 	if (Horde.HitCount > 0)

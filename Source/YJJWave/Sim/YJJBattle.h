@@ -271,6 +271,9 @@ private:
 	FVector2f ChargeTarget = FVector2f::ZeroVector;
 	// 맞붙은 전선 먼지
 	float ClashTimer = 0.f;
+	// 길목 줄 (바위 오른쪽 끝 x, 가까운 것끼리 묶음)과 넘었는지
+	TArray<float> ChokeXs;
+	TArray<uint8> ChokePassed;
 	int32 Served = 0;
 	float ServedHP = 0.f;
 	float ServedDamage = 0.f;

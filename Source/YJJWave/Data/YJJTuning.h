@@ -106,6 +106,8 @@ struct FYJJTuning
 	UPROPERTY() float HeroChargeRadius = 0.f;   // 앞을 쓰는 범위
 	UPROPERTY() float HeroChargeKnockback = 0.f;   // 날려 보내는 힘
 	UPROPERTY() float HeroChargeHitInterval = 0.f;   // 내달리는 동안 이 간격마다 친다
+	UPROPERTY() float ChokeMergeDist = 0.f;   // 길목 바위 오른쪽 끝이 이만큼 안이면 한 줄로 친다 (길목 돌파 알림)
+	UPROPERTY() float BotChargeRange = 0.f;   // 봇: 적 앞줄이 영웅에서 이 거리 안이면 돌격
 	// ---- 난전 느낌 ----
 	UPROPERTY() float SparkTime = 0.f;   // 근접 타격 불꽃 시간
 	UPROPERTY() float SparkSize = 0.f;   // 근접 타격 불꽃 크기 (월드)
@@ -205,6 +207,10 @@ struct FYJJUILayout
 	UPROPERTY() float SparkStartScale = 0.f;   // 불꽃이 터지기 시작하는 크기
 	UPROPERTY() float SparkLift = 0.f;   // 불꽃 높이 (크기 배율, 몸통께)
 	UPROPERTY() float ChargeButtonW = 0.f;   // 영웅 돌격 버튼 너비 (전장 아래 가운데)
+	UPROPERTY() float FrontStripW = 0.f;   // 땅 위 전선 띠 너비
+	UPROPERTY() float FrontStripAlpha = 0.f;   // 전선 띠 진하기
+	UPROPERTY() float FrontStripPulse = 0.f;   // 전선 띠 깜빡임 세기
+	UPROPERTY() float FrontLabelY = 0.f;   // 전선 띠 위 보너스 글자 높이 (전장 위끝에서)
 	UPROPERTY() float ChargeButtonH = 0.f;   // 영웅 돌격 버튼 높이
 	UPROPERTY() float ChargeButtonMargin = 0.f;   // 화면 아래와 돌격 버튼 사이
 	UPROPERTY() float ChargeDefaultReach = 0.f;   // 마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)

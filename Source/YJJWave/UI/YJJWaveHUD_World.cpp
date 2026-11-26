@@ -25,12 +25,42 @@ void AYJJWaveHUD::DrawWorld()
 	DrawCamp();
 	DrawWall();
 	DrawBlockers();
+	DrawFrontLines();
 	DrawUnits();
 	DrawDying();
 	DrawProjectiles();
 	DrawEffects();
 	DrawSpellAim();
 	DrawUnitBars();
+}
+
+void AYJJWaveHUD::DrawFrontLines()
+{
+	const FYJJBattle* Current = Battle();
+	if (Current->bGameOver)
+	{
+		return;
+	}
+	const FYJJUILayout& L = UI();
+	const FYJJHordeView& Horde = View();
+	const EYJJTeam Teams[] = { EYJJTeam::Player, EYJJTeam::Enemy };
+	for (const EYJJTeam Team : Teams)
+	{
+		const float FrontX = Horde.Front[static_cast<int32>(Team)];
+		if (FrontX < 0.f || Horde.Num(Team) == 0)
+		{
+			continue;
+		}
+		const bool bMine = Team == EYJJTeam::Player;
+		const FVector2f Top = WorldToVirtual(FVector2f(FrontX, 0.f));
+		const FVector2f Bottom = WorldToVirtual(FVector2f(FrontX, Current->FieldHeight));
+		const float Pulse = L.FrontStripAlpha * (1.f + L.FrontStripPulse * FMath::Sin(AnimClock * L.GlowSpeed));
+		DrawBox(Top.X - L.FrontStripW * Half, Top.Y, L.FrontStripW, Bottom.Y - Top.Y, YJJUI::WithAlpha(bMine ? YJJUI::HeroBar : YJJUI::BossBar, Pulse));
+		if (bMine && Current->FrontBonus > 1.f)
+		{
+			DrawLabel(YJJLoc::Format(TEXT("UI.FrontBonus"), { FMath::RoundToInt((Current->FrontBonus - 1.f) * Percent) }), Top.X, FMath::Max(Top.Y, 0.f) + L.FrontLabelY, L.SmallText, YJJUI::Good, Half);
+		}
+	}
 }
 
 void AYJJWaveHUD::DrawBlockers()

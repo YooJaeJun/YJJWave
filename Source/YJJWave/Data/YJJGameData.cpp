@@ -718,6 +718,7 @@ const TCHAR* YJJData::TriggerKey(EYJJTalkTrigger Trigger)
 	case EYJJTalkTrigger::PotReady: return TEXT("PotReady");
 	case EYJJTalkTrigger::BossDown: return TEXT("BossDown");
 	case EYJJTalkTrigger::CampDown: return TEXT("CampDown");
+	case EYJJTalkTrigger::ChokePassed: return TEXT("ChokePassed");
 	default: return TEXT("");
 	}
 }

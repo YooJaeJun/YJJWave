@@ -332,6 +332,7 @@ enum class EYJJTalkTrigger : uint8
 	PotReady,     // 냄비 국이 한 단계 진해졌다 (처음 끓을 때 알려 주기)
 	BossDown,     // 보스를 쓰러뜨렸다
 	CampDown,     // 적 진지를 무너뜨렸다 (Unit = 남은 진지 수)
+	ChokePassed,  // 아군 앞줄이 길목을 처음 넘었다 (Unit = 몇 번째 길목)
 	Count
 };
 

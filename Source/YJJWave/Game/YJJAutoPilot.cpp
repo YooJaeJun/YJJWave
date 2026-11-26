@@ -371,6 +371,10 @@ void FYJJAutoPilot::CastSpells(FYJJBattle& Battle)
 {
 	const FYJJTuning& T = YJJData::Tune();
 	const float EnemyFront = Battle.Horde.FrontX(EYJJTeam::Enemy);
+	if (EnemyFront > 0.f && Battle.HasHero() && Battle.ChargeReady() >= 1.f && FMath::Abs(EnemyFront - Battle.HeroPos().X) < T.BotChargeRange)
+	{
+		Battle.HeroCharge(FVector2f(EnemyFront + T.BotChargeRange, Battle.HeroPos().Y));
+	}
 	if (EnemyFront > 0.f && Battle.CanCast(EYJJSpell::Meteor))
 	{
 		const float Radius = Battle.SpellNow(EYJJSpell::Meteor).Radius;
