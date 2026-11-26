@@ -26,6 +26,12 @@ PotRattleSpeed,30,뚜껑 덜컹 빠르기
 PotLabelGap,8,냄비 위 글자 간격
 PotHoverScale,1.06,냄비에 마우스를 올리면 커지는 배율
 BoneSpin,9,진급 빛 회전 빠르기
+SparkStartScale,0.4,불꽃이 터지기 시작하는 크기
+SparkLift,0.8,"불꽃 높이 (크기 배율, 몸통께)"
+ChargeButtonW,240,영웅 돌격 버튼 너비 (전장 아래 가운데)
+ChargeButtonH,64,영웅 돌격 버튼 높이
+ChargeButtonMargin,24,화면 아래와 돌격 버튼 사이
+ChargeDefaultReach,500,마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
 RockAspect,4,Props.png 바위 무더기 칸 가로/세로
 RockRowOverlap,0.5,"바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)"
 RockWidthPad,1.2,바위 그림을 타원 너비보다 이만큼 넓게

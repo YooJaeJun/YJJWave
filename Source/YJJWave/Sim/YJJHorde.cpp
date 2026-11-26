@@ -512,7 +512,14 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	// 아군 병사는 전선 끝에서 멈춘다: 적 진영 깊이 있는 적은 쫓지 않고 다가오기를 기다린다 (원거리는 닿으면 쏜다)
 	const bool bHoldLine = MyTeam == EYJJTeam::Player && Slot != HeroSlot && P.X >= Config.PlayerAdvanceX;
 
-	if (Victim != INDEX_NONE)
+	if (Slot == HeroSlot && ChargeLeft > 0.f)
+	{
+		// 돌격 중: 앞만 보고 내달린다 (때리기는 TickCharge)
+		Desired = ChargeDir * ChargeSpeed;
+		Vel[Slot] = Desired;
+		FaceLeft[Slot] = ChargeDir.X < 0.f ? 1 : 0;
+	}
+	else if (Victim != INDEX_NONE)
 	{
 		const FVector2f Delta = Pos[Victim] - P;
 		const float Dist = Delta.Size();
@@ -840,7 +847,53 @@ void FYJJHorde::ApplyAttacks()
 		{
 			Hit(Victim, AttackDamage(Slot), Pos[Slot], Slot, true);
 		}
+		if (Def.ProjectileSpeed <= 0.f && HitSparks.Num() < MaxSparks)
+		{
+			// 난전 불꽃: 맞은 쪽으로 조금 치우친 자리
+			HitSparks.Add(FMath::Lerp(Pos[Slot], Pos[Victim], SparkLean));
+		}
 	}
+}
+
+void FYJJHorde::StartCharge(const FVector2f& Toward, float Duration, float InSpeed, float DamageScale, float Radius, float Knockback, float HitInterval)
+{
+	if (HeroSlot == INDEX_NONE || !Alive[HeroSlot])
+	{
+		return;
+	}
+	const FVector2f Delta = Toward - Pos[HeroSlot];
+	ChargeDir = Delta.SizeSquared() > NearZero ? Delta.GetSafeNormal() : FVector2f(1.f, 0.f);
+	ChargeLeft = Duration;
+	ChargeTick = 0.f;
+	ChargeSpeed = InSpeed;
+	ChargeDamageScale = DamageScale;
+	ChargeRadius = Radius;
+	ChargeKnockback = Knockback;
+	ChargeHitInterval = HitInterval;
+}
+
+void FYJJHorde::TickCharge(float Dt)
+{
+	if (ChargeLeft <= 0.f)
+	{
+		return;
+	}
+	ChargeLeft -= Dt;
+	if (HeroSlot == INDEX_NONE || !Alive[HeroSlot])
+	{
+		ChargeLeft = 0.f;
+		return;
+	}
+	ChargeTick -= Dt;
+	if (ChargeTick > 0.f)
+	{
+		return;
+	}
+	ChargeTick = ChargeHitInterval;
+	// 영웅 바로 앞을 쓸어 버린다: 맞은 적은 돌격 방향으로 날아간다
+	const FVector2f Ahead = Pos[HeroSlot] + ChargeDir * ChargeRadius * HalfShare;
+	DamageArea(Ahead, ChargeRadius, AttackDamage(HeroSlot) * ChargeDamageScale, ChargeKnockback, EYJJTeam::Enemy, HeroSlot);
+	Slashes.Add({ Ahead, ChargeRadius, ChargeDir.X >= 0.f ? 1.f : -1.f });
 }
 
 void FYJJHorde::UpdateProjectiles(float Dt)
@@ -961,6 +1014,7 @@ void FYJJHorde::Step(float Dt)
 	}
 
 	ApplyAttacks();
+	TickCharge(Dt);
 	UpdateProjectiles(Dt);
 	EndPhase(EYJJHordePhase::Combat);
 	CollectDead();

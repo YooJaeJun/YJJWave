@@ -164,6 +164,7 @@ private:
 	enum class EButton : int32
 	{
 		BuildCard,
+		Charge,
 		Spell,
 		Tree,
 		TreeClose,
@@ -258,6 +259,9 @@ private:
 	/** 성벽과 성문 (진지 오른쪽 끝, 세로로 길게) + 성문 위 체력 */
 	void DrawWall();
 	void DrawBlockers();
+	/** 전장 아래 가운데: 영웅 돌격 버튼 (E, 쿨다운 막대) */
+	void DrawChargeButton();
+	void TryHeroCharge();
 	/** 처치한 적 자리에서 금화가 튀어 오른다 */
 	void DrawCoinPops();
 	void UpdateCoinPops(float Dt);
@@ -483,6 +487,8 @@ private:
 	static constexpr int32 EffectQuadsGuess = 12;
 	/** 길목 하나를 채우는 바위 줄 수 어림 (배치 예약용) */
 	static constexpr int32 BlockerRowsGuess = 16;
+	/** 불꽃 각도를 자리로 정하는 씨앗 */
+	static constexpr float SparkAngleSeed = 0.0137f;
 	// 냄비 거품·김·뚜껑 모양 (자리를 번호로 흩는 씨앗과 퍼지는 비율)
 	static constexpr float PotBubbleSeedX = 2.1f;
 	static constexpr float PotBubbleSeedY = 1.7f;

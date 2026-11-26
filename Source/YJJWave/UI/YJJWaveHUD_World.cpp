@@ -612,6 +612,14 @@ void AYJJWaveHUD::DrawEffects()
 			AddQuadRotated(Batch, Center, FVector2f(Burst), T * UI().ImpactSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
 			break;
 		}
+		case EYJJEffectKind::Spark:
+		{
+			// 난전 불꽃: 자리마다 다른 각도로 툭 터졌다 사라진다
+			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().SparkStartScale, 1.f, FMath::Sqrt(T));
+			const float Angle = FMath::Frac((Effect.Pos.X + Effect.Pos.Y) * SparkAngleSeed) * FullTurn;
+			AddQuadRotated(Batch, Ground - FVector2f(0.f, Effect.Radius * UI().SparkLift * Zoom), FVector2f(Size), Angle, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T * T), false);
+			break;
+		}
 		case EYJJEffectKind::Build:
 		{
 			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);

@@ -205,6 +205,43 @@ float AYJJWaveHUD::DrawPotPanel(float X, float Y, float W)
 	return H;
 }
 
+void AYJJWaveHUD::TryHeroCharge()
+{
+	// 마우스가 전장 위면 그쪽으로, 아니면 영웅 앞(오른쪽)으로 내달린다
+	FYJJBattle* Current = EditBattle();
+	if (!Current || Current->bCardPending)
+	{
+		return;
+	}
+	const FVector2f Mouse = ScreenToWorld(MouseScreen());
+	const FVector2f Toward = IsMouseOverUI() ? Current->HeroPos() + FVector2f(UI().ChargeDefaultReach, 0.f) : Mouse;
+	Current->HeroCharge(Toward);
+}
+
+void AYJJWaveHUD::DrawChargeButton()
+{
+	const FYJJBattle* Current = Battle();
+	if (Current->bGameOver || bTreeOpen)
+	{
+		return;
+	}
+	const FYJJUILayout& L = UI();
+	const float W = L.ChargeButtonW;
+	const float H = L.ChargeButtonH;
+	const float X = WorldCenterVirtualX() - W * Half;
+	const float Y = VirtualHeight - H - L.ChargeButtonMargin;
+	const float Ready = Current->ChargeReady();
+	const bool bReady = Ready >= 1.f && Current->HasHero();
+	const float Glow = bReady ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
+	DrawPanel(X, Y, W, H, FMath::Lerp(YJJUI::PanelTint, YJJUI::Bad, Glow), FMath::RoundToInt(L.UiCard));
+	DrawLabelCentered(YJJLoc::Get(TEXT("UI.Charge")), X + W * Half, Y + (H - L.SkillChargeBarH) * Half, L.MidText, bReady ? YJJUI::Paper : YJJUI::Muted, W - L.PanelPad * 2.f);
+	if (!bReady)
+	{
+		DrawBar(X + L.PanelPad, Y + H - L.PanelPad - L.SkillChargeBarH, W - L.PanelPad * 2.f, L.SkillChargeBarH, Ready, YJJUI::Highlight);
+	}
+	AddButton(EButton::Charge, 0, X, Y, W, H);
+}
+
 FLinearColor AYJJWaveHUD::PotStatusColor() const
 {
 	const FYJJBattle* Current = Battle();

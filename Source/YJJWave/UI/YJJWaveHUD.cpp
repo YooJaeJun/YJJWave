@@ -292,6 +292,7 @@ void AYJJWaveHUD::DrawHUD()
 	DrawTalks();
 	DrawBanners();
 	DrawCombo();
+	DrawChargeButton();
 	if (Battle()->bCardPending && !Battle()->bGameOver)
 	{
 		DrawCardPick();

@@ -198,6 +198,9 @@ public:
 	void SetBlockers(const TArray<FVector4f>& InBlockers) { Blockers = InBlockers; }
 	/** 아군 병사가 멈추는 선 (적 진지가 있으면 끝까지 밀고 간다) */
 	void SetPlayerAdvanceX(float X) { Config.PlayerAdvanceX = X; }
+	/** 영웅 돌격: Toward 쪽으로 Duration 동안 내달리며 HitInterval마다 앞의 적을 때리고 날린다 (게임 스레드, 걸음 사이에) */
+	void StartCharge(const FVector2f& Toward, float Duration, float InSpeed, float DamageScale, float Radius, float Knockback, float HitInterval);
+	bool IsCharging() const { return ChargeLeft > 0.f; }
 
 	void Step(float Dt);
 
@@ -243,6 +246,9 @@ public:
 	TArray<FYJJProjectile> Projectiles;
 	/** 적이 성벽에 준 피해 (FYJJBattle이 가져가 0으로) */
 	float WallDamage = 0.f;
+	/** 이번 걸음의 근접 타격 자리 (난전 불꽃, MaxSparks까지. 전투가 가져가고 비운다) */
+	TArray<FVector2f> HitSparks;
+	int32 MaxSparks = 0;
 	/** 이번 걸음의 영웅·보스 휘두르기 (전투가 가져가고 비운다) */
 	TArray<FYJJSlash> Slashes;
 	/** 이번 틱 최후의 저항·부활이 일어난 자리 (FYJJBattle이 연출로 바꾸고 비운다) */
@@ -331,7 +337,19 @@ private:
 	TArray<int32> Order;
 	FRandomStream Random;
 	FYJJHordeConfig Config;
+	/** 난전 불꽃: 때린 쪽에서 맞은 쪽으로 이 비율 자리 */
+	static constexpr float SparkLean = 0.65f;
 	TArray<FVector4f> Blockers;
+	// 영웅 돌격
+	void TickCharge(float Dt);
+	FVector2f ChargeDir = FVector2f::ZeroVector;
+	float ChargeLeft = 0.f;
+	float ChargeTick = 0.f;
+	float ChargeSpeed = 0.f;
+	float ChargeDamageScale = 0.f;
+	float ChargeRadius = 0.f;
+	float ChargeKnockback = 0.f;
+	float ChargeHitInterval = 0.f;
 	FYJJGrid Grids[static_cast<int32>(EYJJTeam::Count)];
 	TArray<FYJJUnitSpecial> Specials;
 	FYJJUnitSpecial NoSpecial;

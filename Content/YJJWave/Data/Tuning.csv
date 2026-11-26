@@ -76,6 +76,21 @@ PromoteEffectScale,1.6,진급 빛줄기 크기 (진급한 유닛 DrawSize 배율
 PotOverflowTime,12,마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다
 PotSteamTime,1.2,뚜껑 열 때 김 연출 시간
 CampSpawnScatter,60,적 진지에서 나오는 적이 퍼지는 거리
+HeroChargeCooldown,9,돌격 대기 시간
+HeroChargeTime,0.5,내달리는 시간
+HeroChargeSpeed,900,내달리는 속도
+HeroChargeDamageScale,2,한 번 칠 때 피해 = 영웅 공격력 × 이 값
+HeroChargeRadius,120,앞을 쓰는 범위
+HeroChargeKnockback,2600,날려 보내는 힘
+HeroChargeHitInterval,0.1,내달리는 동안 이 간격마다 친다
+SparkTime,0.22,근접 타격 불꽃 시간
+SparkSize,34,근접 타격 불꽃 크기 (월드)
+MaxSparksPerStep,24,한 걸음에 불꽃 이만큼까지
+ClashGap,180,두 전선이 이 거리 안이면 맞붙었다 (먼지)
+ClashPuffInterval,0.18,맞붙은 전선 먼지 간격
+ClashPuffSize,110,맞붙은 전선 먼지 크기
+ClashBandMin,0.3,먼지가 피는 높이 범위 (전장 높이 비율)
+ClashBandMax,0.72,
 SlashTime,0.3,영웅·보스 휘두르기 붓 초승달 시간
 PotSteamSize,120,뚜껑 열 때 김 크기 (화면 UI)
 PotOverflowSteamScale,2,끓어 넘칠 때 김 크기 배율

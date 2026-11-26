@@ -256,3 +256,4 @@ Unit.BoneTent,뼈 천막,Bone Tent,적 진지
 Unit.BoneTower,해골 망루,Skull Tower,큰 적 진지
 UI.CampDown,적 진지를 무너뜨렸다! (남은 진지 {0}),Enemy camp destroyed! ({0} left),배너
 UI.CampsAllDown,적 진지를 모두 무너뜨렸다!,All enemy camps destroyed!,배너
+UI.Charge,영웅 돌격! (E),Hero Charge! (E),전장 아래 버튼

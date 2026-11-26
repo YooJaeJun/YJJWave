@@ -370,6 +370,30 @@ void FYJJBattle::PostStep(float Dt)
 		Effect.Power = Slash.Dir;
 	}
 	Horde.Slashes.Reset();
+	// 난전 불꽃: 근접 타격 자리마다 작은 먹 튀김
+	for (const FVector2f& Spark : Horde.HitSparks)
+	{
+		AddEffect(EYJJEffectKind::Spark, Spark, T.SparkTime, T.SparkSize);
+	}
+	Horde.HitSparks.Reset();
+	Horde.MaxSparks = T.MaxSparksPerStep;
+	// 두 전선이 맞붙은 자리에 먼지가 피어오른다 (전투 중 느낌)
+	ClashTimer -= Dt;
+	const float ClashPlayer = Horde.FrontX(EYJJTeam::Player);
+	const float ClashEnemy = Horde.FrontX(EYJJTeam::Enemy);
+	if (ClashTimer <= 0.f && Horde.Num(EYJJTeam::Player) > 0 && Horde.Num(EYJJTeam::Enemy) > 0 && FMath::Abs(ClashEnemy - ClashPlayer) <= T.ClashGap)
+	{
+		ClashTimer = T.ClashPuffInterval;
+		const FVector2f Where((ClashPlayer + ClashEnemy) * Half + Random.FRandRange(-T.ClashGap, T.ClashGap) * Half, FieldHeight * Random.FRandRange(T.ClashBandMin, T.ClashBandMax));
+		AddEffect(EYJJEffectKind::Build, Where, T.BuildEffectTime, T.ClashPuffSize);
+	}
+	// 영웅 돌격: 걸음 사이에만 무리를 건드린다
+	ChargeCooldown = FMath::Max(ChargeCooldown - Dt, 0.f);
+	if (bChargeQueued)
+	{
+		bChargeQueued = false;
+		Horde.StartCharge(ChargeTarget, T.HeroChargeTime, T.HeroChargeSpeed, T.HeroChargeDamageScale, T.HeroChargeRadius, T.HeroChargeKnockback, T.HeroChargeHitInterval);
+	}
 	if (HeroRespawnLeft > 0.f && !bGameOver)
 	{
 		HeroRespawnLeft -= Dt;
@@ -403,6 +427,28 @@ void FYJJBattle::CheckVictory()
 		const float Health = WallHP / FMath::Max(WallMaxHP, KINDA_SMALL_NUMBER);
 		Stars = Health >= T.StarThreeHealth ? 3 : Health >= T.StarTwoHealth ? 2 : 1;
 	}
+}
+
+bool FYJJBattle::HeroCharge(const FVector2f& Toward)
+{
+	if (bGameOver || ChargeCooldown > 0.f || Horde.Hero() == INDEX_NONE)
+	{
+		return false;
+	}
+	const FYJJTuning& T = YJJData::Tune();
+	ChargeCooldown = T.HeroChargeCooldown;
+	ChargeTarget = Toward;
+	bChargeQueued = true;
+	// 영웅 필살기: 화면이 한 번 흔들린다
+	++ShakeRequests;
+	Sounds.Add(SoundSmack);
+	return true;
+}
+
+float FYJJBattle::ChargeReady() const
+{
+	const float Cooldown = YJJData::Tune().HeroChargeCooldown;
+	return Cooldown > 0.f ? 1.f - ChargeCooldown / Cooldown : 1.f;
 }
 
 float FYJJBattle::TimeScale() const

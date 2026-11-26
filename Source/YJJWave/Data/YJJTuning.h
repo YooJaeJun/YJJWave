@@ -98,6 +98,23 @@ struct FYJJTuning
 	UPROPERTY() float PotOverflowTime = 0.f;   // 마지막 단계에서 이 시간 안에 안 열면 끓어 넘쳐 뼈를 다 잃는다
 	UPROPERTY() float PotSteamTime = 0.f;   // 뚜껑 열 때 김 연출 시간
 	UPROPERTY() float CampSpawnScatter = 0.f;   // 적 진지에서 나오는 적이 퍼지는 거리
+	// ---- 영웅 돌격 (E): 영웅이 내달리며 앞의 적을 쓸어 날린다 ----
+	UPROPERTY() float HeroChargeCooldown = 0.f;   // 돌격 대기 시간
+	UPROPERTY() float HeroChargeTime = 0.f;   // 내달리는 시간
+	UPROPERTY() float HeroChargeSpeed = 0.f;   // 내달리는 속도
+	UPROPERTY() float HeroChargeDamageScale = 0.f;   // 한 번 칠 때 피해 = 영웅 공격력 × 이 값
+	UPROPERTY() float HeroChargeRadius = 0.f;   // 앞을 쓰는 범위
+	UPROPERTY() float HeroChargeKnockback = 0.f;   // 날려 보내는 힘
+	UPROPERTY() float HeroChargeHitInterval = 0.f;   // 내달리는 동안 이 간격마다 친다
+	// ---- 난전 느낌 ----
+	UPROPERTY() float SparkTime = 0.f;   // 근접 타격 불꽃 시간
+	UPROPERTY() float SparkSize = 0.f;   // 근접 타격 불꽃 크기 (월드)
+	UPROPERTY() int32 MaxSparksPerStep = 0;   // 한 걸음에 불꽃 이만큼까지
+	UPROPERTY() float ClashGap = 0.f;   // 두 전선이 이 거리 안이면 맞붙었다 (먼지)
+	UPROPERTY() float ClashPuffInterval = 0.f;   // 맞붙은 전선 먼지 간격
+	UPROPERTY() float ClashPuffSize = 0.f;   // 맞붙은 전선 먼지 크기
+	UPROPERTY() float ClashBandMin = 0.f;   // 먼지가 피는 높이 범위 (전장 높이 비율)
+	UPROPERTY() float ClashBandMax = 0.f;   // 
 	UPROPERTY() float SlashTime = 0.f;   // 영웅·보스 휘두르기 붓 초승달 시간
 	UPROPERTY() float PotSteamSize = 0.f;   // 뚜껑 열 때 김 크기 (화면 UI)
 	UPROPERTY() float PotOverflowSteamScale = 0.f;   // 끓어 넘칠 때 김 크기 배율
@@ -185,6 +202,12 @@ struct FYJJUILayout
 	UPROPERTY() float PotLabelGap = 0.f;   // 냄비 위 글자 간격
 	UPROPERTY() float PotHoverScale = 0.f;   // 냄비에 마우스를 올리면 커지는 배율
 	UPROPERTY() float BoneSpin = 0.f;   // 진급 빛 회전 빠르기
+	UPROPERTY() float SparkStartScale = 0.f;   // 불꽃이 터지기 시작하는 크기
+	UPROPERTY() float SparkLift = 0.f;   // 불꽃 높이 (크기 배율, 몸통께)
+	UPROPERTY() float ChargeButtonW = 0.f;   // 영웅 돌격 버튼 너비 (전장 아래 가운데)
+	UPROPERTY() float ChargeButtonH = 0.f;   // 영웅 돌격 버튼 높이
+	UPROPERTY() float ChargeButtonMargin = 0.f;   // 화면 아래와 돌격 버튼 사이
+	UPROPERTY() float ChargeDefaultReach = 0.f;   // 마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
 	UPROPERTY() float RockAspect = 0.f;   // Props.png 바위 무더기 칸 가로/세로
 	UPROPERTY() float RockRowOverlap = 0.f;   // 바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)
 	UPROPERTY() float RockWidthPad = 0.f;   // 바위 그림을 타원 너비보다 이만큼 넓게

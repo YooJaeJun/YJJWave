@@ -28,6 +28,7 @@ enum class EYJJEffectKind : uint8
 	Promote,      // 진급 빛줄기
 	SmackFall,    // 국자가 내려오는 중 (끝나면 쾅)
 	Slash,        // 영웅·보스의 큰 휘두르기 (Power = 방향 1/-1)
+	Spark,        // 난전 불꽃 (근접 타격 자리의 작은 먹 튀김)
 };
 
 /** 화면 연출 + 늦게 터지는 스킬 (MeteorFall·SmackFall 끝, Burn 동안의 피해) */
@@ -94,6 +95,12 @@ public:
 	// ---- 주문 (F1·F2·F3, Lv은 특성 성좌의 주문 별로 올린다) ----
 	bool CanCast(EYJJSpell Spell) const;
 	bool Cast(EYJJSpell Spell, const FVector2f& Where);
+	/** 영웅 돌격 (E): 쿨다운이 차 있으면 다음 걸음 사이에 Toward 쪽으로 내달린다 */
+	bool HeroCharge(const FVector2f& Toward);
+	/** 돌격 준비 (0 ~ 1, 1이면 쓸 수 있다) */
+	float ChargeReady() const;
+	bool HasHero() const { return Horde.Hero() != INDEX_NONE; }
+	FVector2f HeroPos() const { return Horde.Hero() != INDEX_NONE ? Horde.Pos[Horde.Hero()] : FVector2f::ZeroVector; }
 	/** 국자는 다음 한 번이 차오르기까지 */
 	float CooldownLeft(EYJJSpell Spell) const;
 	float CooldownMax(EYJJSpell Spell) const;
@@ -258,6 +265,12 @@ private:
 	float OverflowAge = -1.f;
 	// 적 진지: 살아 있는 진지 자리 (적은 여기서 나온다, 비면 승리)
 	TArray<FVector2f> CampSpots;
+	// 영웅 돌격
+	float ChargeCooldown = 0.f;
+	bool bChargeQueued = false;
+	FVector2f ChargeTarget = FVector2f::ZeroVector;
+	// 맞붙은 전선 먼지
+	float ClashTimer = 0.f;
 	int32 Served = 0;
 	float ServedHP = 0.f;
 	float ServedDamage = 0.f;

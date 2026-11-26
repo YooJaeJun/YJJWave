@@ -729,6 +729,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::Pot:
 			OpenPot();
 			break;
+		case EButton::Charge:
+			TryHeroCharge();
+			break;
 		case EButton::TitleStart:
 			Mode->GoToWorldMap();
 			break;
@@ -916,6 +919,10 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	else if (Key == EKeys::T || Key == EKeys::Tab)
 	{
 		bTreeOpen = !bTreeOpen;
+	}
+	else if (Key == EKeys::E)
+	{
+		TryHeroCharge();
 	}
 	else if (Key == EKeys::Q)
 	{
