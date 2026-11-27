@@ -44,6 +44,8 @@ public:
 	TArray<FYJJTalk> Talks;
 	/** Skills.csv: 영웅·보스 큰 범위 스킬 (유닛 Def.Skill 이 번호) */
 	TArray<FYJJSkillDef> Skills;
+	/** 내 영웅이 판 시작에 고르는 스킬 후보 (Skills.csv 번호, 영웅 유닛의 Manual 줄) */
+	TArray<int32> HeroSkills;
 
 	/** 읽으면서 생긴 문제 (빠진 이름, 모르는 유닛…) */
 	TArray<FString> Problems;
@@ -114,6 +116,7 @@ namespace YJJData
 	YJJWAVE_API TConstArrayView<FYJJTalk> Talks();
 	YJJWAVE_API TConstArrayView<FYJJSkillDef> Skills();
 	YJJWAVE_API const FYJJSkillDef& Skill(int32 Index);
+	YJJWAVE_API TConstArrayView<int32> HeroSkills();
 	/** Dialogues.csv Trigger 열 이름 */
 	YJJWAVE_API const TCHAR* TriggerKey(EYJJTalkTrigger Trigger);
 

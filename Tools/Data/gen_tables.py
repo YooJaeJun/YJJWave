@@ -116,6 +116,8 @@ TUNING = [
     ("SkillTextMinKills", 5, True, "스킬 한 번에 이만큼 쓰러뜨리면 싹쓸이 글자"),
     ("SkillSlowMoKills", 20, True, "스킬 한 번에 이만큼 쓰러뜨리면 잠깐 느리게 (BossSlowMo 배율)"),
     ("SkillSlowMoTime", 0.4, False, "싹쓸이 느린 화면 시간 (게임 시간)"),
+    ("SkillSummonSpread", 0.9, False, "소환 스킬: 졸병이 튀어나오는 거리 (스킬 반경 배율)"),
+    ("SkillSummonPuff", 70, False, "소환 스킬: 튀어나오는 자리 먼지 크기"),
     ("# 난전 느낌", None, False, ""),
     ("SparkTime", 0.22, False, "근접 타격 불꽃 시간"),
     ("SparkSize", 34, False, "근접 타격 불꽃 크기 (월드)"),

@@ -198,6 +198,10 @@ struct FYJJSkillRow : public FTableRowBase
 
 	UPROPERTY() FString Unit;
 	UPROPERTY() FString NameKey;
+	/** 고르기 카드 설명 (영웅 후보만) */
+	UPROPERTY() FString DescKey;
+	/** 고르기 카드 그림 (UI.png 칸, -1 없음) */
+	UPROPERTY() int32 Icon = -1;
 	/** Manual(플레이어가 누른다) / Auto(둘레에 상대가 AutoCount 이상이면 저절로) */
 	UPROPERTY() FString Trigger;
 	UPROPERTY() float Cooldown = 0.f;
@@ -210,6 +214,9 @@ struct FYJJSkillRow : public FTableRowBase
 	UPROPERTY() float DamageScale = 0.f;
 	UPROPERTY() float Knockback = 0.f;
 	UPROPERTY() int32 AutoCount = 0;
+	/** 쓸 때 둘레에 불러내는 유닛과 수 (비우면 없음) */
+	UPROPERTY() FString Summon;
+	UPROPERTY() int32 SummonCount = 0;
 	UPROPERTY() FString Note;
 };
 

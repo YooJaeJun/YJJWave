@@ -111,6 +111,13 @@ public:
 	float HeroSkillReady() const { return HeroSkillReadyNow; }
 	/** 영웅 스킬 정의 (없으면 nullptr) */
 	const FYJJSkillDef* HeroSkillDef() const;
+	/** 판 시작: 영웅 스킬 후보 중 하나를 고르는 중 (시뮬이 멈춘다) */
+	bool bSkillPickPending = false;
+	/** 고를 후보 (Skills.csv 번호) */
+	TArray<int32> SkillOffer;
+	bool PickHeroSkill(int32 Choice);
+	/** 카드·스킬을 고르는 중 (전장 조작을 막는다) */
+	bool IsChoosing() const { return bCardPending || bSkillPickPending; }
 	/** 봇: 지금 쓰면 둘레 적이 AutoCount 이상 걸린다 */
 	bool HeroSkillWorthIt() const;
 	FVector2f HeroPos() const { return Horde.Hero() != INDEX_NONE ? Horde.Pos[Horde.Hero()] : FVector2f::ZeroVector; }
@@ -284,6 +291,9 @@ private:
 	FVector2f ChargeTarget = FVector2f::ZeroVector;
 	// 영웅 큰 스킬
 	bool bSkillQueued = false;
+	/** 이번 판 영웅 스킬 (Skills.csv 번호) */
+	int32 HeroSkillIndex = INDEX_NONE;
+	void SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center);
 	float HeroSkillReadyNow = -1.f;
 	void HandleSkillEvents();
 	// 맞붙은 전선 먼지

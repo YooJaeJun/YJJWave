@@ -65,13 +65,13 @@ float AYJJWaveHUD::DrawPotPanel(float X, float Y, float W)
 	const float H = L.PotUiH;
 	const int32 Stage = Current->PotStage();
 	const float OverflowLeft = Current->PotOverflowLeft();
-	const bool bCan = Current->CanOpenPot() && !Current->bCardPending;
+	const bool bCan = Current->CanOpenPot() && !Current->IsChoosing();
 
 	// 솥 그림 자리: 칸 왼쪽에 발을 붙인다 (김·뚜껑만 위로 살짝)
 	const float BaseSize = L.PotUiSize;
 	const FVector2f Feet(X + Pad + L.PotUiCol * Half, Y + H - L.PotUiFeet);
 	const float Top = FMath::Min(Y, Feet.Y - BaseSize * L.PotAnchorY);
-	if (!Current->bCardPending)
+	if (!Current->IsChoosing())
 	{
 		AddButton(EButton::Pot, 0, X, Top, W, Y + H - Top);
 	}
@@ -209,7 +209,7 @@ void AYJJWaveHUD::TryHeroCharge()
 {
 	// 마우스가 전장 위면 그쪽으로, 아니면 영웅 앞(오른쪽)으로 내달린다
 	FYJJBattle* Current = EditBattle();
-	if (!Current || Current->bCardPending)
+	if (!Current || Current->IsChoosing())
 	{
 		return;
 	}
@@ -246,7 +246,7 @@ void AYJJWaveHUD::DrawChargeButton()
 void AYJJWaveHUD::TryHeroSkill()
 {
 	FYJJBattle* Current = EditBattle();
-	if (Current && !Current->bCardPending)
+	if (Current && !Current->IsChoosing())
 	{
 		Current->HeroSkill();
 	}

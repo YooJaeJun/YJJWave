@@ -173,6 +173,7 @@ private:
 		Restart,
 		NextStage,
 		Card,
+		SkillPick,
 		Buy,
 		Option,
 		OpenOptions,
@@ -337,6 +338,9 @@ private:
 	void PressSpell(EYJJSpell Spell);
 	static bool NeedsAim(EYJJSpell Spell) { return Spell != EYJJSpell::Rally; }
 	void DrawCardPick();
+	/** 판 시작: 영웅 스킬 후보 카드 (1·2·3) */
+	void DrawSkillPick();
+	void PickHeroSkill(int32 Choice);
 	/** 양념 하나를 냄비에 (카드 고르기) + 배너 */
 	void PickSeasoning(int32 Choice);
 	/** 좌측 패널: 이번 판 넣은 양념 그림들 (높이를 돌려준다) */

@@ -51,7 +51,7 @@ bool AYJJWaveGameMode::IsRunning() const
 {
 	const APlayerController* Player = GetWorld()->GetFirstPlayerController();
 	const AYJJWaveHUD* HUD = Player ? Cast<AYJJWaveHUD>(Player->GetHUD()) : nullptr;
-	return Screen == EYJJScreen::Battle && !bUserPaused && !Battle.bGameOver && !Battle.bCardPending && CutIndex == INDEX_NONE && !(HUD && (HUD->IsTreeOpen() || HUD->IsOptionsOpen()));
+	return Screen == EYJJScreen::Battle && !bUserPaused && !Battle.bGameOver && !Battle.IsChoosing() && CutIndex == INDEX_NONE && !(HUD && (HUD->IsTreeOpen() || HUD->IsOptionsOpen()));
 }
 
 float AYJJWaveGameMode::GetSpeed() const

@@ -310,7 +310,11 @@ void AYJJWaveHUD::DrawHUD()
 	DrawSkillTexts();
 	DrawChargeButton();
 	DrawHeroSkillButton();
-	if (Battle()->bCardPending && !Battle()->bGameOver)
+	if (Battle()->bSkillPickPending && !Battle()->bGameOver)
+	{
+		DrawSkillPick();
+	}
+	else if (Battle()->bCardPending && !Battle()->bGameOver)
 	{
 		DrawCardPick();
 	}

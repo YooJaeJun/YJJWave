@@ -44,6 +44,12 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	bVictory = false;
 	bCardPending = false;
 	CardOffer.Reset();
+	// 영웅 스킬: 후보가 둘 이상이면 판 시작에 고른다 (고르기 전엔 첫 후보)
+	SkillOffer.Reset();
+	SkillOffer.Append(YJJData::HeroSkills().GetData(), YJJData::HeroSkills().Num());
+	HeroSkillIndex = SkillOffer.Num() > 0 ? SkillOffer[0] : INDEX_NONE;
+	bSkillPickPending = SkillOffer.Num() > 1;
+	bSkillQueued = false;
 	Sounds.Add(SoundCard);
 	CardsTaken.Reset();
 	FrontBonus = 1.f;
@@ -480,6 +486,10 @@ void FYJJBattle::HandleSkillEvents()
 		}
 		AddEffect(EYJJEffectKind::SkillBlast, Event.Pos, T.SkillBlastTime, Skill.Radius).Side = Side;
 		Sounds.Add(SoundSmack);
+		if (Skill.SummonUnit != INDEX_NONE && Event.Team == EYJJTeam::Player)
+		{
+			SummonAround(Skill, Event.Pos);
+		}
 		if (!Event.bLast)
 		{
 			continue;
@@ -510,8 +520,43 @@ bool FYJJBattle::HeroSkill()
 
 const FYJJSkillDef* FYJJBattle::HeroSkillDef() const
 {
-	const int32 Hero = YJJData::HeroUnit();
-	return Hero != INDEX_NONE && YJJData::Unit(Hero).Skill != INDEX_NONE ? &YJJData::Skill(YJJData::Unit(Hero).Skill) : nullptr;
+	return YJJData::Skills().IsValidIndex(HeroSkillIndex) ? &YJJData::Skill(HeroSkillIndex) : nullptr;
+}
+
+bool FYJJBattle::PickHeroSkill(int32 Choice)
+{
+	if (!bSkillPickPending || !SkillOffer.IsValidIndex(Choice))
+	{
+		return false;
+	}
+	HeroSkillIndex = SkillOffer[Choice];
+	bSkillPickPending = false;
+	if (Horde.Hero() != INDEX_NONE)
+	{
+		Horde.SetSkill(Horde.Hero(), HeroSkillIndex);
+		HeroSkillReadyNow = Horde.SkillReady(Horde.Hero());
+	}
+	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 영웅 스킬: %s"), *YJJData::Skill(HeroSkillIndex).Id.ToString());
+	return true;
+}
+
+void FYJJBattle::SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center)
+{
+	// 그 유닛을 내는 병영의 Lv1 능력치 (특성·카드 보너스 포함)로 둘레에 튀어나온다
+	const FYJJTuning& T = YJJData::Tune();
+	const int32 Building = YJJData::Buildings().IndexOfByPredicate([&Skill](const FYJJBuildingDef& Def) { return Def.Unit == Skill.SummonUnit; });
+	const FYJJSpawnStats Stats = Building != INDEX_NONE ? PlayerStats(Building, 1) : FYJJSpawnStats();
+	for (int32 Index = 0; Index < Skill.SummonCount; ++Index)
+	{
+		const float Angle = Random.FRand() * 2.f * UE_PI;
+		const float Dist = Skill.Radius * T.SkillSummonSpread * FMath::Sqrt(Random.FRand());
+		const FVector2f Where = Center + FVector2f(FMath::Cos(Angle), FMath::Sin(Angle)) * Dist;
+		if (Horde.Spawn(Skill.SummonUnit, EYJJTeam::Player, Where, Stats) != INDEX_NONE)
+		{
+			++Spawned[static_cast<int32>(EYJJTeam::Player)];
+			AddEffect(EYJJEffectKind::Build, Where, T.BuildEffectTime, T.SkillSummonPuff);
+		}
+	}
 }
 
 bool FYJJBattle::HeroSkillWorthIt() const
@@ -569,6 +614,10 @@ void FYJJBattle::SpawnHero()
 	const FVector2f Home(T.HeroHomeX, FieldHeight * Half);
 	const int32 Slot = Horde.Spawn(HeroUnit, EYJJTeam::Player, Home, Stats);
 	Horde.SetHero(Slot, Home, T.HeroLeash, T.HeroArrive);
+	if (HeroSkillIndex != INDEX_NONE)
+	{
+		Horde.SetSkill(Slot, HeroSkillIndex);
+	}
 }
 
 void FYJJBattle::RecomputeHero()

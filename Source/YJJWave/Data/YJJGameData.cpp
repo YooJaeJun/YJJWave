@@ -283,6 +283,7 @@ void FYJJGameDatabase::LoadBroth()
 void FYJJGameDatabase::LoadSkills()
 {
 	Skills.Reset();
+	HeroSkills.Reset();
 	for (FYJJUnitDef& Def : Units)
 	{
 		Def.Skill = INDEX_NONE;
@@ -294,6 +295,10 @@ void FYJJGameDatabase::LoadSkills()
 		Def.Id = Name;
 		Def.Unit = FindUnit(Row.Unit, TEXT("Skills.csv"));
 		Def.NameKey = Row.NameKey;
+		Def.DescKey = Row.DescKey;
+		Def.Icon = Row.Icon;
+		Def.SummonUnit = Row.Summon.IsEmpty() ? INDEX_NONE : FindUnit(Row.Summon, TEXT("Skills.csv Summon"));
+		Def.SummonCount = Def.SummonUnit != INDEX_NONE ? FMath::Max(Row.SummonCount, 0) : 0;
 		if (Row.Trigger == SkillManualName)
 		{
 			Def.Trigger = EYJJSkillTrigger::Manual;
@@ -320,12 +325,21 @@ void FYJJGameDatabase::LoadSkills()
 		{
 			return;
 		}
-		if (Units[Def.Unit].Skill != INDEX_NONE)
+		// 내 영웅은 Manual 후보가 여럿일 수 있다 (판 시작에 고른다). 다른 유닛은 하나만
+		const bool bHeroChoice = Units[Def.Unit].bHero && Def.Trigger == EYJJSkillTrigger::Manual;
+		if (Units[Def.Unit].Skill != INDEX_NONE && !bHeroChoice)
 		{
 			Problem(FString::Printf(TEXT("Skills.csv %s: %s 는 이미 스킬이 있다"), *Name.ToString(), *Row.Unit));
 			return;
 		}
-		Units[Def.Unit].Skill = Skills.Num();
+		if (bHeroChoice)
+		{
+			HeroSkills.Add(Skills.Num());
+		}
+		if (Units[Def.Unit].Skill == INDEX_NONE)
+		{
+			Units[Def.Unit].Skill = Skills.Num();
+		}
 		Skills.Add(Def);
 	});
 }
@@ -761,6 +775,7 @@ TConstArrayView<FYJJPerkDef> YJJData::Cards() { return FYJJGameDatabase::Get().C
 TConstArrayView<FYJJBrothStage> YJJData::Broth() { return FYJJGameDatabase::Get().Broth; }
 TConstArrayView<FYJJSkillDef> YJJData::Skills() { return FYJJGameDatabase::Get().Skills; }
 const FYJJSkillDef& YJJData::Skill(int32 Index) { return FYJJGameDatabase::Get().Skills[Index]; }
+TConstArrayView<int32> YJJData::HeroSkills() { return FYJJGameDatabase::Get().HeroSkills; }
 TConstArrayView<FYJJTalk> YJJData::Talks() { return FYJJGameDatabase::Get().Talks; }
 
 const TCHAR* YJJData::TriggerKey(EYJJTalkTrigger Trigger)

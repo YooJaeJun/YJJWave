@@ -257,6 +257,8 @@ public:
 	bool CastSkill(int32 Slot, float Dir);
 	/** 그 유닛 스킬 준비 (0 ~ 1, 쓰는 중이면 0, 스킬이 없으면 음수) */
 	float SkillReady(int32 Slot) const;
+	/** 그 유닛 스킬을 바꾼다 (영웅 스킬 고르기, 게임 스레드). 대기 시간은 그 스킬 FirstDelay 부터 */
+	void SetSkill(int32 Slot, int32 Skill);
 	/** 이번 걸음의 스킬 사건 (전투가 가져가고 비운다) */
 	TArray<FYJJSkillEvent> SkillEvents;
 
@@ -396,7 +398,7 @@ private:
 	// 영웅 돌격
 	void TickCharge(float Dt);
 	// 큰 범위 스킬
-	void AddCaster(int32 Slot);
+	void AddCaster(int32 Slot, int32 Skill);
 	void TickSkills(float Dt);
 	void BeginSkill(FYJJSkillCaster& Caster);
 	FVector2f SkillCenter(const FYJJSkillCaster& Caster) const;

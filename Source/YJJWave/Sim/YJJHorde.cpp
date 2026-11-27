@@ -149,7 +149,7 @@ int32 FYJJHorde::Spawn(int32 InType, EYJJTeam InTeam, const FVector2f& InPos, co
 	}
 	if (Def.Skill != INDEX_NONE)
 	{
-		AddCaster(Slot);
+		AddCaster(Slot, Def.Skill);
 	}
 	return Slot;
 }
@@ -708,7 +708,7 @@ void FYJJHorde::Promote(int32 Slot)
 	if (New.Skill != INDEX_NONE && New.Skill != Old.Skill)
 	{
 		Casters.RemoveAll([Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot; });
-		AddCaster(Slot);
+		AddCaster(Slot, New.Skill);
 	}
 	Promoted.Add({ Pos[Slot], NewType });
 }
@@ -962,12 +962,12 @@ void FYJJHorde::TickCharge(float Dt)
 	Slashes.Add({ Ahead, ChargeRadius, ChargeDir.X >= 0.f ? 1.f : -1.f });
 }
 
-void FYJJHorde::AddCaster(int32 Slot)
+void FYJJHorde::AddCaster(int32 Slot, int32 Skill)
 {
 	FYJJSkillCaster& Caster = Casters.AddDefaulted_GetRef();
 	Caster.Slot = Slot;
 	Caster.Gen = Gen[Slot];
-	Caster.Skill = YJJData::Unit(Type[Slot]).Skill;
+	Caster.Skill = Skill;
 	Caster.Cooldown = YJJData::Skill(Caster.Skill).FirstDelay;
 	Caster.Windup = NoWindup;
 }
@@ -981,6 +981,16 @@ FVector2f FYJJHorde::SkillCenter(const FYJJSkillCaster& Caster) const
 {
 	const FYJJSkillDef& Skill = YJJData::Skill(Caster.Skill);
 	return Pos[Caster.Slot] + FVector2f(Caster.Dir * Skill.Radius * Skill.Reach, 0.f);
+}
+
+void FYJJHorde::SetSkill(int32 Slot, int32 Skill)
+{
+	Casters.RemoveAll([Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot; });
+	if (Alive.IsValidIndex(Slot) && Alive[Slot] && YJJData::Skills().IsValidIndex(Skill))
+	{
+		Flags[Slot] &= ~YJJUnitFlag::Casting;
+		AddCaster(Slot, Skill);
+	}
 }
 
 bool FYJJHorde::CastSkill(int32 Slot, float Dir)

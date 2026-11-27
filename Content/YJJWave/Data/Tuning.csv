@@ -93,6 +93,8 @@ SkillTextTime,1.4,싹쓸이 글자 시간
 SkillTextMinKills,5,스킬 한 번에 이만큼 쓰러뜨리면 싹쓸이 글자
 SkillSlowMoKills,20,스킬 한 번에 이만큼 쓰러뜨리면 잠깐 느리게 (BossSlowMo 배율)
 SkillSlowMoTime,0.4,싹쓸이 느린 화면 시간 (게임 시간)
+SkillSummonSpread,0.9,소환 스킬: 졸병이 튀어나오는 거리 (스킬 반경 배율)
+SkillSummonPuff,70,소환 스킬: 튀어나오는 자리 먼지 크기
 SparkTime,0.22,근접 타격 불꽃 시간
 SparkSize,34,근접 타격 불꽃 크기 (월드)
 MaxSparksPerStep,24,한 걸음에 불꽃 이만큼까지

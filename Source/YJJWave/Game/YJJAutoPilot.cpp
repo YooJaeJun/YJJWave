@@ -182,6 +182,20 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		Mode->SkipCutscene();
 	}
 
+	// 영웅 스킬: 스테이지마다 돌아가며, 마지막 후보부터 (첫 판에 새 기술을 써 보게)
+	if (Battle.bSkillPickPending)
+	{
+		if (!bSkillPickShot)
+		{
+			bSkillPickShot = true;
+			Mode->TakeShot(FString::Printf(TEXT("%sSkillPick"), ShotPrefix));
+			return;
+		}
+		const int32 Offer = FMath::Max(Battle.SkillOffer.Num(), 1);
+		Battle.PickHeroSkill((Battle.Stage + Offer - 1) % Offer);
+		return;
+	}
+
 	// 카드: 아무거나 하나
 	if (Battle.bCardPending)
 	{

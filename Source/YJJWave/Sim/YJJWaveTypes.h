@@ -193,7 +193,7 @@ struct FYJJUnitDef
 	/** 쓰러뜨리면 냄비로 가는 뼈 */
 	float Bones = 0.f;
 	FName VoiceKey;              // Sounds.csv Voice_<Id>
-	/** 큰 범위 스킬 (Skills.csv 번호, 없으면 INDEX_NONE) */
+	/** 큰 범위 스킬 (Skills.csv 번호, 없으면 INDEX_NONE). 영웅은 후보가 여럿이면 첫 줄 (판 시작에 고른다) */
 	int32 Skill = INDEX_NONE;
 };
 
@@ -210,6 +210,8 @@ struct FYJJSkillDef
 	FName Id;
 	int32 Unit = INDEX_NONE;
 	FString NameKey;
+	FString DescKey;
+	int32 Icon = INDEX_NONE;
 	EYJJSkillTrigger Trigger = EYJJSkillTrigger::Auto;
 	float Cooldown = 0.f;
 	float FirstDelay = 0.f;   // 나와서 처음 쓸 수 있기까지
@@ -221,6 +223,8 @@ struct FYJJSkillDef
 	float DamageScale = 0.f;  // 한 번 피해 = 공격력 × 이 값
 	float Knockback = 0.f;
 	int32 AutoCount = 0;      // Auto: 원 안 상대가 이만큼 이상이면 쓴다 (Manual 은 봇 기준)
+	int32 SummonUnit = INDEX_NONE;   // 쓸 때 둘레에 불러내는 유닛
+	int32 SummonCount = 0;
 };
 
 /** Buildings.csv 한 줄 */

@@ -262,3 +262,12 @@ Skill.BoneSweep,뼈 대검 쓸기,Bone Sweep,해골 왕 스킬
 Skill.GruntWhirl,영웅 회전 베기,Hero Spin,진급 영웅 스킬
 UI.HeroSkill,{0}! (R),{0}! (R),전장 아래 버튼 (스킬 이름)
 UI.SkillKills,싹쓸이 ×{0}!,Swept ×{0}!,스킬 한 번에 쓰러뜨린 수
+Skill.HeroQuake,땅 내려찍기,Ground Slam,영웅 R 스킬 후보
+Skill.HeroSummon,졸병 떼 호출,Grunt Rush,영웅 R 스킬 후보
+SkillDesc.HeroWhirl,제자리에서 세 번 돌며 둘레의 적을 쓸어 날린다.,Spins three times and flings everything around.,
+SkillDesc.HeroQuake,한참 기를 모았다가 앞을 크게 내려찍는다. 한 방이 세다.,Charges up and slams the ground ahead. One huge hit.,
+SkillDesc.HeroSummon,냄비를 두드리면 졸병 {0}명이 땅에서 튀어나온다.,Bang the pot and {0} grunts pop out of the ground.,{0} = 나오는 수
+UI.SkillPickTitle,대장 기술 고르기 (1 · 2 · 3),Pick the Captain's move (1 · 2 · 3),판 시작
+UI.SkillPickSub,이번 판에 R로 쓸 기술 하나를 고르자.,Pick one move to use with R this stage.,
+UI.SkillCooldown,대기 {0}초,Cooldown {0}s,스킬 카드
+Skill.Picked,{0} 준비!,{0} ready!,배너
