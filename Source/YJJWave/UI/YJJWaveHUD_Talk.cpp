@@ -34,10 +34,6 @@ void AYJJWaveHUD::TakeEvents()
 		{
 			AddBanner(YJJLoc::Format(TEXT("Promote.Banner"), { YJJLoc::Get(YJJData::Unit(Event.Unit).NameKey) }), YJJUI::Highlight);
 		}
-		else if (Event.Trigger == EYJJTalkTrigger::PotOpen && YJJData::Broth().IsValidIndex(Event.Unit))
-		{
-			AddBanner(YJJLoc::Format(TEXT("Pot.OpenBanner"), { YJJLoc::Get(YJJData::Broth()[Event.Unit].NameKey) }), YJJUI::Good);
-		}
 		else if (Event.Trigger == EYJJTalkTrigger::CampDown)
 		{
 			AddBanner(Event.Unit > 0 ? YJJLoc::Format(TEXT("UI.CampDown"), { Event.Unit }) : YJJLoc::Get(TEXT("UI.CampsAllDown")), YJJUI::Highlight);

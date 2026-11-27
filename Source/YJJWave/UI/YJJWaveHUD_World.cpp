@@ -225,6 +225,25 @@ void AYJJWaveHUD::DrawCombo()
 	DrawLabelCentered(YJJLoc::Get(TEXT("UI.Combo")), X, L.ComboY + Size * Half + L.ComboLabelGap, L.MidText, YJJUI::WithAlpha(YJJUI::Paper, Fade));
 }
 
+void AYJJWaveHUD::DrawSkillTexts()
+{
+	// 스킬 한 번에 많이 쓰러뜨리면 그 자리에서 글자가 툭 커졌다가 떠오르며 사라진다
+	const FYJJUILayout& L = UI();
+	for (const FYJJEffect& Effect : Battle()->Effects)
+	{
+		if (Effect.Kind != EYJJEffectKind::SkillText)
+		{
+			continue;
+		}
+		const float T = FMath::Clamp(Effect.Age / FMath::Max(Effect.Life, KINDA_SMALL_NUMBER), 0.f, 1.f);
+		const FVector2f At = WorldToVirtual(Effect.Pos - FVector2f(0.f, Effect.Radius * L.SkillTextLift)) - FVector2f(0.f, L.SkillTextRise * T);
+		const float Pop = FMath::Square(FMath::Square(1.f - T));
+		const float Size = L.SkillTextSize * (1.f + Pop * L.SkillTextPop);
+		const FLinearColor Color = Effect.Side < 0.f ? YJJUI::Bad : YJJUI::Highlight;
+		DrawLabel(YJJLoc::Format(TEXT("UI.SkillKills"), { FMath::RoundToInt(Effect.Power) }), At.X, At.Y, Size, YJJUI::WithAlpha(Color, 1.f - T * T * T), Half);
+	}
+}
+
 void AYJJWaveHUD::DrawUnitBars()
 {
 	// 영웅은 초록, 보스는 빨강. 그림 위쪽에 작게, 보스는 이름도
@@ -652,6 +671,25 @@ void AYJJWaveHUD::DrawEffects()
 			AddQuadRotated(Batch, Center, FVector2f(Size), Angle + (Open - Half) * UI().SlashSweep * Effect.Power, FxAtlas.UV(FMath::RoundToInt(UI().FxSlash)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T * T), false);
 			const float Burst = Effect.Radius * UI().ImpactScale * Zoom * FMath::Lerp(UI().SlashStartScale, 1.f, Open);
 			AddQuadRotated(Batch, Center, FVector2f(Burst), T * UI().ImpactSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
+			break;
+		}
+		case EYJJEffectKind::SkillWarn:
+		{
+			// 쓸어 버릴 원: 바깥 원은 그대로, 안쪽 원이 차오른다 (다 차면 쾅). 보스는 빨강, 아군은 금색
+			const FLinearColor Color = Effect.Side < 0.f ? YJJUI::Bad : YJJUI::Highlight;
+			const float Full = Effect.Radius * 2.f * Zoom;
+			AddQuad(Batch, Ground - FVector2f(Full * Half), FVector2f(Full), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(Color, UI().SkillWarnAlpha), false);
+			const float Inner = Full * T;
+			AddQuad(Batch, Ground - FVector2f(Inner * Half), FVector2f(Inner), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(Color, FMath::Lerp(UI().SkillWarnFillAlpha, 1.f, T)), false);
+			break;
+		}
+		case EYJJEffectKind::SkillBlast:
+		{
+			const FLinearColor Color = Effect.Side < 0.f ? YJJUI::Bad : YJJUI::Highlight;
+			const float Open = FMath::Sqrt(T);
+			const float Size = Effect.Radius * 2.f * Zoom * FMath::Lerp(UI().SkillBlastStart, UI().SkillBlastEnd, Open);
+			AddQuad(Batch, Ground - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(Color, 1.f - T), false);
+			AddQuadRotated(Batch, Ground, FVector2f(Size * UI().SkillBlastImpact), T * UI().ImpactSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
 			break;
 		}
 		case EYJJEffectKind::Spark:

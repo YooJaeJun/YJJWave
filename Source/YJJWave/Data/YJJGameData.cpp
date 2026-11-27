@@ -113,6 +113,7 @@ void FYJJGameDatabase::Load()
 	FillNameValues(TEXT("Tuning.csv"), FYJJTuning::StaticStruct(), &Tuning);
 	FillNameValues(TEXT("UILayout.csv"), FYJJUILayout::StaticStruct(), &Layout);
 	LoadUnits();
+	LoadSkills();
 	LoadBuildings();
 	LoadRegions();
 	LoadStages();
@@ -277,6 +278,56 @@ void FYJJGameDatabase::LoadBroth()
 	{
 		Problem(TEXT("Broth.csv: 국물 단계가 없다"));
 	}
+}
+
+void FYJJGameDatabase::LoadSkills()
+{
+	Skills.Reset();
+	for (FYJJUnitDef& Def : Units)
+	{
+		Def.Skill = INDEX_NONE;
+	}
+	const UDataTable* Table = LoadTable(TEXT("Skills.csv"), FYJJSkillRow::StaticStruct());
+	Table->ForeachRow<FYJJSkillRow>(ContextName, [this](const FName& Name, const FYJJSkillRow& Row)
+	{
+		FYJJSkillDef Def;
+		Def.Id = Name;
+		Def.Unit = FindUnit(Row.Unit, TEXT("Skills.csv"));
+		Def.NameKey = Row.NameKey;
+		if (Row.Trigger == SkillManualName)
+		{
+			Def.Trigger = EYJJSkillTrigger::Manual;
+		}
+		else if (Row.Trigger == SkillAutoName)
+		{
+			Def.Trigger = EYJJSkillTrigger::Auto;
+		}
+		else
+		{
+			Problem(FString::Printf(TEXT("Skills.csv %s: 모르는 Trigger %s"), *Name.ToString(), *Row.Trigger));
+		}
+		Def.Cooldown = Row.Cooldown;
+		Def.FirstDelay = Row.FirstDelay;
+		Def.Windup = FMath::Max(Row.Windup, 0.f);
+		Def.Hits = FMath::Max(Row.Hits, 1);
+		Def.HitInterval = Row.HitInterval;
+		Def.Radius = Row.Radius;
+		Def.Reach = Row.Reach;
+		Def.DamageScale = Row.DamageScale;
+		Def.Knockback = Row.Knockback;
+		Def.AutoCount = FMath::Max(Row.AutoCount, 1);
+		if (Def.Unit == INDEX_NONE)
+		{
+			return;
+		}
+		if (Units[Def.Unit].Skill != INDEX_NONE)
+		{
+			Problem(FString::Printf(TEXT("Skills.csv %s: %s 는 이미 스킬이 있다"), *Name.ToString(), *Row.Unit));
+			return;
+		}
+		Units[Def.Unit].Skill = Skills.Num();
+		Skills.Add(Def);
+	});
 }
 
 bool FYJJGameDatabase::ParseTrigger(const FString& Name, EYJJTalkTrigger& Out)
@@ -708,6 +759,8 @@ int32 YJJData::HeroUnit()
 TConstArrayView<FYJJPerkDef> YJJData::Perks() { return FYJJGameDatabase::Get().Perks; }
 TConstArrayView<FYJJPerkDef> YJJData::Cards() { return FYJJGameDatabase::Get().Cards; }
 TConstArrayView<FYJJBrothStage> YJJData::Broth() { return FYJJGameDatabase::Get().Broth; }
+TConstArrayView<FYJJSkillDef> YJJData::Skills() { return FYJJGameDatabase::Get().Skills; }
+const FYJJSkillDef& YJJData::Skill(int32 Index) { return FYJJGameDatabase::Get().Skills[Index]; }
 TConstArrayView<FYJJTalk> YJJData::Talks() { return FYJJGameDatabase::Get().Talks; }
 
 const TCHAR* YJJData::TriggerKey(EYJJTalkTrigger Trigger)

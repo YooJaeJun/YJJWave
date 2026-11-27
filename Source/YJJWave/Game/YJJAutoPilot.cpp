@@ -143,6 +143,23 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 			HUD->FocusWorld(Effect.Pos, PromoteShotZoom);
 			Mode->TakeShot(FString::Printf(TEXT("%sSmack"), ShotPrefix));
 		}
+		if (!bHeroSkillShot && HUD && Effect.Kind == EYJJEffectKind::SkillBlast && Effect.Side > 0.f && Effect.Age >= Effect.Life * SkillBlastShotAt)
+		{
+			bHeroSkillShot = true;
+			HUD->FocusWorld(Effect.Pos, PromoteShotZoom);
+			Mode->TakeShot(FString::Printf(TEXT("%sHeroSkill"), ShotPrefix));
+		}
+		if (!bBossSkillShot && HUD && Effect.Kind == EYJJEffectKind::SkillWarn && Effect.Side < 0.f && Effect.Age >= Effect.Life * BossWarnShotAt)
+		{
+			bBossSkillShot = true;
+			HUD->FocusWorld(Effect.Pos, PromoteShotZoom);
+			Mode->TakeShot(FString::Printf(TEXT("%sBossSkill"), ShotPrefix));
+		}
+		if (!bSkillTextShot && Effect.Kind == EYJJEffectKind::SkillText && Effect.Age >= Effect.Life * SkillTextShotAt)
+		{
+			bSkillTextShot = true;
+			Mode->TakeShot(FString::Printf(TEXT("%sSkillKills"), ShotPrefix));
+		}
 		if (!bBurnShot && bShowing && Effect.Kind == EYJJEffectKind::Burn)
 		{
 			bBurnShot = true;
@@ -395,6 +412,11 @@ void FYJJAutoPilot::CastSpells(FYJJBattle& Battle)
 	if (EnemyFront > 0.f && Battle.HasHero() && Battle.ChargeReady() >= 1.f && FMath::Abs(EnemyFront - Battle.HeroPos().X) < T.BotChargeRange)
 	{
 		Battle.HeroCharge(FVector2f(EnemyFront + T.BotChargeRange, Battle.HeroPos().Y));
+	}
+	// 영웅 큰 스킬: 둘레에 적이 몰리면
+	if (Battle.HeroSkillReady() >= 1.f && Battle.HeroSkillWorthIt())
+	{
+		Battle.HeroSkill();
 	}
 	if (EnemyFront > 0.f && Battle.CanCast(EYJJSpell::Meteor))
 	{

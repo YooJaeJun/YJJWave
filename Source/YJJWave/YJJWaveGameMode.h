@@ -55,6 +55,8 @@ public:
 	bool IsRunning() const;
 	bool IsPaused() const { return bUserPaused; }
 	float GetSpeed() const;
+	/** 플레이어 배속 토글만 (x1, x2). 버튼 글자용: 테스트 배속은 빼고 보여 준다 */
+	float SpeedToggle() const;
 	void CycleSpeed();
 	void TogglePause() { bUserPaused = !bUserPaused; }
 	void Restart();

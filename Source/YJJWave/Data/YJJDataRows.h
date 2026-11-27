@@ -190,6 +190,29 @@ struct FYJJPerkRow : public FYJJEffectRow
 	UPROPERTY() int32 Icon = -1;
 };
 
+/** Skills.csv: 영웅·보스 큰 범위 스킬 (유닛 하나에 하나) */
+USTRUCT()
+struct FYJJSkillRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString Unit;
+	UPROPERTY() FString NameKey;
+	/** Manual(플레이어가 누른다) / Auto(둘레에 상대가 AutoCount 이상이면 저절로) */
+	UPROPERTY() FString Trigger;
+	UPROPERTY() float Cooldown = 0.f;
+	UPROPERTY() float FirstDelay = 0.f;
+	UPROPERTY() float Windup = 0.f;
+	UPROPERTY() int32 Hits = 1;
+	UPROPERTY() float HitInterval = 0.f;
+	UPROPERTY() float Radius = 0.f;
+	UPROPERTY() float Reach = 0.f;
+	UPROPERTY() float DamageScale = 0.f;
+	UPROPERTY() float Knockback = 0.f;
+	UPROPERTY() int32 AutoCount = 0;
+	UPROPERTY() FString Note;
+};
+
 /** Broth.csv: 냄비 국물 단계 */
 USTRUCT()
 struct FYJJBrothRow : public FTableRowBase

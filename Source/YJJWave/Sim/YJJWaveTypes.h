@@ -93,6 +93,8 @@ namespace YJJUnitFlag
 {
 	inline constexpr uint8 LastStandUsed = 1 << 0;
 	inline constexpr uint8 Revived = 1 << 1;
+	/** 큰 범위 스킬을 쓰는 중 (멈춰서 기를 모으고 쓴다) */
+	inline constexpr uint8 Casting = 1 << 2;
 }
 
 /** 주문 (Spells.csv Spell 열 이름과 같다) */
@@ -190,7 +192,35 @@ struct FYJJUnitDef
 	int32 Tier = 0;
 	/** 쓰러뜨리면 냄비로 가는 뼈 */
 	float Bones = 0.f;
-	FName VoiceKey;              // Sounds.csv Voice_<Id>   // 크게 그려지는 유닛: BigUnits.png 줄 (흐릿하지 않게 256px 칸)
+	FName VoiceKey;              // Sounds.csv Voice_<Id>
+	/** 큰 범위 스킬 (Skills.csv 번호, 없으면 INDEX_NONE) */
+	int32 Skill = INDEX_NONE;
+};
+
+/** Skills.csv Trigger 열: 언제 쓰나 */
+enum class EYJJSkillTrigger : uint8
+{
+	Manual,   // 플레이어가 누른다 (내 영웅 R)
+	Auto,     // 둘레에 상대가 AutoCount 이상이면 저절로 (보스·진급 영웅)
+};
+
+/** Skills.csv 한 줄: 영웅·보스의 큰 범위 쓸기. 기를 모으는 동안(Windup) 멈춰 서고 바닥에 원이 뜬다 → Hits 번 쓴다 */
+struct FYJJSkillDef
+{
+	FName Id;
+	int32 Unit = INDEX_NONE;
+	FString NameKey;
+	EYJJSkillTrigger Trigger = EYJJSkillTrigger::Auto;
+	float Cooldown = 0.f;
+	float FirstDelay = 0.f;   // 나와서 처음 쓸 수 있기까지
+	float Windup = 0.f;       // 예고 시간
+	int32 Hits = 1;
+	float HitInterval = 0.f;
+	float Radius = 0.f;
+	float Reach = 0.f;        // 쓰는 원 가운데를 바라보는 쪽으로 반경 × 이만큼 민다 (0 = 제자리 회오리)
+	float DamageScale = 0.f;  // 한 번 피해 = 공격력 × 이 값
+	float Knockback = 0.f;
+	int32 AutoCount = 0;      // Auto: 원 안 상대가 이만큼 이상이면 쓴다 (Manual 은 봇 기준)
 };
 
 /** Buildings.csv 한 줄 */

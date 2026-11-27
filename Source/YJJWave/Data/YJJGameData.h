@@ -17,7 +17,7 @@ class UScriptStruct;
  *   Stages.csv     스테이지                       Waves.csv      스테이지·웨이브별 몬스터
  *   Perks.csv      특성 성좌 (Tools/Data/gen_perks.py)  Spells.csv     주문 Lv별 수치·특수 효과
  *   Broth.csv      냄비 국물 단계                 Dialogues.csv  게임 중 말풍선 대화
- *   Regions.csv    월드맵 지역
+ *   Regions.csv    월드맵 지역                    Skills.csv     영웅·보스 큰 범위 스킬
  * 글자는 Localization.csv (YJJLoc).
  */
 class YJJWAVE_API FYJJGameDatabase
@@ -42,6 +42,8 @@ public:
 	TArray<FYJJBrothStage> Broth;
 	/** Dialogues.csv: 말풍선 대화 */
 	TArray<FYJJTalk> Talks;
+	/** Skills.csv: 영웅·보스 큰 범위 스킬 (유닛 Def.Skill 이 번호) */
+	TArray<FYJJSkillDef> Skills;
 
 	/** 읽으면서 생긴 문제 (빠진 이름, 모르는 유닛…) */
 	TArray<FString> Problems;
@@ -64,6 +66,7 @@ private:
 	void LoadSpells();
 	void LoadBroth();
 	void LoadDialogues();
+	void LoadSkills();
 	bool ParseTrigger(const FString& Name, EYJJTalkTrigger& Out);
 	/** Voice 열: 비우면 소리 없음 (대사는 글로만) */
 	static FName VoiceFor(const FString& Voice, const FString& Speaker);
@@ -87,6 +90,9 @@ private:
 	static constexpr int32 BlockerFields = 4;
 	static constexpr const TCHAR* ContextName = TEXT("YJJData");
 	static constexpr const TCHAR* TitleName = TEXT("Title");
+	/** Skills.csv Trigger 열 이름 */
+	static constexpr const TCHAR* SkillManualName = TEXT("Manual");
+	static constexpr const TCHAR* SkillAutoName = TEXT("Auto");
 };
 
 // 자주 쓰는 표를 짧게 부르는 길 (모두 FYJJGameDatabase::Get()을 거친다)
@@ -106,6 +112,8 @@ namespace YJJData
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Cards();
 	YJJWAVE_API TConstArrayView<FYJJBrothStage> Broth();
 	YJJWAVE_API TConstArrayView<FYJJTalk> Talks();
+	YJJWAVE_API TConstArrayView<FYJJSkillDef> Skills();
+	YJJWAVE_API const FYJJSkillDef& Skill(int32 Index);
 	/** Dialogues.csv Trigger 열 이름 */
 	YJJWAVE_API const TCHAR* TriggerKey(EYJJTalkTrigger Trigger);
 

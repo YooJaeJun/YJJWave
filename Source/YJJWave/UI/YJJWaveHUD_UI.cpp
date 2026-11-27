@@ -732,6 +732,9 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::Charge:
 			TryHeroCharge();
 			break;
+		case EButton::HeroSkill:
+			TryHeroSkill();
+			break;
 		case EButton::TitleStart:
 			Mode->GoToWorldMap();
 			break;
@@ -923,6 +926,10 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	else if (Key == EKeys::E)
 	{
 		TryHeroCharge();
+	}
+	else if (Key == EKeys::R)
+	{
+		TryHeroSkill();
 	}
 	else if (Key == EKeys::Q)
 	{

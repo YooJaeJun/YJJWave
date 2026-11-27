@@ -77,6 +77,8 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 
 	FreeSlots.Reset();
 	BigUnits.Reset();
+	Casters.Reset();
+	SkillEvents.Reset();
 	Deaths.Reset();
 	Projectiles.Reset();
 	Rescued.Reset();
@@ -144,6 +146,10 @@ int32 FYJJHorde::Spawn(int32 InType, EYJJTeam InTeam, const FVector2f& InPos, co
 	if (Def.Radius >= Config.BigUnitRadius)
 	{
 		BigUnits.Add(Slot);
+	}
+	if (Def.Skill != INDEX_NONE)
+	{
+		AddCaster(Slot);
 	}
 	return Slot;
 }
@@ -258,6 +264,11 @@ void FYJJHorde::Reorder()
 		Big = Moved(Big);
 	}
 	BigUnits.RemoveAll([](int32 Slot) { return Slot == INDEX_NONE; });
+	for (FYJJSkillCaster& Caster : Casters)
+	{
+		Caster.Slot = Moved(Caster.Slot);
+	}
+	Casters.RemoveAll([](const FYJJSkillCaster& Caster) { return Caster.Slot == INDEX_NONE; });
 	HeroSlot = Moved(HeroSlot);
 	FreeSlots.Reset();
 	HighWaterMark = Count;
@@ -513,7 +524,12 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	// 아군 병사는 전선 끝에서 멈춘다: 적 진영 깊이 있는 적은 쫓지 않고 다가오기를 기다린다 (원거리는 닿으면 쏜다)
 	const bool bHoldLine = MyTeam == EYJJTeam::Player && Slot != HeroSlot && P.X >= Config.PlayerAdvanceX;
 
-	if (Slot == HeroSlot && ChargeLeft > 0.f)
+	if (Flags[Slot] & YJJUnitFlag::Casting)
+	{
+		// 큰 스킬: 멈춰 서서 기를 모으고 쓴다 (때리기는 TickSkills)
+		Desired = FVector2f::ZeroVector;
+	}
+	else if (Slot == HeroSlot && ChargeLeft > 0.f)
 	{
 		// 돌격 중: 앞만 보고 내달린다 (때리기는 TickCharge)
 		Desired = ChargeDir * ChargeSpeed;
@@ -689,6 +705,11 @@ void FYJJHorde::Promote(int32 Slot)
 	{
 		BigUnits.Add(Slot);
 	}
+	if (New.Skill != INDEX_NONE && New.Skill != Old.Skill)
+	{
+		Casters.RemoveAll([Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot; });
+		AddCaster(Slot);
+	}
 	Promoted.Add({ Pos[Slot], NewType });
 }
 
@@ -763,8 +784,9 @@ int32 FYJJHorde::FindEnemyNear(const FVector2f& Center, float Radius, EYJJTeam V
 	return Best;
 }
 
-void FYJJHorde::DamageArea(const FVector2f& Center, float Radius, float Amount, float Knockback, EYJJTeam Victims, int32 Attacker)
+int32 FYJJHorde::DamageArea(const FVector2f& Center, float Radius, float Amount, float Knockback, EYJJTeam Victims, int32 Attacker)
 {
+	int32 Killed = 0;
 	const FYJJGrid& Grid = Grids[TeamIndex(Victims)];
 	const FIntPoint Min = Grid.CellOf(Center - FVector2f(Radius));
 	const FIntPoint Max = Grid.CellOf(Center + FVector2f(Radius));
@@ -781,7 +803,12 @@ void FYJJHorde::DamageArea(const FVector2f& Center, float Radius, float Amount, 
 				{
 					continue;
 				}
+				const bool bWasUp = HP[Other] > 0.f;
 				Hit(Other, Amount, Center, Attacker, Attacker != INDEX_NONE);
+				if (bWasUp && HP[Other] <= 0.f)
+				{
+					++Killed;
+				}
 				if (Knockback > 0.f)
 				{
 					// 가벼울수록, 가운데일수록 멀리 날아간다
@@ -794,6 +821,32 @@ void FYJJHorde::DamageArea(const FVector2f& Center, float Radius, float Amount, 
 			}
 		}
 	}
+	return Killed;
+}
+
+int32 FYJJHorde::CountNear(const FVector2f& Center, float Radius, EYJJTeam Victims, int32 Cap) const
+{
+	const FYJJGrid& Grid = Grids[TeamIndex(Victims)];
+	const FIntPoint Min = Grid.CellOf(Center - FVector2f(Radius));
+	const FIntPoint Max = Grid.CellOf(Center + FVector2f(Radius));
+	const float RadiusSq = Radius * Radius;
+	int32 Count = 0;
+	for (int32 Y = Min.Y; Y <= Max.Y; ++Y)
+	{
+		for (int32 X = Min.X; X <= Max.X; ++X)
+		{
+			const int32 Cell = Grid.Index(X, Y);
+			for (int32 Item = Grid.Start[Cell]; Item < Grid.Start[Cell + 1]; ++Item)
+			{
+				const int32 Other = Grid.Items[Item];
+				if (Alive[Other] && FVector2f::DistSquared(Center, Pos[Other]) <= RadiusSq && ++Count >= Cap)
+				{
+					return Count;
+				}
+			}
+		}
+	}
+	return Count;
 }
 
 void FYJJHorde::Shoot(int32 Slot, int32 Victim)
@@ -907,6 +960,144 @@ void FYJJHorde::TickCharge(float Dt)
 	const FVector2f Ahead = Pos[HeroSlot] + ChargeDir * ChargeRadius * HalfShare;
 	DamageArea(Ahead, ChargeRadius, AttackDamage(HeroSlot) * ChargeDamageScale, ChargeKnockback, EYJJTeam::Enemy, HeroSlot);
 	Slashes.Add({ Ahead, ChargeRadius, ChargeDir.X >= 0.f ? 1.f : -1.f });
+}
+
+void FYJJHorde::AddCaster(int32 Slot)
+{
+	FYJJSkillCaster& Caster = Casters.AddDefaulted_GetRef();
+	Caster.Slot = Slot;
+	Caster.Gen = Gen[Slot];
+	Caster.Skill = YJJData::Unit(Type[Slot]).Skill;
+	Caster.Cooldown = YJJData::Skill(Caster.Skill).FirstDelay;
+	Caster.Windup = NoWindup;
+}
+
+const FYJJSkillCaster* FYJJHorde::CasterOf(int32 Slot) const
+{
+	return Casters.FindByPredicate([this, Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot && IsValidTarget(Slot, Caster.Gen); });
+}
+
+FVector2f FYJJHorde::SkillCenter(const FYJJSkillCaster& Caster) const
+{
+	const FYJJSkillDef& Skill = YJJData::Skill(Caster.Skill);
+	return Pos[Caster.Slot] + FVector2f(Caster.Dir * Skill.Radius * Skill.Reach, 0.f);
+}
+
+bool FYJJHorde::CastSkill(int32 Slot, float Dir)
+{
+	FYJJSkillCaster* Caster = const_cast<FYJJSkillCaster*>(CasterOf(Slot));
+	if (!Caster || Caster->Cooldown > 0.f || Caster->Windup >= 0.f || Caster->HitsLeft > 0)
+	{
+		return false;
+	}
+	Caster->Dir = Dir < 0.f ? -1.f : 1.f;
+	BeginSkill(*Caster);
+	return true;
+}
+
+float FYJJHorde::SkillReady(int32 Slot) const
+{
+	const FYJJSkillCaster* Caster = CasterOf(Slot);
+	if (!Caster)
+	{
+		return -1.f;
+	}
+	if (Caster->Windup >= 0.f || Caster->HitsLeft > 0)
+	{
+		return 0.f;
+	}
+	const float Full = YJJData::Skill(Caster->Skill).Cooldown;
+	return Full > 0.f ? 1.f - Caster->Cooldown / Full : 1.f;
+}
+
+void FYJJHorde::BeginSkill(FYJJSkillCaster& Caster)
+{
+	const FYJJSkillDef& Skill = YJJData::Skill(Caster.Skill);
+	Caster.Windup = Skill.Windup;
+	Caster.Cooldown = Skill.Cooldown;
+	Caster.Kills = 0;
+	Flags[Caster.Slot] |= YJJUnitFlag::Casting;
+	FaceLeft[Caster.Slot] = Caster.Dir < 0.f ? 1 : 0;
+	FYJJSkillEvent& Event = SkillEvents.AddDefaulted_GetRef();
+	Event.Phase = EYJJSkillPhase::Windup;
+	Event.Skill = Caster.Skill;
+	Event.Team = static_cast<EYJJTeam>(Team[Caster.Slot]);
+	Event.Pos = SkillCenter(Caster);
+	Event.Dir = Caster.Dir;
+}
+
+void FYJJHorde::TickSkills(float Dt)
+{
+	for (int32 Index = Casters.Num() - 1; Index >= 0; --Index)
+	{
+		FYJJSkillCaster& Caster = Casters[Index];
+		const int32 Slot = Caster.Slot;
+		if (!IsValidTarget(Slot, Caster.Gen))
+		{
+			Casters.RemoveAtSwap(Index, EAllowShrinking::No);
+			continue;
+		}
+		const FYJJSkillDef& Skill = YJJData::Skill(Caster.Skill);
+		const EYJJTeam MyTeam = static_cast<EYJJTeam>(Team[Slot]);
+		Caster.Cooldown = FMath::Max(Caster.Cooldown - Dt, 0.f);
+		// 1) 기 모으기: 멈춰 서 있다가 다 모이면 쓰기 시작
+		if (Caster.Windup >= 0.f)
+		{
+			Flags[Slot] |= YJJUnitFlag::Casting;
+			Caster.Windup -= Dt;
+			if (Caster.Windup >= 0.f)
+			{
+				continue;
+			}
+			Caster.Windup = NoWindup;
+			Caster.HitsLeft = Skill.Hits;
+			Caster.HitTimer = 0.f;
+		}
+		// 2) 쓸기: HitInterval 마다 원 안 상대를 치고 날린다
+		if (Caster.HitsLeft > 0)
+		{
+			Flags[Slot] |= YJJUnitFlag::Casting;
+			Caster.HitTimer -= Dt;
+			if (Caster.HitTimer > 0.f)
+			{
+				continue;
+			}
+			Caster.HitTimer = Skill.HitInterval;
+			--Caster.HitsLeft;
+			const FVector2f Center = SkillCenter(Caster);
+			Caster.Kills += DamageArea(Center, Skill.Radius, Damage[Slot] * Skill.DamageScale, Skill.Knockback, Opponent(MyTeam), Slot);
+			StartAttackAnim(Slot);
+			// 붓 초승달: 앞 쓸기는 한쪽, 제자리 회오리는 양쪽
+			Slashes.Add({ Center, Skill.Radius, Caster.Dir });
+			if (Skill.Reach <= 0.f)
+			{
+				Slashes.Add({ Center, Skill.Radius, -Caster.Dir });
+			}
+			FYJJSkillEvent& Event = SkillEvents.AddDefaulted_GetRef();
+			Event.Phase = EYJJSkillPhase::Hit;
+			Event.Skill = Caster.Skill;
+			Event.Team = MyTeam;
+			Event.Pos = Center;
+			Event.Dir = Caster.Dir;
+			Event.Kills = Caster.Kills;
+			Event.bLast = Caster.HitsLeft == 0;
+			if (Caster.HitsLeft == 0)
+			{
+				Flags[Slot] &= ~YJJUnitFlag::Casting;
+			}
+			continue;
+		}
+		Flags[Slot] &= ~YJJUnitFlag::Casting;
+		// 3) 저절로 쓰는 스킬: 바라보는 쪽 원 안에 상대가 충분하면
+		if (Skill.Trigger == EYJJSkillTrigger::Auto && Caster.Cooldown <= 0.f)
+		{
+			Caster.Dir = FaceLeft[Slot] ? -1.f : 1.f;
+			if (CountNear(SkillCenter(Caster), Skill.Radius, Opponent(MyTeam), Skill.AutoCount) >= Skill.AutoCount)
+			{
+				BeginSkill(Caster);
+			}
+		}
+	}
 }
 
 void FYJJHorde::UpdateProjectiles(float Dt)
@@ -1033,6 +1224,7 @@ void FYJJHorde::Step(float Dt)
 
 	ApplyAttacks();
 	TickCharge(Dt);
+	TickSkills(Dt);
 	UpdateProjectiles(Dt);
 	EndPhase(EYJJHordePhase::Combat);
 	CollectDead();

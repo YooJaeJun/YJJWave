@@ -54,6 +54,9 @@ private:
 	bool bTalkShot = false;
 	bool bPromoteShot = false;
 	bool bSmackShot = false;
+	bool bHeroSkillShot = false;
+	bool bBossSkillShot = false;
+	bool bSkillTextShot = false;
 	// 배속 토글 확인: 두 번째 웨이브에서 토글을 눌러 게임 시간이 몇 배로 흐르는지 재고 되돌린다 (0 아직, 1 재는 중, 2 끝)
 	int32 SpeedCheck = 0;
 	float SpeedCheckReal = 0.f;
@@ -102,6 +105,10 @@ private:
 	static constexpr float PromoteShotZoom = 1.6f;
 	/** 국자 스크린샷: 내려오는 중 이만큼일 때 */
 	static constexpr float SmackShotAt = 0.7f;
+	/** 큰 스킬: 쾅 고리가 이만큼 퍼졌을 때, 보스 예고 원이 이만큼 찼을 때, 싹쓸이 글자가 이만큼 떴을 때 */
+	static constexpr float SkillBlastShotAt = 0.25f;
+	static constexpr float BossWarnShotAt = 0.6f;
+	static constexpr float SkillTextShotAt = 0.15f;
 	/** 메뉴 화면이 그려질 때까지 기다리는 실제 시간 */
 	static constexpr float MenuShotWait = 0.6f;
 	/** 결과 창 별 연출이 다 나올 때까지 (실제 시간) */

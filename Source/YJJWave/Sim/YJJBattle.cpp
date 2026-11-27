@@ -394,6 +394,7 @@ void FYJJBattle::PostStep(float Dt)
 		Effect.Power = Slash.Dir;
 	}
 	Horde.Slashes.Reset();
+	HandleSkillEvents();
 	// 난전 불꽃: 근접 타격 자리마다 작은 먹 튀김
 	for (const FVector2f& Spark : Horde.HitSparks)
 	{
@@ -451,6 +452,72 @@ void FYJJBattle::CheckVictory()
 		const float Health = WallHP / FMath::Max(WallMaxHP, KINDA_SMALL_NUMBER);
 		Stars = Health >= T.StarThreeHealth ? 3 : Health >= T.StarTwoHealth ? 2 : 1;
 	}
+}
+
+void FYJJBattle::HandleSkillEvents()
+{
+	// 영웅 R: 걸음 사이에만 무리를 건드린다
+	if (bSkillQueued)
+	{
+		bSkillQueued = false;
+		const int32 Hero = Horde.Hero();
+		if (Hero != INDEX_NONE)
+		{
+			Horde.CastSkill(Hero, Horde.FaceLeft[Hero] ? -1.f : 1.f);
+		}
+	}
+	const FYJJTuning& T = YJJData::Tune();
+	for (const FYJJSkillEvent& Event : Horde.SkillEvents)
+	{
+		const FYJJSkillDef& Skill = YJJData::Skill(Event.Skill);
+		const float Side = Event.Team == EYJJTeam::Player ? 1.f : -1.f;
+		if (Event.Phase == EYJJSkillPhase::Windup)
+		{
+			// 쓸어 버릴 자리를 바닥에 미리 보여 준다 (보스 것은 피할 틈)
+			AddEffect(EYJJEffectKind::SkillWarn, Event.Pos, FMath::Max(Skill.Windup, T.SkillWarnMinTime), Skill.Radius).Side = Side;
+			Sounds.Add(Event.Team == EYJJTeam::Player ? SoundHeroVoice : SoundBossAppear);
+			continue;
+		}
+		AddEffect(EYJJEffectKind::SkillBlast, Event.Pos, T.SkillBlastTime, Skill.Radius).Side = Side;
+		Sounds.Add(SoundSmack);
+		if (!Event.bLast)
+		{
+			continue;
+		}
+		++ShakeRequests;
+		if (Event.Kills >= T.SkillTextMinKills)
+		{
+			AddEffect(EYJJEffectKind::SkillText, Event.Pos, T.SkillTextTime, Skill.Radius, static_cast<float>(Event.Kills)).Side = Side;
+		}
+		if (Event.Kills >= T.SkillSlowMoKills)
+		{
+			SlowMoLeft = FMath::Max(SlowMoLeft, T.SkillSlowMoTime);
+		}
+	}
+	Horde.SkillEvents.Reset();
+	HeroSkillReadyNow = Horde.Hero() != INDEX_NONE ? Horde.SkillReady(Horde.Hero()) : -1.f;
+}
+
+bool FYJJBattle::HeroSkill()
+{
+	if (bGameOver || bSkillQueued || HeroSkillReadyNow < 1.f || Horde.Hero() == INDEX_NONE)
+	{
+		return false;
+	}
+	bSkillQueued = true;
+	return true;
+}
+
+const FYJJSkillDef* FYJJBattle::HeroSkillDef() const
+{
+	const int32 Hero = YJJData::HeroUnit();
+	return Hero != INDEX_NONE && YJJData::Unit(Hero).Skill != INDEX_NONE ? &YJJData::Skill(YJJData::Unit(Hero).Skill) : nullptr;
+}
+
+bool FYJJBattle::HeroSkillWorthIt() const
+{
+	const FYJJSkillDef* Skill = HeroSkillDef();
+	return Skill && HasHero() && Horde.CountNear(HeroPos(), Skill->Radius, EYJJTeam::Enemy, Skill->AutoCount) >= Skill->AutoCount;
 }
 
 bool FYJJBattle::HeroCharge(const FVector2f& Toward)

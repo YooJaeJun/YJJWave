@@ -182,9 +182,9 @@ void AYJJWaveHUD::DrawSpeedButton()
 	DrawPanel(OptionsX, Y, OptionsW, H, bOptionsOpen ? YJJUI::Highlight : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
 	DrawLabelCentered(YJJLoc::Get(TEXT("UI.Options")), OptionsX + OptionsW * Half, Y + H * Half, L.MidText, YJJUI::Paper, OptionsW - L.PanelPad);
 	AddButton(EButton::OpenOptions, 0, OptionsX, Y, OptionsW, H);
-	const FString Speed = Mode && Mode->IsPaused() ? YJJLoc::Get(TEXT("UI.Paused")) : YJJLoc::Format(TEXT("UI.Speed"), { Mode ? FMath::RoundToInt(Mode->GetSpeed()) : 1 });
+	const FString Speed = Mode && Mode->IsPaused() ? YJJLoc::Get(TEXT("UI.Paused")) : YJJLoc::Format(TEXT("UI.Speed"), { Mode ? FMath::RoundToInt(Mode->SpeedToggle()) : 1 });
 	// 2배속이면 금빛으로 깜빡여 켜져 있음을 알린다 (누르면 1배속 ↔ 2배속)
-	const bool bFast = Mode && !Mode->IsPaused() && Mode->GetSpeed() > 1.f;
+	const bool bFast = Mode && !Mode->IsPaused() && Mode->SpeedToggle() > 1.f;
 	const float Glow = bFast ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
 	DrawPanel(X, Y, W, H, FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow), FMath::RoundToInt(L.UiCard));
 	DrawLabelCentered(Speed, X + W * Half, Y + H * Half, L.MidText, bFast ? YJJUI::Ink : YJJUI::Paper, W - L.PanelPad);

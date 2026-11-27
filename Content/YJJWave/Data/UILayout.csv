@@ -36,6 +36,16 @@ FrontLabelY,140,전선 띠 위 보너스 글자 높이 (전장 위끝에서)
 ChargeButtonH,64,영웅 돌격 버튼 높이
 ChargeButtonMargin,24,화면 아래와 돌격 버튼 사이
 ChargeDefaultReach,500,마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
+SkillButtonGap,16,돌격 버튼과 스킬 버튼 사이 (두 버튼이 전장 아래 가운데에 나란히)
+SkillWarnAlpha,0.45,스킬 예고: 바깥 원 진하기
+SkillWarnFillAlpha,0.25,스킬 예고: 차오르는 안쪽 원 처음 진하기 (다 차면 1)
+SkillBlastStart,0.4,스킬 쾅 고리 처음 크기 (반경 배율)
+SkillBlastEnd,1.15,스킬 쾅 고리 끝 크기 (반경 배율)
+SkillBlastImpact,0.35,"스킬 쾅 가운데 먹 튀김 크기 (고리 크기 배율, 크면 쓰는 유닛을 가린다)"
+SkillTextSize,34,싹쓸이 글자 크기
+SkillTextRise,70,싹쓸이 글자가 떠오르는 높이 (화면)
+SkillTextPop,0.6,싹쓸이 글자 처음 커지는 정도
+SkillTextLift,0.6,싹쓸이 글자 시작 높이 (스킬 반경 배율)
 RockAspect,4,Props.png 바위 무더기 칸 가로/세로
 RockRowOverlap,0.5,"바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)"
 RockWidthPad,1.2,바위 그림을 타원 너비보다 이만큼 넓게
@@ -345,7 +355,7 @@ CardPickGap,30,카드 사이
 CardTitleY,220,카드 고르기 제목 y
 BannerY,150,물량 배너 y
 BannerTime,2.2,배너가 떠 있는 시간
-BannerText,64,배너 글자 크기
+BannerText,52,배너 글자 크기
 BannerPop,0.5,배너가 처음 튀어나오는 크기 (+비율)
 BannerPopSpeed,6,튀어나온 크기가 줄어드는 빠르기
 BannerFadeSharpness,3,끝에 사라지는 빠르기 (클수록 늦게까지 또렷)

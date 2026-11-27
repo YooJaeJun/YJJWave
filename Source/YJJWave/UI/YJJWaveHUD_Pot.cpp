@@ -228,7 +228,8 @@ void AYJJWaveHUD::DrawChargeButton()
 	const FYJJUILayout& L = UI();
 	const float W = L.ChargeButtonW;
 	const float H = L.ChargeButtonH;
-	const float X = WorldCenterVirtualX() - W * Half;
+	// 스킬이 있으면 두 버튼을 가운데에 나란히 (돌격 왼쪽, 스킬 오른쪽)
+	const float X = Current->HeroSkillDef() ? WorldCenterVirtualX() - W - L.SkillButtonGap * Half : WorldCenterVirtualX() - W * Half;
 	const float Y = VirtualHeight - H - L.ChargeButtonMargin;
 	const float Ready = Current->ChargeReady();
 	const bool bReady = Ready >= 1.f && Current->HasHero();
@@ -240,6 +241,40 @@ void AYJJWaveHUD::DrawChargeButton()
 		DrawBar(X + L.PanelPad, Y + H - L.PanelPad - L.SkillChargeBarH, W - L.PanelPad * 2.f, L.SkillChargeBarH, Ready, YJJUI::Highlight);
 	}
 	AddButton(EButton::Charge, 0, X, Y, W, H);
+}
+
+void AYJJWaveHUD::TryHeroSkill()
+{
+	FYJJBattle* Current = EditBattle();
+	if (Current && !Current->bCardPending)
+	{
+		Current->HeroSkill();
+	}
+}
+
+void AYJJWaveHUD::DrawHeroSkillButton()
+{
+	const FYJJBattle* Current = Battle();
+	const FYJJSkillDef* Skill = Current->HeroSkillDef();
+	if (Current->bGameOver || bTreeOpen || !Current->HasHero() || !Skill)
+	{
+		return;
+	}
+	const FYJJUILayout& L = UI();
+	const float W = L.ChargeButtonW;
+	const float H = L.ChargeButtonH;
+	const float X = WorldCenterVirtualX() + L.SkillButtonGap * Half;
+	const float Y = VirtualHeight - H - L.ChargeButtonMargin;
+	const float Ready = FMath::Max(Current->HeroSkillReady(), 0.f);
+	const bool bReady = Ready >= 1.f;
+	const float Glow = bReady ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
+	DrawPanel(X, Y, W, H, FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow), FMath::RoundToInt(L.UiCard));
+	DrawLabelCentered(YJJLoc::Format(TEXT("UI.HeroSkill"), { YJJLoc::Get(Skill->NameKey) }), X + W * Half, Y + (H - L.SkillChargeBarH) * Half, L.MidText, bReady ? YJJUI::Paper : YJJUI::Muted, W - L.PanelPad * 2.f);
+	if (!bReady)
+	{
+		DrawBar(X + L.PanelPad, Y + H - L.PanelPad - L.SkillChargeBarH, W - L.PanelPad * 2.f, L.SkillChargeBarH, Ready, YJJUI::Highlight);
+	}
+	AddButton(EButton::HeroSkill, 0, X, Y, W, H);
 }
 
 FLinearColor AYJJWaveHUD::PotStatusColor() const

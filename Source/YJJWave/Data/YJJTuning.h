@@ -110,6 +110,13 @@ struct FYJJTuning
 	UPROPERTY() float HeroChargeHitInterval = 0.f;   // 내달리는 동안 이 간격마다 친다
 	UPROPERTY() float ChokeMergeDist = 0.f;   // 길목 바위 오른쪽 끝이 이만큼 안이면 한 줄로 친다 (길목 돌파 알림)
 	UPROPERTY() float BotChargeRange = 0.f;   // 봇: 적 앞줄이 영웅에서 이 거리 안이면 돌격
+	// ---- 큰 범위 스킬 (Skills.csv): 영웅은 R, 보스·진급 영웅은 저절로 ----
+	UPROPERTY() float SkillWarnMinTime = 0.f;   // 스킬 예고 원을 적어도 이만큼 보여 준다
+	UPROPERTY() float SkillBlastTime = 0.f;   // 스킬 쾅 고리 연출 시간
+	UPROPERTY() float SkillTextTime = 0.f;   // 싹쓸이 글자 시간
+	UPROPERTY() int32 SkillTextMinKills = 0;   // 스킬 한 번에 이만큼 쓰러뜨리면 싹쓸이 글자
+	UPROPERTY() int32 SkillSlowMoKills = 0;   // 스킬 한 번에 이만큼 쓰러뜨리면 잠깐 느리게 (BossSlowMo 배율)
+	UPROPERTY() float SkillSlowMoTime = 0.f;   // 싹쓸이 느린 화면 시간 (게임 시간)
 	// ---- 난전 느낌 ----
 	UPROPERTY() float SparkTime = 0.f;   // 근접 타격 불꽃 시간
 	UPROPERTY() float SparkSize = 0.f;   // 근접 타격 불꽃 크기 (월드)
@@ -216,6 +223,16 @@ struct FYJJUILayout
 	UPROPERTY() float ChargeButtonH = 0.f;   // 영웅 돌격 버튼 높이
 	UPROPERTY() float ChargeButtonMargin = 0.f;   // 화면 아래와 돌격 버튼 사이
 	UPROPERTY() float ChargeDefaultReach = 0.f;   // 마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
+	UPROPERTY() float SkillButtonGap = 0.f;   // 돌격 버튼과 스킬 버튼 사이 (두 버튼이 전장 아래 가운데에 나란히)
+	UPROPERTY() float SkillWarnAlpha = 0.f;   // 스킬 예고: 바깥 원 진하기
+	UPROPERTY() float SkillWarnFillAlpha = 0.f;   // 스킬 예고: 차오르는 안쪽 원 처음 진하기 (다 차면 1)
+	UPROPERTY() float SkillBlastStart = 0.f;   // 스킬 쾅 고리 처음 크기 (반경 배율)
+	UPROPERTY() float SkillBlastEnd = 0.f;   // 스킬 쾅 고리 끝 크기 (반경 배율)
+	UPROPERTY() float SkillBlastImpact = 0.f;   // 스킬 쾅 가운데 먹 튀김 크기 (고리 크기 배율, 크면 쓰는 유닛을 가린다)
+	UPROPERTY() float SkillTextSize = 0.f;   // 싹쓸이 글자 크기
+	UPROPERTY() float SkillTextRise = 0.f;   // 싹쓸이 글자가 떠오르는 높이 (화면)
+	UPROPERTY() float SkillTextPop = 0.f;   // 싹쓸이 글자 처음 커지는 정도
+	UPROPERTY() float SkillTextLift = 0.f;   // 싹쓸이 글자 시작 높이 (스킬 반경 배율)
 	UPROPERTY() float RockAspect = 0.f;   // Props.png 바위 무더기 칸 가로/세로
 	UPROPERTY() float RockRowOverlap = 0.f;   // 바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)
 	UPROPERTY() float RockWidthPad = 0.f;   // 바위 그림을 타원 너비보다 이만큼 넓게

@@ -177,7 +177,6 @@ Pot.Empty,뼈 {0}/{1},Bones {0}/{1},냄비 위: 아직 국이 안 됨
 Pot.Stage,{0}  뼈 {1}/{2},{0}  Bones {1}/{2},냄비 위: 지금 단계
 Pot.Full,{0}  넘치기까지 {1}초!,{0}  Boils over in {1}s!,
 Pot.Served,"먹인 국 {0}그릇: 체력 +{1}%, 공격력 +{2}%","Bowls served {0}: HP +{1}%, damage +{2}%",
-Pot.OpenBanner,{0}(을)를 나눠 먹였다!,Served the {0}!,배너
 Pot.OverflowBanner,국이 끓어 넘쳤다!,The broth boiled over!,배너
 Promote.Banner,{0} 탄생!,A {0} is born!,배너 (장군 이상)
 Key.Q,Q,Q,
@@ -258,3 +257,8 @@ UI.CampDown,적 진지를 무너뜨렸다! (남은 진지 {0}),Enemy camp destro
 UI.CampsAllDown,적 진지를 모두 무너뜨렸다!,All enemy camps destroyed!,배너
 UI.Charge,영웅 돌격! (E),Hero Charge! (E),전장 아래 버튼
 UI.ChokePassed,길목 돌파! 적 라인이 밀려난다,Chokepoint broken! The enemy line falls back,배너
+Skill.HeroWhirl,대장 회오리,Captain's Whirl,영웅 R 스킬
+Skill.BoneSweep,뼈 대검 쓸기,Bone Sweep,해골 왕 스킬
+Skill.GruntWhirl,영웅 회전 베기,Hero Spin,진급 영웅 스킬
+UI.HeroSkill,{0}! (R),{0}! (R),전장 아래 버튼 (스킬 이름)
+UI.SkillKills,싹쓸이 ×{0}!,Swept ×{0}!,스킬 한 번에 쓰러뜨린 수

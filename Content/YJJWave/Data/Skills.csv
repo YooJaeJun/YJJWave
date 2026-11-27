@@ -1,0 +1,4 @@
+﻿Name,Unit,NameKey,Trigger,Cooldown,FirstDelay,Windup,Hits,HitInterval,Radius,Reach,DamageScale,Knockback,AutoCount,Note
+HeroWhirl,Hero,Skill.HeroWhirl,Manual,16,0,0.3,3,0.16,240,0,2.2,3200,10,영웅 R: 제자리에서 세 번 돌며 둘레를 쓸어 날린다 (봇은 둘레 적 AutoCount 이상이면)
+BoneSweep,BoneKing,Skill.BoneSweep,Auto,13,5,1.2,1,0,320,0.6,4,4200,12,해골 왕: 붉은 원으로 예고한 뒤 앞을 대검으로 한 번에 쓴다
+GruntWhirl,GruntHero,Skill.GruntWhirl,Auto,9,2,0.25,2,0.2,150,0,1.6,2400,8,진급 영웅: 둘러싸이면 저절로 회전 베기

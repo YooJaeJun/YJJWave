@@ -165,6 +165,7 @@ private:
 	{
 		BuildCard,
 		Charge,
+		HeroSkill,
 		Spell,
 		Tree,
 		TreeClose,
@@ -268,6 +269,11 @@ private:
 	/** 전장 아래 가운데: 영웅 돌격 버튼 (E, 쿨다운 막대) */
 	void DrawChargeButton();
 	void TryHeroCharge();
+	/** 영웅 큰 스킬 버튼 (돌격 버튼 오른쪽) */
+	void DrawHeroSkillButton();
+	void TryHeroSkill();
+	/** 싹쓸이 글자 (스킬 한 번에 많이 쓰러뜨렸을 때) */
+	void DrawSkillTexts();
 	/** 처치한 적 자리에서 금화가 튀어 오른다 */
 	void DrawCoinPops();
 	void UpdateCoinPops(float Dt);

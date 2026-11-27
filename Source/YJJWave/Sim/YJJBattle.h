@@ -29,6 +29,9 @@ enum class EYJJEffectKind : uint8
 	SmackFall,    // 국자가 내려오는 중 (끝나면 쾅)
 	Slash,        // 영웅·보스의 큰 휘두르기 (Power = 방향 1/-1)
 	Spark,        // 난전 불꽃 (근접 타격 자리의 작은 먹 튀김)
+	SkillWarn,    // 큰 스킬 예고: 쓸어 버릴 원 (Life = 기 모으는 시간)
+	SkillBlast,   // 큰 스킬 쾅 고리
+	SkillText,    // 싹쓸이 글자 (Power = 쓰러뜨린 수)
 };
 
 /** 화면 연출 + 늦게 터지는 스킬 (MeteorFall·SmackFall 끝, Burn 동안의 피해) */
@@ -45,6 +48,8 @@ struct FYJJEffect
 	/** MeteorFall: 떨어진 자리에 남길 불 (초당 피해, 시간) */
 	float BurnPower = 0.f;
 	float BurnTime = 0.f;
+	/** 스킬 연출: 1 = 아군, -1 = 적 (색) */
+	float Side = 0.f;
 };
 
 /** 판이 끝나도 남는 것: 영혼과 찍은 특성, 깬 스테이지, 스테이지별 최고 별 (저장 파일과 주고받는다) */
@@ -100,6 +105,14 @@ public:
 	/** 돌격 준비 (0 ~ 1, 1이면 쓸 수 있다) */
 	float ChargeReady() const;
 	bool HasHero() const { return Horde.Hero() != INDEX_NONE; }
+	/** 영웅 큰 스킬 (R, Skills.csv 영웅 줄): 준비되면 다음 걸음 사이에 쓴다 */
+	bool HeroSkill();
+	/** 영웅 스킬 준비 (0 ~ 1, 스킬이 없거나 영웅이 없으면 음수). 걸음이 끝날 때 적어 둔 값 */
+	float HeroSkillReady() const { return HeroSkillReadyNow; }
+	/** 영웅 스킬 정의 (없으면 nullptr) */
+	const FYJJSkillDef* HeroSkillDef() const;
+	/** 봇: 지금 쓰면 둘레 적이 AutoCount 이상 걸린다 */
+	bool HeroSkillWorthIt() const;
 	FVector2f HeroPos() const { return Horde.Hero() != INDEX_NONE ? Horde.Pos[Horde.Hero()] : FVector2f::ZeroVector; }
 	/** 국자는 다음 한 번이 차오르기까지 */
 	float CooldownLeft(EYJJSpell Spell) const;
@@ -269,6 +282,10 @@ private:
 	float ChargeCooldown = 0.f;
 	bool bChargeQueued = false;
 	FVector2f ChargeTarget = FVector2f::ZeroVector;
+	// 영웅 큰 스킬
+	bool bSkillQueued = false;
+	float HeroSkillReadyNow = -1.f;
+	void HandleSkillEvents();
 	// 맞붙은 전선 먼지
 	float ClashTimer = 0.f;
 	// 길목 줄 (바위 오른쪽 끝 x, 가까운 것끼리 묶음)과 넘었는지

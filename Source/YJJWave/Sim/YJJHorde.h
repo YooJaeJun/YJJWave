@@ -108,6 +108,43 @@ struct FYJJSlash
 	float Dir = 1.f;
 };
 
+/** 큰 범위 스킬을 가진 유닛 하나의 상태 (Skills.csv) */
+struct FYJJSkillCaster
+{
+	int32 Slot = INDEX_NONE;
+	uint32 Gen = 0;
+	int32 Skill = INDEX_NONE;
+	float Cooldown = 0.f;
+	/** 0 이상이면 기 모으는 중 (남은 시간) */
+	float Windup = -1.f;
+	int32 HitsLeft = 0;
+	float HitTimer = 0.f;
+	/** 1 = 오른쪽, -1 = 왼쪽 (기를 모을 때 정한다) */
+	float Dir = 1.f;
+	/** 이번에 쓰러뜨린 수 */
+	int32 Kills = 0;
+};
+
+enum class EYJJSkillPhase : uint8
+{
+	Windup,   // 기 모으기 시작 (바닥에 원)
+	Hit,      // 한 번 쓸었다
+};
+
+/** 스킬 사건 (전투가 연출·소리로 바꾸고 비운다) */
+struct FYJJSkillEvent
+{
+	EYJJSkillPhase Phase = EYJJSkillPhase::Windup;
+	int32 Skill = INDEX_NONE;
+	EYJJTeam Team = EYJJTeam::Player;
+	/** 쓰는 원 가운데 */
+	FVector2f Pos = FVector2f::ZeroVector;
+	float Dir = 1.f;
+	/** Hit: 이번 시전에서 지금까지 쓰러뜨린 수, 마지막 한 번인지 */
+	int32 Kills = 0;
+	bool bLast = false;
+};
+
 struct FYJJHordeView
 {
 	int32 HighWater = 0;
@@ -210,8 +247,18 @@ public:
 	/** 그리기용 사본을 만든다 (시뮬이 돌지 않을 때 게임 스레드에서) */
 	void CopyTo(FYJJHordeView& View) const;
 
-	/** 원 안의 Victims 편에게 피해 + 바깥으로 밀쳐내기 (스펠·범위 공격) */
-	void DamageArea(const FVector2f& Center, float Radius, float Damage, float Knockback, EYJJTeam Victims, int32 Attacker = INDEX_NONE);
+	/** 원 안의 Victims 편에게 피해 + 바깥으로 밀쳐내기 (스펠·범위 공격). 쓰러뜨린 수를 돌려준다 */
+	int32 DamageArea(const FVector2f& Center, float Radius, float Damage, float Knockback, EYJJTeam Victims, int32 Attacker = INDEX_NONE);
+	/** 원 안 Victims 편 수 (Cap 까지만 센다) */
+	int32 CountNear(const FVector2f& Center, float Radius, EYJJTeam Victims, int32 Cap) const;
+
+	// ---- 큰 범위 스킬 (Skills.csv, 유닛 하나에 하나) ----
+	/** 그 유닛 스킬을 지금 쓴다 (게임 스레드, 걸음 사이에). Dir 1 = 오른쪽, -1 = 왼쪽. 대기 중이거나 쓰는 중이면 false */
+	bool CastSkill(int32 Slot, float Dir);
+	/** 그 유닛 스킬 준비 (0 ~ 1, 쓰는 중이면 0, 스킬이 없으면 음수) */
+	float SkillReady(int32 Slot) const;
+	/** 이번 걸음의 스킬 사건 (전투가 가져가고 비운다) */
+	TArray<FYJJSkillEvent> SkillEvents;
 
 	/** 유닛 종류별 특수 효과 (특성이 바뀔 때 FYJJBattle이 넣는다) */
 	void SetSpecials(const TArray<FYJJUnitSpecial>& InSpecials);
@@ -348,6 +395,14 @@ private:
 	TArray<FVector4f> Blockers;
 	// 영웅 돌격
 	void TickCharge(float Dt);
+	// 큰 범위 스킬
+	void AddCaster(int32 Slot);
+	void TickSkills(float Dt);
+	void BeginSkill(FYJJSkillCaster& Caster);
+	FVector2f SkillCenter(const FYJJSkillCaster& Caster) const;
+	const FYJJSkillCaster* CasterOf(int32 Slot) const;
+	TArray<FYJJSkillCaster> Casters;
+	static constexpr float NoWindup = -1.f;
 	FVector2f ChargeDir = FVector2f::ZeroVector;
 	float ChargeLeft = 0.f;
 	float ChargeTick = 0.f;
