@@ -11,10 +11,10 @@ RIGS = {
     "Hero": dict(
         feet=(430, 900),
         parts={
-            "cape": dict(poly=[(0, 830), (40, 700), (160, 600), (270, 545), (300, 560), (290, 630), (250, 640), (245, 720), (300, 760), (300, 850), (150, 850), (40, 840)], pivot=(300, 560), blur=26),
+            "cape": dict(poly=[(-40, 880), (0, 690), (150, 580), (268, 525), (308, 550), (296, 630), (256, 640), (250, 720), (304, 760), (304, 880)], pivot=(300, 560), blur=26),
             "back_leg": dict(poly=[(225, 822), (348, 822), (348, 905), (225, 905)], pivot=(300, 822)),
             "front_leg": dict(poly=[(468, 822), (632, 822), (632, 905), (468, 905)], pivot=(520, 822)),
-            "crown": dict(poly=[(150, 180), (260, 60), (400, 170), (445, 255), (535, 360), (556, 430), (552, 500), (300, 500), (262, 440), (238, 352), (150, 250)], pivot=(410, 520), blur=34),
+            "crown": dict(poly=[(150, 180), (260, 60), (400, 170), (445, 255), (535, 360), (572, 430), (572, 548), (292, 548), (248, 470), (222, 352), (150, 250)], pivot=(420, 548), blur=30),
             "sword": dict(poly=[(545, 560), (600, 520), (648, 452), (618, 410), (758, 0), (867, 0), (867, 62), (762, 462), (722, 522), (692, 562), (622, 592), (560, 602)], pivot=(555, 560)),
         },
         windup=-32, strike=100,
@@ -27,9 +27,33 @@ RIGS = {
             "back_leg": dict(poly=[(85, 415), (150, 415), (150, 502), (85, 502)], pivot=(125, 415)),
             "front_leg": dict(poly=[(195, 415), (262, 415), (262, 502), (195, 502)], pivot=(215, 415)),
             "crown": dict(poly=[(80, 0), (160, 0), (160, 70), (240, 90), (266, 130), (252, 162), (80, 166), (68, 150), (80, 110)], pivot=(170, 162)),
-            "sword": dict(poly=[(240, 290), (300, 320), (330, 300), (440, 190), (470, 165), (477, 175), (477, 200), (360, 340), (350, 355), (320, 372), (295, 374), (288, 350), (240, 322)], pivot=(245, 300)),
+            "sword": dict(poly=[(236, 285), (300, 312), (325, 290), (430, 175), (465, 148), (492, 158), (492, 208), (376, 346), (362, 368), (326, 386), (290, 386), (282, 356), (236, 328)], pivot=(245, 300)),
         },
         windup=-70, strike=55,
+    ),
+    # 졸병: 냄비 투구, 국자 든 팔(뒤), 냄비뚜껑 방패 든 팔(앞, 망토 자리로 흔든다), 짧은 다리
+    "Grunt": dict(
+        feet=(345, 598),
+        parts={
+            "cape": dict(poly=[(500, 300), (685, 290), (685, 510), (500, 510), (490, 420)], pivot=(505, 405), blur=12),
+            "back_leg": dict(poly=[(235, 535), (312, 535), (312, 606), (235, 606)], pivot=(275, 540)),
+            "front_leg": dict(poly=[(392, 535), (462, 535), (462, 606), (392, 606)], pivot=(425, 540)),
+            "crown": dict(poly=[(140, 60), (250, 0), (420, 20), (505, 95), (500, 145), (400, 160), (300, 200), (215, 262), (165, 268), (140, 200)], pivot=(330, 175), blur=20),
+            "sword": dict(poly=[(0, 35), (45, 35), (170, 245), (205, 275), (238, 345), (212, 365), (150, 345), (118, 300), (95, 250), (0, 85)], pivot=(212, 340), blur=8),
+        },
+        windup=-30, strike=65,
+    ),
+    # 해골 졸병: 큰 해골 머리, 포크 든 팔, 뒤쪽 팔(망토 자리), 두 다리
+    "Skeleton": dict(
+        feet=(220, 832),
+        parts={
+            "cape": dict(poly=[(40, 380), (135, 380), (165, 470), (165, 655), (75, 655), (35, 560)], pivot=(120, 400), blur=12),
+            "back_leg": dict(poly=[(90, 640), (232, 640), (232, 850), (25, 850), (25, 795), (90, 760)], pivot=(170, 652)),
+            "front_leg": dict(poly=[(238, 640), (342, 640), (395, 850), (232, 850)], pivot=(290, 652)),
+            "crown": dict(poly=[(0, 0), (432, 0), (442, 250), (402, 350), (382, 440), (262, 448), (202, 402), (120, 362), (0, 300)], pivot=(232, 425), blur=24),
+            "sword": dict(poly=[(280, 448), (330, 478), (420, 468), (480, 135), (618, 135), (602, 300), (532, 352), (502, 480), (502, 562), (422, 712), (358, 702), (400, 562), (320, 542), (280, 512)], pivot=(292, 482), blur=8),
+        },
+        windup=-25, strike=40,
     ),
     # 금발 해골 보스급: 머리(해골·금발·왕관)·망토·대검. 다리는 망토 앞이라 떼지 않고 몸째 들썩인다
     "BoneKing": dict(
@@ -37,7 +61,7 @@ RIGS = {
         parts={
             "cape": dict(poly=[(0, 880), (80, 780), (150, 620), (200, 560), (262, 600), (302, 700), (312, 900), (232, 941), (0, 941)], pivot=(250, 560)),
             "crown": dict(poly=[(0, 330), (60, 250), (200, 160), (210, 0), (470, 0), (528, 160), (528, 330), (482, 372), (362, 378), (330, 352), (250, 420), (160, 582), (60, 562), (0, 470)], pivot=(400, 372)),
-            "sword": dict(poly=[(500, 372), (612, 362), (628, 470), (642, 560), (602, 602), (584, 935), (508, 935), (503, 560), (518, 520), (558, 470), (558, 440)], pivot=(585, 460)),
+            "sword": dict(poly=[(490, 372), (625, 360), (642, 470), (658, 560), (614, 604), (598, 952), (494, 952), (490, 560), (506, 520), (546, 470), (546, 440)], pivot=(585, 460)),
         },
         windup=-200, strike=-40,
     ),
@@ -46,6 +70,8 @@ FILL = 0.84        # 칸 높이 중 그림 비율 (generate_art.ART_FILL과 같�
 FOOT = 0.92        # 칸에서 발 높이 (generate_art.FOOT)
 PAD = 160          # 휘어 나간 칼·망토가 잘리지 않게 둘레에 두는 여백 (원화 픽셀)
 BLUR = {"cape": 26, "back_leg": 14, "front_leg": 14, "crown": 30, "sword": 8}   # 부위 경계를 흐리는 폭 (원화 픽셀)
+ORDER = ["cape", "back_leg", "body", "front_leg", "crown", "sword"]   # 뒤 → 앞
+CORE_SOFT = 1.5    # 부위 속 경계를 살짝 흐리는 폭 (원화 픽셀)
 SPARKLE_KEEP = ("Hero",)   # 몸에서 떨어진 반짝이를 지우는 원화 (칼과 따로 놀아서)
 _cache = {}
 
@@ -97,47 +123,38 @@ def _prepared(name):
     padded = Image.new("RGBA", (source.size[0] + PAD * 2, source.size[1] + PAD * 2), (0, 0, 0, 0))
     padded.paste(source, (PAD, PAD))
     weights = {}
+    used = Image.new("L", padded.size, 0)
     for part, spec in rig["parts"].items():
         mask = Image.new("L", padded.size, 0)
         ImageDraw.Draw(mask).polygon([(x + PAD, y + PAD) for x, y in spec["poly"]], fill=255)
-        weights[part] = mask.filter(ImageFilter.GaussianBlur(spec.get("blur", BLUR[part]) / 2))
-    # 겹치는 부위는 먼저 온 쪽을 덜어 합이 255를 넘지 않게, 몸은 나머지
-    used = Image.new("L", padded.size, 0)
-    for part in list(weights):
-        weights[part] = ImageChops.subtract(weights[part], used)
-        used = ImageChops.add(used, weights[part])
+        blur = spec.get("blur", BLUR[part])
+        weights[part] = mask.filter(ImageFilter.GaussianBlur(blur / 2))
+        # 부위 속(경계 띠를 뺀 곳)만 몸에서 덜어 낸다 → 경계 띠는 몸에도 남아 있어 부위가 움직여도 틈이 안 생긴다
+        core = mask.filter(ImageFilter.MinFilter(2 * (blur // 2) + 1)).filter(ImageFilter.GaussianBlur(CORE_SOFT))
+        used = ImageChops.lighter(used, core)
     weights["body"] = ImageChops.invert(used)
     _cache[name] = (source, padded, weights)
     return _cache[name]
 
 
-def _premul(img, weight):
-    """부위 몫만큼 투명도를 곱하고(가중치) 색도 미리 곱해 둔다 → (색×투명, 투명)"""
-    alpha = ImageChops.multiply(img.getchannel("A"), weight)
-    rgb = ImageChops.multiply(img.convert("RGB"), Image.merge("RGB", (alpha, alpha, alpha)))
-    return rgb, alpha
-
-
 def _warp(name, q):
-    """부위마다 흐린 몫으로 나눠 각자 돌린 뒤 더한다. 몫의 합이 1이라 안 움직이면 원화 그대로,
-    움직이면 경계가 금 대신 부드럽게 겹친다"""
+    """부위마다 흐린 몫만큼 떼어 각자 돌린 뒤 뒤에서 앞 순서로 덮는다.
+    몸은 부위 경계 띠까지 꽉 차 있어 틈이 안 생기고, 앞 부위가 뒤를 제대로 가린다"""
     source, padded, weights = _prepared(name)
     rig = RIGS[name]
-    rgb_sum, alpha_sum = None, None
-    for part, weight in weights.items():
-        rgb, alpha = _premul(padded, weight)
+    full = Image.new("RGBA", padded.size, (0, 0, 0, 0))
+    for part in ORDER:
+        if part not in weights:
+            continue
+        layer = padded.copy()
+        layer.putalpha(ImageChops.multiply(padded.getchannel("A"), weights[part]))
         if part != "body":
             spec = rig["parts"][part]
             center = (spec["pivot"][0] + PAD, spec["pivot"][1] + PAD)
             shift = (0, q["crown_dy"]) if part == "crown" else (0, 0)
-            rgb = rgb.rotate(-q[part], resample=Image.BICUBIC, center=center, translate=shift)
-            alpha = alpha.rotate(-q[part], resample=Image.BICUBIC, center=center, translate=shift)
-        rgb_sum = rgb if rgb_sum is None else ImageChops.add(rgb_sum, rgb)
-        alpha_sum = alpha if alpha_sum is None else ImageChops.add(alpha_sum, alpha)
-    # 미리 곱한 색을 되돌린다
-    bands = [ImageMath.lambda_eval(lambda v: v["convert"](v["min"](v["c"] * 255 / v["max"](v["a"], 1), 255), "L"), c=band, a=alpha_sum)
-             for band in rgb_sum.split()]
-    return Image.merge("RGBA", (*bands, alpha_sum)), source
+            layer = layer.rotate(-q[part], resample=Image.BICUBIC, center=center, translate=shift)
+        full.alpha_composite(layer)
+    return full, source
 
 
 def _ease(keys, t):

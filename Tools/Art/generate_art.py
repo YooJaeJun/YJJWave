@@ -606,6 +606,8 @@ ART_UNITS = {
     "Hero": dict(file="Hero.png", flip=False),
     "BoneKing": dict(file="BossBlonde.png", flip=True),
     "Veteran": dict(file="Veteran1.png", flip=False),
+    "Grunt": dict(file="Grunt.png", flip=False, shadow=True),
+    "Skeleton": dict(file="Skeleton.png", flip=True, shadow=True, holes=0.55),
     "BoneTent": dict(file="CampTent.png", flip=False, building=True),
     "BoneTower": dict(file="CampTower.png", flip=False, building=True),
 }
@@ -623,7 +625,38 @@ ART_LEAN = 0.8           # 자세 lean 1당 기울기 (도)
 ART_SWING = 6.0          # 공격 swing 1당 앞으로 숙이는 각도 (도)
 ART_BG_MIN = 200         # 이보다 밝고
 ART_BG_CHROMA = 24       # 채도가 이보다 낮으면 바탕 (가장자리에서 이어진 곳만)
+ART_SHADOW_MIN = 150     # shadow 원화: 이만큼 밝은 회색까지 바탕 (그려진 바닥 그림자 지우기)
+ART_FRINGE = 3           # 바탕 둘레 몇 픽셀까지 흰 섞임을 뺀다
+ART_HOLE_MIN = 1500      # holes 원화: 이보다 큰 갇힌 흰 덩어리는 바탕 (holes 높이 비율 아래만)
 _art_cache = {}
+
+
+def _defringe(img, cleared):
+    """바탕을 지운 자리 둘레 몇 픽셀: 흰 바탕이 반쯤 섞인 윤곽 픽셀에서 흰색을 투명으로 뺀다 (흰 테두리 없애기).
+    색 c = 원래색 × a + 흰색 × (1 - a) 로 보고, 가장 어두운 채널로 a 를 구한다"""
+    w, h = img.size
+    px = img.load()
+    near = bytearray(w * h)
+    edge = [i for i in range(w * h) if cleared[i] and px[i % w, i // w][3] == 0]
+    for _ in range(ART_FRINGE):
+        grow = []
+        for i in edge:
+            x, y = i % w, i // w
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                j = ny * w + nx
+                if 0 <= nx < w and 0 <= ny < h and not near[j] and px[nx, ny][3]:
+                    near[j] = 1
+                    grow.append(j)
+        for j in grow:
+            x, y = j % w, j // w
+            r, g, b, a = px[x, y]
+            alpha = (255 - min(r, g, b)) / 255.0
+            if alpha <= 0.02:
+                px[x, y] = (0, 0, 0, 0)
+                continue
+            un = lambda c: max(0, min(255, round((c - 255 * (1 - alpha)) / alpha)))
+            px[x, y] = (un(r), un(g), un(b), round(a * alpha))
+        edge = grow
 
 
 def art_source(name):
@@ -636,6 +669,8 @@ def art_source(name):
     w, h = img.size
     px = img.load()
     seen = bytearray(w * h)
+    # shadow: 원화에 그려진 회색 바닥 그림자도 바탕으로 (게임이 그림자를 따로 그린다)
+    bg_min = ART_SHADOW_MIN if spec.get("shadow") else ART_BG_MIN
     q = deque([(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)] + [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)])
     while q:
         x, y = q.popleft()
@@ -643,7 +678,7 @@ def art_source(name):
             continue
         seen[y * w + x] = 1
         r, g, b, _ = px[x, y]
-        if min(r, g, b) < ART_BG_MIN or max(r, g, b) - min(r, g, b) > ART_BG_CHROMA:
+        if min(r, g, b) < bg_min or max(r, g, b) - min(r, g, b) > ART_BG_CHROMA:
             continue
         px[x, y] = (0, 0, 0, 0)
         q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
@@ -654,6 +689,32 @@ def art_source(name):
                 r, g, b, a = px[x, y]
                 if a and min(r, g, b) >= ART_BG_MIN and max(r, g, b) - min(r, g, b) <= ART_BG_CHROMA:
                     px[x, y] = (0, 0, 0, 0)
+    if spec.get("holes"):
+        # 몸 사이에 갇힌 흰 바탕 (가장자리와 안 이어진 큰 흰 덩어리) 도 지운다
+        # holes = 이 높이 비율 아래만 (머리의 흰 하이라이트는 남긴다)
+        for y0 in range(int(h * spec["holes"]), h):
+            for x0 in range(w):
+                if seen[y0 * w + x0] or not px[x0, y0][3]:
+                    continue
+                r, g, b, _ = px[x0, y0]
+                if min(r, g, b) < ART_BG_MIN or max(r, g, b) - min(r, g, b) > ART_BG_CHROMA:
+                    continue
+                blob = []
+                q = deque([(x0, y0)])
+                seen[y0 * w + x0] = 1
+                while q:
+                    x, y = q.popleft()
+                    blob.append((x, y))
+                    for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                        if 0 <= nx < w and 0 <= ny < h and not seen[ny * w + nx]:
+                            r, g, b, a = px[nx, ny]
+                            if a and min(r, g, b) >= ART_BG_MIN and max(r, g, b) - min(r, g, b) <= ART_BG_CHROMA:
+                                seen[ny * w + nx] = 1
+                                q.append((nx, ny))
+                if len(blob) >= ART_HOLE_MIN:
+                    for x, y in blob:
+                        px[x, y] = (0, 0, 0, 0)
+    _defringe(img, seen)
     img = img.crop(img.getbbox())
     if spec["flip"]:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -1449,11 +1510,110 @@ def heart(p, cx, cy, r, fill):
     p.poly(pts, fill)
 
 
+# AI 원화 UI (Approved/UIKit.png, 사용자 승인 시안): 나무 틀 패널 3종 + 아이콘 몇 개. 좌표는 바탕 지우고 자른 그림 기준
+UI_KIT_FRAME = dict(tl=(0, 48), tr=(855, 48), bl=(0, 675), br=(855, 675), top=(120, 48, 190, 148), bottom=(120, 675, 220, 775),
+                    left=(0, 250, 100, 350), right=(855, 250, 955, 350), patch=100, band=60)
+UI_KIT_ICON_TOP = 795      # 아이콘 줄이 시작하는 높이
+UI_KIT_ICONS = {2: 0, 3: 1, 4: 2, 5: 3, 6: 34}   # 시안 아이콘 순서 (0·1 나무 단추) → UI.png 칸 (금화·영혼·칼·해골·냄비)
+UI_PANEL_FILL = {13: "#4A3424", 14: "#2E211A", 15: "#5A3A26"}   # 패널·어두운 패널·카드: 양피지 대신 나무판 (밝은 글자가 읽히게)
+UI_GRUNT_ICON = 9          # 졸병 막사 아이콘: 졸병 원화 윗몸
+UI_ICON_FILL = 0.88        # 아이콘이 칸에서 차지하는 비율
+
+
+def _ui_kit():
+    ART_UNITS.setdefault("UIKit", dict(file="UIKit.png", flip=False))
+    return art_source("UIKit")
+
+
+def _parchment_to_wood(patch, inner, fill):
+    """틀 안쪽(inner 영역)의 양피지 색 픽셀만 나무판 색으로 (금 장식·선은 남긴다)"""
+    px = patch.load()
+    x0, y0, x1, y1 = inner
+    for y in range(max(y0, 0), min(y1, patch.size[1])):
+        for x in range(max(x0, 0), min(x1, patch.size[0])):
+            r, g, b, a = px[x, y]
+            if a and (r + g + b) / 3 > 150 and 20 < r - b < 110:
+                px[x, y] = fill
+    return patch
+
+
+def ui_panel(cell, size=128):
+    """9칸 늘리기 패널: 모서리·변은 시안 나무 틀, 가운데는 나무판"""
+    kit = _ui_kit()
+    F = UI_KIT_FRAME
+    k, band = F["patch"], F["band"]
+    corner = round(size * 0.25)      # UILayout PanelCornerFraction
+    fill = rgba(UI_PANEL_FILL[cell])
+    out = Image.new("RGBA", (size, size), fill)
+    # 가운데 나무결
+    d = ImageDraw.Draw(out)
+    rnd = random.Random(cell)
+    for _ in range(6):
+        y = rnd.randint(corner, size - corner)
+        d.line([(corner, y), (size - corner, y + rnd.randint(-2, 2))], fill=tuple(max(c - 14, 0) for c in fill[:3]) + (255,), width=1)
+
+    def piece(box, inner, to_size):
+        patch = kit.crop(box).copy()
+        return _parchment_to_wood(patch, inner, fill).resize(to_size, Image.LANCZOS)
+
+    tl, tr, bl, br = F["tl"], F["tr"], F["bl"], F["br"]
+    out.paste(piece((tl[0], tl[1], tl[0] + k, tl[1] + k), (band, band, k, k), (corner, corner)), (0, 0))
+    out.paste(piece((tr[0], tr[1], tr[0] + k, tr[1] + k), (0, band, k - band, k), (corner, corner)), (size - corner, 0))
+    out.paste(piece((bl[0], bl[1], bl[0] + k, bl[1] + k), (band, 0, k, k - band), (corner, corner)), (0, size - corner))
+    out.paste(piece((br[0], br[1], br[0] + k, br[1] + k), (0, 0, k - band, k - band), (corner, corner)), (size - corner, size - corner))
+    top, bottom, left, right = F["top"], F["bottom"], F["left"], F["right"]
+    out.paste(piece(top, (0, band, top[2] - top[0], k), (size - corner * 2, corner)), (corner, 0))
+    out.paste(piece(bottom, (0, 0, bottom[2] - bottom[0], k - band), (size - corner * 2, corner)), (corner, size - corner))
+    out.paste(piece(left, (band, 0, k, left[3] - left[1]), (corner, size - corner * 2)), (0, corner))
+    out.paste(piece(right, (0, 0, k - band, right[3] - right[1]), (corner, size - corner * 2)), (size - corner, corner))
+    # 바깥 모서리 둥근 부분은 시안 그대로 투명
+    return out
+
+
+def _fit_icon(img, size=128):
+    img = img.crop(img.getbbox())
+    scale = size * UI_ICON_FILL / max(img.size)
+    img = img.resize((max(1, round(img.size[0] * scale)), max(1, round(img.size[1] * scale))), Image.LANCZOS)
+    cell = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    cell.alpha_composite(img, ((size - img.size[0]) // 2, (size - img.size[1]) // 2))
+    return cell
+
+
+def ui_kit_icons():
+    """시안 아래 줄 아이콘들을 왼쪽부터 떼어 낸다 (빈 세로줄로 나눔)"""
+    kit = _ui_kit()
+    row = kit.crop((0, UI_KIT_ICON_TOP, kit.size[0], kit.size[1]))
+    a = row.getchannel("A").load()
+    filled = [any(a[x, y] > 40 for y in range(row.size[1])) for x in range(row.size[0])]
+    icons, start = [], None
+    for x, on in enumerate(filled + [False]):
+        if on and start is None:
+            start = x
+        elif not on and start is not None:
+            if x - start > 20:
+                icons.append(row.crop((start, 0, x, row.size[1])))
+            start = None
+    return icons
+
+
 def ui_atlas():
     C = 128
     atlas = Image.new("RGBA", (C * 8, C * ((UI_ICONS + 7) // 8)), (0, 0, 0, 0))
     for i in range(UI_ICONS):
         atlas.alpha_composite(ui_icon(i), ((i % 8) * C, (i // 8) * C))
+
+    def put(i, img):
+        atlas.paste(Image.new("RGBA", (C, C), (0, 0, 0, 0)), ((i % 8) * C, (i // 8) * C))
+        atlas.alpha_composite(img, ((i % 8) * C, (i // 8) * C))
+
+    # 새 화풍 (승인 시안): 나무 틀 패널, 금화·영혼·칼·해골·냄비, 졸병 막사
+    for cell in UI_PANEL_FILL:
+        put(cell, ui_panel(cell, C))
+    icons = ui_kit_icons()
+    for index, cell in UI_KIT_ICONS.items():
+        put(cell, _fit_icon(icons[index], C))
+    grunt = art_source("Grunt")
+    put(UI_GRUNT_ICON, _fit_icon(grunt.crop((0, 0, grunt.size[0], int(grunt.size[1] * 0.72))), C))
     return atlas
 
 
@@ -1525,10 +1685,28 @@ def ground(P=GROUND_FOREST):
 
 
 
+WORLD_MAP_SIZE = (1920, 1080)
+
+
+def ai_world_map():
+    """월드맵: AI 원화 (Approved/WorldMapWide.png, 사용자 승인 시안 화풍) 를 16:9 로 잘라 키운다.
+    지역·스테이지 자리는 Regions.csv / Stages.csv MapX·MapY (이 그림 기준)"""
+    img = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "AI", "Approved", "WorldMapWide.png")).convert("RGBA")
+    w, h = img.size
+    target = WORLD_MAP_SIZE[0] / WORLD_MAP_SIZE[1]
+    if w / h > target:
+        cw = round(h * target)
+        img = img.crop(((w - cw) // 2, 0, (w - cw) // 2 + cw, h))
+    else:
+        ch = round(w / target)
+        img = img.crop((0, (h - ch) // 2, w, (h - ch) // 2 + ch))
+    return img.resize(WORLD_MAP_SIZE, Image.LANCZOS)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     jobs = [("Props.png", props_atlas), ("Units.png", units_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
-            ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", lambda: __import__("world_map").world_map())]
+            ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", ai_world_map)]
     jobs += [("Big_%s.png" % name, (lambda n: lambda: big_atlas(n))(name)) for name in big_specs()]
     only = [a for a in sys.argv[1:] if a.lower().endswith(".png")]   # 파일 이름을 주면 그것만 다시 만든다
     for name, make in jobs:
