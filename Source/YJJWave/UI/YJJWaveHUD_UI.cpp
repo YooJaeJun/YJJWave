@@ -820,6 +820,27 @@ void AYJJWaveHUD::HandleWheel(float Delta)
 	ClampCamera();
 }
 
+void AYJJWaveHUD::PinchBegin(const FVector2f& Mid)
+{
+	PinchStartZoom = Zoom;
+	PinchLastMid = Mid;
+}
+
+void AYJJWaveHUD::PinchUpdate(float Ratio, const FVector2f& Mid)
+{
+	if (bTreeOpen)
+	{
+		return;
+	}
+	// 두 손가락 가운데 지점을 붙잡고 확대·축소, 가운데가 움직인 만큼 화면도 따라간다
+	const FVector2f Before = ScreenToWorld(Mid);
+	Zoom = FMath::Clamp(PinchStartZoom * Ratio, UI().ZoomMin, UI().ZoomMax);
+	CamCenter += Before - ScreenToWorld(Mid);
+	CamCenter -= (Mid - PinchLastMid) / Zoom;
+	PinchLastMid = Mid;
+	ClampCamera();
+}
+
 void AYJJWaveHUD::ClickWorld()
 {
 	FYJJBattle* Current = EditBattle();

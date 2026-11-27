@@ -112,7 +112,26 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	if (HUD)
 	{
 		HUD->SetTreeOpen(false);
-		FollowFront(Battle, HUD, RealDeltaSeconds);
+		if (ZoomShotStep < 2 && Battle.Level >= ZoomShotWave && !Battle.IsChoosing())
+		{
+			// 줌 확인: 가장 멀리(전장 가운데) → 가장 가까이(영웅) 한 장씩, 저장될 때까지 그 줌을 잡고 있는다
+			const bool bOut = ZoomShotStep == 0;
+			HUD->FocusWorld(bOut ? FVector2f(Battle.FieldWidth * 0.5f, Battle.FieldHeight * 0.5f) : Battle.HeroPos(), bOut ? ZoomOutShot : ZoomInShot);
+			if (ZoomShotHold <= 0.f)
+			{
+				Mode->TakeShot(FString::Printf(TEXT("%s%s"), ShotPrefix, bOut ? TEXT("ZoomOut") : TEXT("ZoomIn")));
+				ZoomShotHold = ZoomShotHoldTime;
+			}
+			ZoomShotHold -= RealDeltaSeconds;
+			if (ZoomShotHold <= 0.f)
+			{
+				++ZoomShotStep;
+			}
+		}
+		else
+		{
+			FollowFront(Battle, HUD, RealDeltaSeconds);
+		}
 		// 냄비: 봇이 열 단계가 되면 한 장 (솥은 화면 UI, 뚜껑은 그다음 판단에서 연다)
 		if (!bPotShot && Battle.PotStage() >= YJJData::Tune().BotPotStage)
 		{

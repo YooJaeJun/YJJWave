@@ -267,6 +267,16 @@ void AYJJWaveHUD::DrawUnitBars()
 void AYJJWaveHUD::DrawGround()
 {
 	const FYJJBattle* Current = Battle();
+	// 전장 바깥 둘레 (멀리 볼 때)
+	if (UTexture2D* Outer = GroundOuterFor(Current->Stage))
+	{
+		const FVector2f Margin(UI().ViewMarginX, UI().ViewMarginY);
+		const FVector2f OuterTopLeft = WorldToScreen(-Margin);
+		const FVector2f OuterSize = (FVector2f(Current->FieldWidth, Current->FieldHeight) + Margin * 2.f) * Zoom;
+		FCanvasTileItem OuterItem(FVector2D(OuterTopLeft.X, OuterTopLeft.Y), Outer->GetResource(), FVector2D(OuterSize.X, OuterSize.Y), FLinearColor::White);
+		OuterItem.BlendMode = SE_BLEND_Opaque;
+		Canvas->DrawItem(OuterItem);
+	}
 	if (!GroundTarget || !bGroundReady)
 	{
 		return;
@@ -729,6 +739,10 @@ void AYJJWaveHUD::DrawSpellAim()
 
 FVector2f AYJJWaveHUD::MouseScreen() const
 {
+	if (bTouchPointer)
+	{
+		return TouchPos;
+	}
 	float X = 0.f;
 	float Y = 0.f;
 	if (PlayerOwner && PlayerOwner->GetMousePosition(X, Y))

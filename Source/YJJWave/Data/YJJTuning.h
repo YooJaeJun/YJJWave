@@ -424,7 +424,10 @@ struct FYJJUILayout
 	UPROPERTY() float PanelCorner = 0.f;   // 화면에 그리는 패널 모서리 크기
 	// ---- 카메라 ----
 	UPROPERTY() float ZoomDefault = 0.f;   // 시작 확대
-	UPROPERTY() float ZoomMin = 0.f;   // 최소 확대 (실제로는 전장이 화면을 꽉 채우는 값 아래로는 안 간다)
+	UPROPERTY() float ZoomMin = 0.f;   // 최소 확대 (실제로는 전장+둘레 배경이 화면을 꽉 채우는 값 아래로는 안 간다)
+	UPROPERTY() float ViewMarginX = 0.f;   // 전장 바깥 둘레 배경 너비 (멀리 볼 때 보인다, 양옆 각각, Ground_Outer.png)
+	UPROPERTY() float ViewMarginY = 0.f;   // 전장 바깥 둘레 배경 높이 (위아래 각각)
+	UPROPERTY() float PinchMinPixels = 0.f;   // 두 손가락 확대: 처음 손가락 사이가 이보다 가까우면 이 값으로 친다 (튀지 않게)
 	UPROPERTY() float ZoomMax = 0.f;   // 최대 확대
 	UPROPERTY() float ZoomStep = 0.f;   // 휠 한 칸 확대 배율
 	UPROPERTY() float CameraStartX = 0.f;   // 시작 시점 x

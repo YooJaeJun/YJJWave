@@ -1633,62 +1633,153 @@ GROUND_GRAVEYARD = dict(grass="#4A5640", patches=["#435038", "#525E46", "#3E4934
                         specks=["#5E524C", "#776A63", "#665A54"], blade="#2F3A28", camp="#5E5248", camp_specks=["#544840", "#6A5D52", "#5A4E46"], graves=True)
 
 
+GROUND_BASE = (2048, 740)    # 바닥 무늬를 짠 기준 크기 (무늬 크기·개수는 이 크기 기준)
+GROUND_SCALE = 2             # Ground.png = 기준 × 이 배 (최대 확대에서도 또렷하게, 렌더 타깃 GroundTargetWidth 와 같게)
+OUTER_TEXEL = 0.6            # 전장 바깥 배경: 월드 1 당 픽셀
+OUTER_BUSHES = 260           # 전장 바깥 덤불·바위 수
+OUTER_VIGNETTE = 0.45        # 바깥 끝으로 갈수록 어두워지는 정도
+
+
+def _table_values(file, names):
+    """Tuning.csv / UILayout.csv 의 Name,Value 표에서 값 몇 개"""
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Content", "YJJWave", "Data", file)
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        rows = {r["Name"]: r["Value"] for r in csv.DictReader(f)}
+    return [float(rows[n]) for n in names]
+
+
+def _path_band(xp, rnd, H):
+    """기준 픽셀 x 에서 흙길 위·아래 (기준 픽셀)"""
+    top = H * 0.3 + math.sin(xp * 0.006) * 24 + rnd.uniform(-6, 6)
+    bot = H * 0.72 + math.sin(xp * 0.005 + 1.3) * 26 + rnd.uniform(-6, 6)
+    return top, bot
+
+
 def ground(P=GROUND_FOREST):
-    W, H = 2048, 740
+    """전장 바닥 (피·시체는 게임이 그 위에 굽는다). 기준 2048×740 무늬를 GROUND_SCALE 배로 그린다"""
+    BW, BH = GROUND_BASE
+    k = GROUND_SCALE
+    W, H = BW * k, BH * k
     rnd = random.Random(3)
     img = Image.new("RGBA", (W, H), rgba(P["grass"]))
     d = ImageDraw.Draw(img)
     # 풀 얼룩
-    for _ in range(900):
+    for _ in range(900 * k * k):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        r = rnd.uniform(10, 46)
+        r = rnd.uniform(10, 46) * k
         c = rnd.choice(P["patches"])
         d.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=rgba(c))
     # 가운데 흙길
     band = Image.new("L", (W, H), 0)
     bd = ImageDraw.Draw(band)
-    for x in range(0, W, 8):
-        top = H * 0.3 + math.sin(x * 0.006) * 24 + rnd.uniform(-6, 6)
-        bot = H * 0.72 + math.sin(x * 0.005 + 1.3) * 26 + rnd.uniform(-6, 6)
-        bd.rectangle([x, top, x + 8, bot], fill=255)
-    band = band.filter(ImageFilter.GaussianBlur(10))
+    for x in range(0, BW, 8):
+        top, bot = _path_band(x, rnd, BH)
+        bd.rectangle([x * k, top * k, (x + 8) * k, bot * k], fill=255)
+    band = band.filter(ImageFilter.GaussianBlur(10 * k))
     dirt = Image.new("RGBA", (W, H), rgba(P["dirt"]))
     dd = ImageDraw.Draw(dirt)
-    for _ in range(1400):
+    for _ in range(1400 * k * k):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        r = rnd.uniform(3, 14)
+        r = rnd.uniform(3, 14) * k
         dd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["specks"])))
     img = Image.composite(dirt, img, band)
     d = ImageDraw.Draw(img)
     # 풀 포기
-    for _ in range(1600):
+    for _ in range(1600 * k * k):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
         if band.getpixel((int(x), int(y))) > 80:
             continue
-        for k in range(3):
-            d.line([x + k * 3, y, x + k * 3 + rnd.uniform(-3, 3), y - rnd.uniform(6, 12)], fill=rgba(P["blade"]), width=2)
+        for j in range(3):
+            d.line([x + j * 3 * k, y, x + j * 3 * k + rnd.uniform(-3, 3) * k, y - rnd.uniform(6, 12) * k], fill=rgba(P["blade"]), width=2 * k)
     # 진지 (성벽 왼쪽): 다져진 흙
     camp = int(W * 520 / 3600)
     d.rectangle([0, 0, camp, H], fill=rgba(P["camp"]))
-    for _ in range(500):
+    for _ in range(500 * k * k):
         x, y = rnd.uniform(0, camp), rnd.uniform(0, H)
-        r = rnd.uniform(4, 16)
+        r = rnd.uniform(4, 16) * k
         d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["camp_specks"])))
     if P["graves"]:
-        gp = Pen(W, H, lw=2.2)
-        for _ in range(70):
-            x, y = rnd.uniform(camp + 40, W - 20), rnd.uniform(20, H - 20)
+        gp = Pen(W, H, lw=2.2 * k)
+        for _ in range(70 * k):
+            x, y = rnd.uniform(camp + 40 * k, W - 20 * k), rnd.uniform(20 * k, H - 20 * k)
             if band.getpixel((int(x), int(y))) > 40:
                 continue
             if rnd.random() < 0.6:   # 둥근 비석
-                gp.rect(x - 9, y - 22, x + 9, y, rgba("#8E8A86"), radius=8)
-                gp.stick(x - 4, y - 12, x + 4, y - 12, 1.4)
+                gp.rect(x - 9 * k, y - 22 * k, x + 9 * k, y, rgba("#8E8A86"), radius=8 * k)
+                gp.stick(x - 4 * k, y - 12 * k, x + 4 * k, y - 12 * k, 1.4 * k)
             else:                    # 나무 십자가
-                gp.stick(x, y - 26, x, y, 3, rgba("#6E5A44"))
-                gp.stick(x - 8, y - 18, x + 8, y - 18, 3, rgba("#6E5A44"))
+                gp.stick(x, y - 26 * k, x, y, 3 * k, rgba("#6E5A44"))
+                gp.stick(x - 8 * k, y - 18 * k, x + 8 * k, y - 18 * k, 3 * k, rgba("#6E5A44"))
         img.alpha_composite(gp.done(W, H))
     return img
 
+
+def ground_outer(P=GROUND_FOREST):
+    """전장 바깥 배경 (멀리 볼 때 보이는 둘레): 풀밭·흙길이 이어지고, 덤불·바위가 있고, 끝으로 갈수록 어둡다.
+    크기 = (전장 + 둘레 여백 × 2) × OUTER_TEXEL. 가운데 전장 자리는 Ground.png 가 덮는다"""
+    FW, FH = _table_values("Tuning.csv", ["FieldWidth", "FieldHeight"])
+    MX, MY = _table_values("UILayout.csv", ["ViewMarginX", "ViewMarginY"])
+    s = OUTER_TEXEL
+    W, H = int((FW + MX * 2) * s), int((FH + MY * 2) * s)
+    rnd = random.Random(5)
+    img = Image.new("RGBA", (W, H), rgba(P["grass"]))
+    d = ImageDraw.Draw(img)
+    for _ in range(int(W * H / 900)):
+        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
+        r = rnd.uniform(10, 40) * s * 1.6
+        d.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=rgba(rnd.choice(P["patches"])))
+    # 흙길: 전장 안 길과 같은 식으로 좌우로 이어진다 (기준 픽셀 ↔ 월드)
+    BW, BH = GROUND_BASE
+    band = Image.new("L", (W, H), 0)
+    bd = ImageDraw.Draw(band)
+    step = 8
+    for px in range(0, W, step):
+        world_x = px / s - MX
+        top, bot = _path_band(world_x * BW / FW, rnd, BH)
+        y0 = (top * FH / BH + MY) * s
+        y1 = (bot * FH / BH + MY) * s
+        bd.rectangle([px, y0, px + step, y1], fill=255)
+    band = band.filter(ImageFilter.GaussianBlur(10))
+    dirt = Image.new("RGBA", (W, H), rgba(P["dirt"]))
+    dd = ImageDraw.Draw(dirt)
+    for _ in range(int(W * H / 500)):
+        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
+        r = rnd.uniform(3, 12) * s * 1.6
+        dd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["specks"])))
+    img = Image.composite(dirt, img, band)
+    # 둘레 덤불·바위 (전장 밖에만)
+    pen = Pen(W, H, lw=2.6)
+    field = (MX * s, MY * s, (MX + FW) * s, (MY + FH) * s)
+    for _ in range(OUTER_BUSHES):
+        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
+        if field[0] - 30 < x < field[2] + 30 and field[1] - 30 < y < field[3] + 30:
+            continue
+        if band.getpixel((int(x), int(y))) > 60:
+            continue
+        r = rnd.uniform(14, 34)
+        if rnd.random() < 0.7:
+            dark = rgba(P["blade"])
+            for j in range(3):
+                pen.ellipse(x + (j - 1) * r * 0.7, y - (j % 2) * r * 0.4, r * 0.75, r * 0.65, dark if j != 1 else rgba(P["patches"][0]))
+        else:
+            pen.ellipse(x, y, r * 0.8, r * 0.55, rgba("#8E8A86"))
+    img.alpha_composite(pen.done(W, H))
+    # 끝으로 갈수록 어둡게 (전장으로 눈이 가게)
+    shade = Image.new("L", (W, H), 0)
+    sp = shade.load()
+    for y in range(0, H, 4):
+        for x in range(0, W, 4):
+            dx = max(field[0] - x, x - field[2], 0) / max(MX * s, 1)
+            dy = max(field[1] - y, y - field[3], 0) / max(MY * s, 1)
+            v = int(255 * OUTER_VIGNETTE * min(1.0, math.hypot(dx, dy)))
+            for yy in range(y, min(y + 4, H)):
+                for xx in range(x, min(x + 4, W)):
+                    sp[xx, yy] = v
+    shade = shade.filter(ImageFilter.GaussianBlur(20))
+    black = Image.new("RGBA", (W, H), (20, 16, 12, 255))
+    img = Image.composite(black, img, shade)
+    return img
 
 
 WORLD_MAP_SIZE = (1920, 1080)
@@ -1712,7 +1803,8 @@ def ai_world_map():
 def main():
     os.makedirs(OUT, exist_ok=True)
     jobs = [("Props.png", props_atlas), ("Units.png", units_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
-            ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", ai_world_map)]
+            ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", ai_world_map),
+            ("Ground_Outer.png", ground_outer), ("Ground_Graveyard_Outer.png", lambda: ground_outer(GROUND_GRAVEYARD))]
     jobs += [("Big_%s.png" % name, (lambda n: lambda: big_atlas(n))(name)) for name in big_specs()]
     only = [a for a in sys.argv[1:] if a.lower().endswith(".png")]   # 파일 이름을 주면 그것만 다시 만든다
     for name, make in jobs:

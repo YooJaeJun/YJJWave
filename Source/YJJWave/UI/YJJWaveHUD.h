@@ -131,6 +131,13 @@ public:
 	void HandleMouseDown(bool bRight);
 	void HandleMouseUp(bool bRight);
 	void HandleWheel(float Delta);
+	/** 터치: 손가락 자리를 마우스 자리로 쓴다 (모바일엔 마우스가 없다) */
+	void SetTouchPointer(const FVector2f& Screen) { TouchPos = Screen; bTouchPointer = true; }
+	/** 두 번째 손가락이 닿으면: 누르던 클릭·끌기를 취소한다 */
+	void CancelPointer() { bLeftDown = bLeftDragged = false; }
+	/** 두 손가락 확대·이동: 시작 → (손가락 사이 비율, 가운데 자리) */
+	void PinchBegin(const FVector2f& Mid);
+	void PinchUpdate(float Ratio, const FVector2f& Mid);
 	void HandleKey(const FKey& Key);
 	void SetPanInput(const FVector2f& Axis) { PanInput = Axis; }
 
@@ -298,6 +305,9 @@ private:
 	FLinearColor PotStatusColor() const;
 	/** 지금 스테이지 바닥 그림 (Stages.csv Ground, 없으면 Ground.png) */
 	UTexture2D* GroundFor(int32 Stage);
+	/** 전장 바깥 둘레 배경 (그 바닥 이름_Outer.png) */
+	UTexture2D* GroundOuterFor(int32 Stage);
+	UTexture2D* LoadGroundFile(const FString& File);
 	void DrawDebugLine();
 	void DrawPanel(float X, float Y, float W, float H, const FLinearColor& Color, int32 Cell);
 	void DrawBox(float X, float Y, float W, float H, const FLinearColor& Color);
@@ -533,6 +543,12 @@ private:
 	static constexpr int32 HangulFirst = 0x1100;
 	static constexpr int32 HangulLast = 0xD7A3;
 	static constexpr const TCHAR* DefaultGroundFile = TEXT("Ground.png");
+	static constexpr const TCHAR* OuterGroundSuffix = TEXT("_Outer");
+	// 터치
+	FVector2f TouchPos = FVector2f::ZeroVector;
+	bool bTouchPointer = false;
+	float PinchStartZoom = 1.f;
+	FVector2f PinchLastMid = FVector2f::ZeroVector;
 	static constexpr const TCHAR* WorldMapFile = TEXT("WorldMap.png");
 	static constexpr const TCHAR* GameFontFace = TEXT("Regular");
 };

@@ -226,7 +226,10 @@ UiCard,15,UI 칸: 카드
 PanelCornerFraction,0.25,패널 그림에서 모서리가 차지하는 비율
 PanelCorner,22,화면에 그리는 패널 모서리 크기
 ZoomDefault,0.7,시작 확대
-ZoomMin,0.3,최소 확대 (실제로는 전장이 화면을 꽉 채우는 값 아래로는 안 간다)
+ZoomMin,0.3,최소 확대 (실제로는 전장+둘레 배경이 화면을 꽉 채우는 값 아래로는 안 간다)
+ViewMarginX,700,"전장 바깥 둘레 배경 너비 (멀리 볼 때 보인다, 양옆 각각, Ground_Outer.png)"
+ViewMarginY,650,전장 바깥 둘레 배경 높이 (위아래 각각)
+PinchMinPixels,40,두 손가락 확대: 처음 손가락 사이가 이보다 가까우면 이 값으로 친다 (튀지 않게)
 ZoomMax,2,최대 확대
 ZoomStep,1.15,휠 한 칸 확대 배율
 CameraStartX,900,시작 시점 x

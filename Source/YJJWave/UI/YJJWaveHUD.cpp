@@ -184,7 +184,17 @@ void AYJJWaveHUD::InitGround()
 
 UTexture2D* AYJJWaveHUD::GroundFor(int32 Stage)
 {
+	return LoadGroundFile(YJJData::Stages().IsValidIndex(Stage) && !YJJData::Stages()[Stage].Ground.IsEmpty() ? YJJData::Stages()[Stage].Ground : FString(DefaultGroundFile));
+}
+
+UTexture2D* AYJJWaveHUD::GroundOuterFor(int32 Stage)
+{
 	const FString File = YJJData::Stages().IsValidIndex(Stage) && !YJJData::Stages()[Stage].Ground.IsEmpty() ? YJJData::Stages()[Stage].Ground : FString(DefaultGroundFile);
+	return LoadGroundFile(FPaths::GetBaseFilename(File) + OuterGroundSuffix + TEXT(".") + FPaths::GetExtension(File));
+}
+
+UTexture2D* AYJJWaveHUD::LoadGroundFile(const FString& File)
+{
 	if (const TObjectPtr<UTexture2D>* Found = GroundTextures.Find(File))
 	{
 		return *Found;
@@ -387,19 +397,22 @@ void AYJJWaveHUD::ClampCamera()
 	{
 		return;
 	}
-	// 전장이 전장 화면 영역을 빈틈없이 채우도록: 이보다 멀리 볼 수 없다 (빈 띠가 안 보이게)
+	// 전장 + 둘레 배경이 전장 화면 영역을 빈틈없이 채우도록: 이보다 멀리 볼 수 없다 (빈 띠가 안 보이게)
 	const FVector2f ViewSize = WorldViewSize();
-	if (ViewSize.Y > 0.f && Current->FieldHeight > 0.f)
+	const float MarginX = UI().ViewMarginX;
+	const float MarginY = UI().ViewMarginY;
+	const float AreaW = Current->FieldWidth + MarginX * 2.f;
+	const float AreaH = Current->FieldHeight + MarginY * 2.f;
+	if (ViewSize.Y > 0.f && AreaH > 0.f)
 	{
-		const float FillZoom = FMath::Max(ViewSize.Y / Current->FieldHeight, ViewSize.X / Current->FieldWidth);
+		const float FillZoom = FMath::Max(ViewSize.Y / AreaH, ViewSize.X / AreaW);
 		Zoom = FMath::Max(Zoom, FillZoom);
 	}
 	const FVector2f HalfView = ViewSize * (Half / Zoom);
-	const float Margin = 0.f;
-	const float MinX = HalfView.X - Margin;
-	const float MaxX = Current->FieldWidth - HalfView.X + Margin;
-	const float MinY = HalfView.Y - Margin;
-	const float MaxY = Current->FieldHeight - HalfView.Y + Margin;
+	const float MinX = HalfView.X - MarginX;
+	const float MaxX = Current->FieldWidth - HalfView.X + MarginX;
+	const float MinY = HalfView.Y - MarginY;
+	const float MaxY = Current->FieldHeight - HalfView.Y + MarginY;
 	CamCenter.X = MinX > MaxX ? Current->FieldWidth * Half : FMath::Clamp(CamCenter.X, MinX, MaxX);
 	CamCenter.Y = MinY > MaxY ? Current->FieldHeight * Half : FMath::Clamp(CamCenter.Y, MinY, MaxY);
 }
