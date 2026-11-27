@@ -44,12 +44,10 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	bVictory = false;
 	bCardPending = false;
 	CardOffer.Reset();
-	// 영웅 스킬: 후보가 둘 이상이면 판 시작에 고른다 (고르기 전엔 첫 후보)
-	SkillOffer.Reset();
-	SkillOffer.Append(YJJData::HeroSkills().GetData(), YJJData::HeroSkills().Num());
-	HeroSkillIndex = SkillOffer.Num() > 0 ? SkillOffer[0] : INDEX_NONE;
-	bSkillPickPending = SkillOffer.Num() > 1;
-	bSkillQueued = false;
+	// 영웅: 월드맵에서 고른 영웅 (없으면 첫 영웅), 액티브 스킬 셋
+	HeroIndex = YJJData::HeroIndex(Progress.Hero);
+	QueuedSkill = INDEX_NONE;
+	HeroSkillReadyNow.Init(-1.f, HeroDef().Skills.Num());
 	Sounds.Add(SoundCard);
 	CardsTaken.Reset();
 	FrontBonus = 1.f;
@@ -195,7 +193,7 @@ void FYJJBattle::PreStep(float Dt)
 	if (!bHeroLowSaid && WallMaxHP > 0.f && WallHP < WallMaxHP * T.HeroLowShare)
 	{
 		bHeroLowSaid = true;
-		AddEvent(EYJJTalkTrigger::HeroLow, YJJData::HeroUnit());
+		AddEvent(EYJJTalkTrigger::HeroLow, HeroDef().Unit);
 	}
 }
 
@@ -462,15 +460,15 @@ void FYJJBattle::CheckVictory()
 
 void FYJJBattle::HandleSkillEvents()
 {
-	// 영웅 R: 걸음 사이에만 무리를 건드린다
-	if (bSkillQueued)
+	// 영웅 Z·X·C: 걸음 사이에만 무리를 건드린다
+	if (QueuedSkill != INDEX_NONE)
 	{
-		bSkillQueued = false;
 		const int32 Hero = Horde.Hero();
-		if (Hero != INDEX_NONE)
+		if (Hero != INDEX_NONE && HeroDef().Skills.IsValidIndex(QueuedSkill))
 		{
-			Horde.CastSkill(Hero, Horde.FaceLeft[Hero] ? -1.f : 1.f);
+			Horde.CastSkill(Hero, HeroDef().Skills[QueuedSkill], Horde.FaceLeft[Hero] ? -1.f : 1.f);
 		}
+		QueuedSkill = INDEX_NONE;
 	}
 	const FYJJTuning& T = YJJData::Tune();
 	for (const FYJJSkillEvent& Event : Horde.SkillEvents)
@@ -505,39 +503,35 @@ void FYJJBattle::HandleSkillEvents()
 		}
 	}
 	Horde.SkillEvents.Reset();
-	HeroSkillReadyNow = Horde.Hero() != INDEX_NONE ? Horde.SkillReady(Horde.Hero()) : -1.f;
+	for (int32 Index = 0; Index < HeroSkillReadyNow.Num(); ++Index)
+	{
+		HeroSkillReadyNow[Index] = Horde.Hero() != INDEX_NONE ? Horde.SkillReady(Horde.Hero(), HeroDef().Skills[Index]) : -1.f;
+	}
 }
 
-bool FYJJBattle::HeroSkill()
+bool FYJJBattle::HeroSkill(int32 Index)
 {
-	if (bGameOver || bSkillQueued || HeroSkillReadyNow < 1.f || Horde.Hero() == INDEX_NONE)
+	if (bGameOver || QueuedSkill != INDEX_NONE || HeroSkillReady(Index) < 1.f || Horde.Hero() == INDEX_NONE)
 	{
 		return false;
 	}
-	bSkillQueued = true;
+	QueuedSkill = Index;
 	return true;
 }
 
-const FYJJSkillDef* FYJJBattle::HeroSkillDef() const
+const FYJJSkillDef* FYJJBattle::HeroSkillDef(int32 Index) const
 {
-	return YJJData::Skills().IsValidIndex(HeroSkillIndex) ? &YJJData::Skill(HeroSkillIndex) : nullptr;
+	return HeroDef().Skills.IsValidIndex(Index) ? &YJJData::Skill(HeroDef().Skills[Index]) : nullptr;
 }
 
-bool FYJJBattle::PickHeroSkill(int32 Choice)
+float FYJJBattle::HeroHP() const
 {
-	if (!bSkillPickPending || !SkillOffer.IsValidIndex(Choice))
-	{
-		return false;
-	}
-	HeroSkillIndex = SkillOffer[Choice];
-	bSkillPickPending = false;
-	if (Horde.Hero() != INDEX_NONE)
-	{
-		Horde.SetSkill(Horde.Hero(), HeroSkillIndex);
-		HeroSkillReadyNow = Horde.SkillReady(Horde.Hero());
-	}
-	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 영웅 스킬: %s"), *YJJData::Skill(HeroSkillIndex).Id.ToString());
-	return true;
+	return Horde.Hero() != INDEX_NONE ? Horde.HP[Horde.Hero()] : 0.f;
+}
+
+float FYJJBattle::HeroMaxHP() const
+{
+	return Horde.Hero() != INDEX_NONE ? Horde.MaxHP[Horde.Hero()] : 0.f;
 }
 
 void FYJJBattle::SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center)
@@ -559,9 +553,9 @@ void FYJJBattle::SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center
 	}
 }
 
-bool FYJJBattle::HeroSkillWorthIt() const
+bool FYJJBattle::HeroSkillWorthIt(int32 Index) const
 {
-	const FYJJSkillDef* Skill = HeroSkillDef();
+	const FYJJSkillDef* Skill = HeroSkillDef(Index);
 	return Skill && HasHero() && Horde.CountNear(HeroPos(), Skill->Radius, EYJJTeam::Enemy, Skill->AutoCount) >= Skill->AutoCount;
 }
 
@@ -604,7 +598,7 @@ void FYJJBattle::Finish(bool bWon)
 void FYJJBattle::SpawnHero()
 {
 	const FYJJTuning& T = YJJData::Tune();
-	const int32 HeroUnit = YJJData::HeroUnit();
+	const int32 HeroUnit = HeroDef().Unit;
 	if (HeroUnit == INDEX_NONE)
 	{
 		return;
@@ -614,15 +608,12 @@ void FYJJBattle::SpawnHero()
 	const FVector2f Home(T.HeroHomeX, FieldHeight * Half);
 	const int32 Slot = Horde.Spawn(HeroUnit, EYJJTeam::Player, Home, Stats);
 	Horde.SetHero(Slot, Home, T.HeroLeash, T.HeroArrive);
-	if (HeroSkillIndex != INDEX_NONE)
-	{
-		Horde.SetSkill(Slot, HeroSkillIndex);
-	}
+	Horde.SetSkills(Slot, HeroDef().Skills);
 }
 
 void FYJJBattle::RecomputeHero()
 {
-	const int32 HeroUnit = YJJData::HeroUnit();
+	const int32 HeroUnit = HeroDef().Unit;
 	if (HeroUnit != INDEX_NONE)
 	{
 		Horde.SetMaxHP(Horde.Hero(), YJJData::Unit(HeroUnit).HP * (1.f + Bonus(EYJJStat::HeroHP, INDEX_NONE)));

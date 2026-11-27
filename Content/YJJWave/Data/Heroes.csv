@@ -1,0 +1,4 @@
+﻿Name,Order,DescKey,Portrait,Skill1,Skill2,Skill3,Note
+Hero,0,HeroDesc.Hero,8,HeroWhirl,HeroQuake,HeroSummon,대장: 칼 든 졸병 출신. 쓸기·내려찍기·졸병 호출
+HeroCook,1,HeroDesc.HeroCook,46,CookSpin,CookSplash,CookServe,요리사 대장: 국자 회전·끓는 국 뿌리기·방패병 배식 행렬
+HeroPot,2,HeroDesc.HeroPot,47,PotLid,PotBomb,PotCall,냄비 투척꾼: 뚜껑 원반·냄비 폭탄·망치 대장 호출

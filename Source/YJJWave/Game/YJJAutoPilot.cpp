@@ -18,6 +18,15 @@ FYJJAutoPilot::FYJJAutoPilot(AYJJWaveGameMode* InMode, float InDuration, float I
 	ShotTimer = InShotInterval;
 }
 
+void FYJJAutoPilot::PickHeroFor(int32 Stage)
+{
+	const int32 Count = YJJData::Heroes().Num();
+	if (Count > 0)
+	{
+		Mode->SetHero(YJJData::Heroes()[(Count - 1 + Stage) % Count].Id);
+	}
+}
+
 bool FYJJAutoPilot::TickMenus(float RealDeltaSeconds)
 {
 	MenuTimer += RealDeltaSeconds;
@@ -31,7 +40,20 @@ bool FYJJAutoPilot::TickMenus(float RealDeltaSeconds)
 	case 0: Mode->TakeShot(FString::Printf(TEXT("%sTitle"), ShotPrefix)); return false;
 	case 1: Mode->GoToWorldMap(); return false;
 	case 2: Mode->TakeShot(FString::Printf(TEXT("%sWorldMap"), ShotPrefix)); return false;
-	default: return true;
+	case 3:
+		if (AYJJWaveHUD* HUD = Cast<AYJJWaveHUD>(Mode->GetWorld()->GetFirstPlayerController() ? Mode->GetWorld()->GetFirstPlayerController()->GetHUD() : nullptr))
+		{
+			HUD->OpenHeroSelect(0);
+		}
+		return false;
+	case 4: Mode->TakeShot(FString::Printf(TEXT("%sHeroSelect"), ShotPrefix)); return false;
+	default:
+		if (AYJJWaveHUD* HUD = Cast<AYJJWaveHUD>(Mode->GetWorld()->GetFirstPlayerController() ? Mode->GetWorld()->GetFirstPlayerController()->GetHUD() : nullptr))
+		{
+			HUD->OpenHeroSelect(INDEX_NONE);
+		}
+		PickHeroFor(0);
+		return true;
 	}
 }
 
@@ -201,20 +223,6 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		Mode->SkipCutscene();
 	}
 
-	// 영웅 스킬: 스테이지마다 돌아가며, 마지막 후보부터 (첫 판에 새 기술을 써 보게)
-	if (Battle.bSkillPickPending)
-	{
-		if (!bSkillPickShot)
-		{
-			bSkillPickShot = true;
-			Mode->TakeShot(FString::Printf(TEXT("%sSkillPick"), ShotPrefix));
-			return;
-		}
-		const int32 Offer = FMath::Max(Battle.SkillOffer.Num(), 1);
-		Battle.PickHeroSkill((Battle.Stage + Offer - 1) % Offer);
-		return;
-	}
-
 	// 카드: 아무거나 하나
 	if (Battle.bCardPending)
 	{
@@ -302,6 +310,7 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	{
 		bEndingShot = bResultShot = false;
 		ResultWait = 0.f;
+		PickHeroFor(Battle.Stage + 1);
 		Mode->NextStage();
 		return;
 	}
@@ -446,10 +455,13 @@ void FYJJAutoPilot::CastSpells(FYJJBattle& Battle)
 	{
 		Battle.HeroCharge(FVector2f(EnemyFront + T.BotChargeRange, Battle.HeroPos().Y));
 	}
-	// 영웅 큰 스킬: 둘레에 적이 몰리면
-	if (Battle.HeroSkillReady() >= 1.f && Battle.HeroSkillWorthIt())
+	// 영웅 스킬 셋: 둘레에 적이 몰리면 준비된 것부터
+	for (int32 Index = 0; Index < Battle.NumHeroSkills(); ++Index)
 	{
-		Battle.HeroSkill();
+		if (Battle.HeroSkillReady(Index) >= 1.f && Battle.HeroSkillWorthIt(Index) && Battle.HeroSkill(Index))
+		{
+			break;
+		}
 	}
 	if (EnemyFront > 0.f && Battle.CanCast(EYJJSpell::Meteor))
 	{

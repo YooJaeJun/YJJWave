@@ -304,6 +304,10 @@ void AYJJWaveHUD::DrawHUD()
 		else
 		{
 			DrawWorldMap();
+			if (HeroSelectStage != INDEX_NONE)
+			{
+				DrawHeroSelect();
+			}
 		}
 		if (bOptionsOpen)
 		{
@@ -318,15 +322,8 @@ void AYJJWaveHUD::DrawHUD()
 	DrawBanners();
 	DrawCombo();
 	DrawSkillTexts();
-	DrawChargeButton();
-	DrawHeroSkillButton();
-	const AYJJWaveGameMode* PickMode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
-	const bool bInCutscene = PickMode && PickMode->CutsceneLine();
-	if (Battle()->bSkillPickPending && !Battle()->bGameOver && !bInCutscene)
-	{
-		DrawSkillPick();
-	}
-	else if (Battle()->bCardPending && !Battle()->bGameOver)
+	DrawHeroBar();
+	if (Battle()->bCardPending && !Battle()->bGameOver)
 	{
 		DrawCardPick();
 	}
@@ -344,6 +341,7 @@ void AYJJWaveHUD::DrawHUD()
 	{
 		DrawPotTooltip();
 		DrawSpellTooltip();
+		DrawHeroBarTooltip();
 		DrawSeasoningTooltip();
 	}
 	DrawCutscene();

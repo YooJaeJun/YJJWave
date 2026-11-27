@@ -114,6 +114,7 @@ void FYJJGameDatabase::Load()
 	FillNameValues(TEXT("UILayout.csv"), FYJJUILayout::StaticStruct(), &Layout);
 	LoadUnits();
 	LoadSkills();
+	LoadHeroes();
 	LoadBuildings();
 	LoadRegions();
 	LoadStages();
@@ -284,7 +285,6 @@ void FYJJGameDatabase::LoadBroth()
 void FYJJGameDatabase::LoadSkills()
 {
 	Skills.Reset();
-	HeroSkills.Reset();
 	for (FYJJUnitDef& Def : Units)
 	{
 		Def.Skill = INDEX_NONE;
@@ -326,16 +326,12 @@ void FYJJGameDatabase::LoadSkills()
 		{
 			return;
 		}
-		// 내 영웅은 Manual 후보가 여럿일 수 있다 (판 시작에 고른다). 다른 유닛은 하나만
-		const bool bHeroChoice = Units[Def.Unit].bHero && Def.Trigger == EYJJSkillTrigger::Manual;
-		if (Units[Def.Unit].Skill != INDEX_NONE && !bHeroChoice)
+		// 내 영웅은 Manual 스킬이 여럿 (Heroes.csv 가 Z·X·C 에 놓는다). 다른 유닛은 하나만
+		const bool bHeroSkill = Units[Def.Unit].bHero && Def.Trigger == EYJJSkillTrigger::Manual;
+		if (Units[Def.Unit].Skill != INDEX_NONE && !bHeroSkill)
 		{
 			Problem(FString::Printf(TEXT("Skills.csv %s: %s 는 이미 스킬이 있다"), *Name.ToString(), *Row.Unit));
 			return;
-		}
-		if (bHeroChoice)
-		{
-			HeroSkills.Add(Skills.Num());
 		}
 		if (Units[Def.Unit].Skill == INDEX_NONE)
 		{
@@ -343,6 +339,48 @@ void FYJJGameDatabase::LoadSkills()
 		}
 		Skills.Add(Def);
 	});
+}
+
+void FYJJGameDatabase::LoadHeroes()
+{
+	Heroes.Reset();
+	TArray<TPair<int32, FYJJHeroDef>> Sorted;
+	const UDataTable* Table = LoadTable(TEXT("Heroes.csv"), FYJJHeroRow::StaticStruct());
+	Table->ForeachRow<FYJJHeroRow>(ContextName, [this, &Sorted](const FName& Name, const FYJJHeroRow& Row)
+	{
+		FYJJHeroDef Def;
+		Def.Id = Name;
+		Def.Unit = FindUnit(Name.ToString(), TEXT("Heroes.csv"));
+		Def.DescKey = Row.DescKey;
+		Def.Portrait = Row.Portrait;
+		for (const FString* SkillName : { &Row.Skill1, &Row.Skill2, &Row.Skill3 })
+		{
+			const int32 Skill = Skills.IndexOfByPredicate([SkillName](const FYJJSkillDef& Skill) { return Skill.Id == FName(**SkillName); });
+			if (Skill == INDEX_NONE)
+			{
+				Problem(FString::Printf(TEXT("Heroes.csv %s: 모르는 스킬 %s"), *Name.ToString(), **SkillName));
+				continue;
+			}
+			Def.Skills.Add(Skill);
+		}
+		if (Def.Unit != INDEX_NONE && !Units[Def.Unit].bHero)
+		{
+			Problem(FString::Printf(TEXT("Heroes.csv %s: Units.csv 에서 Hero=1 이 아니다"), *Name.ToString()));
+		}
+		Sorted.Emplace(Row.Order, Def);
+	});
+	Sorted.StableSort([](const TPair<int32, FYJJHeroDef>& A, const TPair<int32, FYJJHeroDef>& B) { return A.Key < B.Key; });
+	for (const TPair<int32, FYJJHeroDef>& Entry : Sorted)
+	{
+		if (Entry.Value.Unit != INDEX_NONE)
+		{
+			Heroes.Add(Entry.Value);
+		}
+	}
+	if (Heroes.Num() == 0)
+	{
+		Problem(TEXT("Heroes.csv: 영웅이 없다"));
+	}
 }
 
 bool FYJJGameDatabase::ParseTrigger(const FString& Name, EYJJTalkTrigger& Out)
@@ -769,14 +807,20 @@ TConstArrayView<FYJJRegionDef> YJJData::Regions() { return FYJJGameDatabase::Get
 
 int32 YJJData::HeroUnit()
 {
-	return FYJJGameDatabase::Get().Units.IndexOfByPredicate([](const FYJJUnitDef& Def) { return Def.bHero; });
+	const TArray<FYJJHeroDef>& Heroes = FYJJGameDatabase::Get().Heroes;
+	return Heroes.Num() > 0 ? Heroes[0].Unit : FYJJGameDatabase::Get().Units.IndexOfByPredicate([](const FYJJUnitDef& Def) { return Def.bHero; });
 }
 TConstArrayView<FYJJPerkDef> YJJData::Perks() { return FYJJGameDatabase::Get().Perks; }
 TConstArrayView<FYJJPerkDef> YJJData::Cards() { return FYJJGameDatabase::Get().Cards; }
 TConstArrayView<FYJJBrothStage> YJJData::Broth() { return FYJJGameDatabase::Get().Broth; }
 TConstArrayView<FYJJSkillDef> YJJData::Skills() { return FYJJGameDatabase::Get().Skills; }
 const FYJJSkillDef& YJJData::Skill(int32 Index) { return FYJJGameDatabase::Get().Skills[Index]; }
-TConstArrayView<int32> YJJData::HeroSkills() { return FYJJGameDatabase::Get().HeroSkills; }
+TConstArrayView<FYJJHeroDef> YJJData::Heroes() { return FYJJGameDatabase::Get().Heroes; }
+int32 YJJData::HeroIndex(const FName& Id)
+{
+	const int32 Index = FYJJGameDatabase::Get().Heroes.IndexOfByPredicate([&Id](const FYJJHeroDef& Def) { return Def.Id == Id; });
+	return Index != INDEX_NONE ? Index : 0;
+}
 TConstArrayView<FYJJTalk> YJJData::Talks() { return FYJJGameDatabase::Get().Talks; }
 
 const TCHAR* YJJData::TriggerKey(EYJJTalkTrigger Trigger)

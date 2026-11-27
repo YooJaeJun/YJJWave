@@ -218,63 +218,103 @@ void AYJJWaveHUD::TryHeroCharge()
 	Current->HeroCharge(Toward);
 }
 
-void AYJJWaveHUD::DrawChargeButton()
+void AYJJWaveHUD::DrawHeroBar()
 {
+	// 전장 아래 가운데 나무 판: [얼굴] [이름·체력] [돌격 E] [Z] [X] [C]
 	const FYJJBattle* Current = Battle();
 	if (Current->bGameOver || bTreeOpen || !Current->HasHero())
 	{
 		return;
 	}
 	const FYJJUILayout& L = UI();
-	const float W = L.ChargeButtonW;
-	const float H = L.ChargeButtonH;
-	// 스킬이 있으면 두 버튼을 가운데에 나란히 (돌격 왼쪽, 스킬 오른쪽)
-	const float X = Current->HeroSkillDef() ? WorldCenterVirtualX() - W - L.SkillButtonGap * Half : WorldCenterVirtualX() - W * Half;
-	const float Y = VirtualHeight - H - L.ChargeButtonMargin;
-	const float Ready = Current->ChargeReady();
-	const bool bReady = Ready >= 1.f && Current->HasHero();
-	const float Glow = bReady ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
-	DrawPanel(X, Y, W, H, FMath::Lerp(YJJUI::PanelTint, YJJUI::Bad, Glow), FMath::RoundToInt(L.UiCard));
-	DrawLabelCentered(YJJLoc::Get(TEXT("UI.Charge")), X + W * Half, Y + (H - L.SkillChargeBarH) * Half, L.MidText, bReady ? YJJUI::Paper : YJJUI::Muted, W - L.PanelPad * 2.f);
-	if (!bReady)
+	const FYJJHeroDef& Hero = Current->HeroDef();
+	const float Pad = L.PanelPad;
+	const float Slot = L.HeroBarSlot;
+	const float Inner = FMath::Max(L.HeroBarPortrait, Slot);
+	const float W = Pad + L.HeroBarPortrait + Pad + L.HeroBarHPW + Pad + HeroBarSlots * Slot + (HeroBarSlots - 1) * L.HeroBarSlotGap + Pad;
+	const float H = Inner + Pad * 2.f;
+	const float X = WorldCenterVirtualX() - W * Half;
+	const float Y = VirtualHeight - H - L.HeroBarMargin;
+	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
+	// 얼굴 + 이름 + 체력
+	DrawIcon(Hero.Portrait, X + Pad, Y + Pad + (Inner - L.HeroBarPortrait) * Half, L.HeroBarPortrait);
+	const float InfoX = X + Pad + L.HeroBarPortrait + Pad;
+	DrawLabel(YJJLoc::Get(YJJData::Unit(Hero.Unit).NameKey), InfoX, Y + Pad + Inner * Half - L.SmallText - L.TextBarH * Half, L.SmallText, YJJUI::Highlight, 0.f, L.HeroBarHPW);
+	const float BarY = Y + Pad + Inner * Half - L.TextBarH * Half + L.SmallText * Half;
+	DrawBar(InfoX, BarY, L.HeroBarHPW, L.TextBarH, Current->HeroHP() / FMath::Max(Current->HeroMaxHP(), KINDA_SMALL_NUMBER), YJJUI::HeroBar);
+	DrawBarLabel(FormatCount(FMath::CeilToFloat(Current->HeroHP())), InfoX, BarY, L.HeroBarHPW, L.TextBarH);
+	// 칸 넷: 0 = 돌격(E), 1~3 = 스킬(Z·X·C)
+	const float SlotsX = InfoX + L.HeroBarHPW + Pad;
+	const float SlotY = Y + Pad + (Inner - Slot) * Half;
+	for (int32 Index = 0; Index < HeroBarSlots; ++Index)
 	{
-		DrawBar(X + L.PanelPad, Y + H - L.PanelPad - L.SkillChargeBarH, W - L.PanelPad * 2.f, L.SkillChargeBarH, Ready, YJJUI::Highlight);
+		const bool bCharge = Index == 0;
+		const int32 SkillIndex = Index - 1;
+		const FYJJSkillDef* Skill = bCharge ? nullptr : Current->HeroSkillDef(SkillIndex);
+		if (!bCharge && !Skill)
+		{
+			continue;
+		}
+		const float SX = SlotsX + Index * (Slot + L.HeroBarSlotGap);
+		const float Ready = FMath::Max(bCharge ? Current->ChargeReady() : Current->HeroSkillReady(SkillIndex), 0.f);
+		const bool bReady = Ready >= 1.f;
+		const float Glow = bReady ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) * Half : 0.f;
+		DrawPanel(SX, SlotY, Slot, Slot, FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow), FMath::RoundToInt(L.UiCard));
+		const float Icon = Slot * L.HeroBarIcon;
+		DrawIcon(bCharge ? FMath::RoundToInt(L.UiSword) : Skill->Icon, SX + (Slot - Icon) * Half, SlotY + (Slot - Icon) * Half, Icon, bReady ? FLinearColor::White : YJJUI::Muted);
+		if (!bReady)
+		{
+			// 대기: 아래부터 차오르는 그늘이 걷힌다 + 남은 초
+			const float Left = (1.f - Ready) * (Slot - Pad);
+			DrawBox(SX + Pad * Half, SlotY + Pad * Half, Slot - Pad, Left, YJJUI::Shade);
+			const float Full = bCharge ? YJJData::Tune().HeroChargeCooldown : Skill->Cooldown;
+			DrawLabelCentered(FString::FromInt(FMath::CeilToInt((1.f - Ready) * Full)), SX + Slot * Half, SlotY + Slot * Half, L.MidText, YJJUI::Paper);
+		}
+		DrawLabel(bCharge ? TEXT("E") : HeroSkillKeys[SkillIndex].GetDisplayName().ToString(), SX + Pad * Half, SlotY + Pad * Half, L.SmallText, YJJUI::Highlight);
+		AddButton(bCharge ? EButton::Charge : EButton::HeroSkill, bCharge ? 0 : SkillIndex, SX, SlotY, Slot, Slot);
 	}
-	AddButton(EButton::Charge, 0, X, Y, W, H);
 }
 
-void AYJJWaveHUD::TryHeroSkill()
+void AYJJWaveHUD::TryHeroSkill(int32 Index)
 {
 	FYJJBattle* Current = EditBattle();
 	if (Current && !Current->IsChoosing())
 	{
-		Current->HeroSkill();
+		Current->HeroSkill(Index);
 	}
 }
 
-void AYJJWaveHUD::DrawHeroSkillButton()
+void AYJJWaveHUD::DrawHeroBarTooltip()
 {
-	const FYJJBattle* Current = Battle();
-	const FYJJSkillDef* Skill = Current->HeroSkillDef();
-	if (Current->bGameOver || bTreeOpen || !Current->HasHero() || !Skill)
+	if (!HoverButton(EButton::HeroSkill) || Battle()->bGameOver)
+	{
+		return;
+	}
+	const FYJJButton* Button = ButtonAt(ToVirtual(MouseScreen()));
+	const FYJJSkillDef* Skill = Button ? Battle()->HeroSkillDef(Button->Index) : nullptr;
+	if (!Skill)
 	{
 		return;
 	}
 	const FYJJUILayout& L = UI();
-	const float W = L.ChargeButtonW;
-	const float H = L.ChargeButtonH;
-	const float X = WorldCenterVirtualX() + L.SkillButtonGap * Half;
-	const float Y = VirtualHeight - H - L.ChargeButtonMargin;
-	const float Ready = FMath::Max(Current->HeroSkillReady(), 0.f);
-	const bool bReady = Ready >= 1.f;
-	const float Glow = bReady ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
-	DrawPanel(X, Y, W, H, FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow), FMath::RoundToInt(L.UiCard));
-	DrawLabelCentered(YJJLoc::Format(TEXT("UI.HeroSkill"), { YJJLoc::Get(Skill->NameKey) }), X + W * Half, Y + (H - L.SkillChargeBarH) * Half, L.MidText, bReady ? YJJUI::Paper : YJJUI::Muted, W - L.PanelPad * 2.f);
-	if (!bReady)
+	const float W = L.TipW;
+	const float Pad = L.TextPad;
+	TArray<TPair<FString, FLinearColor>> Lines;
+	Lines.Emplace(YJJLoc::Format(TEXT("UI.HeroSkillLine"), { YJJLoc::Get(Skill->NameKey), HeroSkillKeys[Button->Index].GetDisplayName().ToString(), FMath::RoundToInt(Skill->Cooldown) }), YJJUI::Highlight);
+	for (const FString& Wrapped : WrapText(YJJLoc::Format(*Skill->DescKey, { Skill->SummonCount }), L.SmallText, W - Pad * 2.f))
 	{
-		DrawBar(X + L.PanelPad, Y + H - L.PanelPad - L.SkillChargeBarH, W - L.PanelPad * 2.f, L.SkillChargeBarH, Ready, YJJUI::Highlight);
+		Lines.Emplace(Wrapped, YJJUI::Paper);
 	}
-	AddButton(EButton::HeroSkill, 0, X, Y, W, H);
+	const FVector2f Mouse = ToVirtual(MouseScreen());
+	const float LineH = L.TipLineH;
+	const float H = Pad * 2.f + LineH * Lines.Num();
+	const float X = FMath::Clamp(Mouse.X - W * Half, 0.f, VirtualW - W);
+	const float Y = FMath::Clamp(Mouse.Y - H - L.TipOffset, 0.f, VirtualHeight - H);
+	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
+	for (int32 Line = 0; Line < Lines.Num(); ++Line)
+	{
+		DrawValueLabel(Lines[Line].Key, X + Pad, Y + Pad + LineH * Line, L.SmallText, Lines[Line].Value, W - Pad * 2.f);
+	}
 }
 
 FLinearColor AYJJWaveHUD::PotStatusColor() const

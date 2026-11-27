@@ -260,18 +260,37 @@ UI.ChokePassed,길목 돌파! 적 라인이 밀려난다,Chokepoint broken! The 
 Skill.HeroWhirl,대장 회오리,Captain's Whirl,영웅 R 스킬
 Skill.BoneSweep,뼈 대검 쓸기,Bone Sweep,해골 왕 스킬
 Skill.GruntWhirl,영웅 회전 베기,Hero Spin,진급 영웅 스킬
-UI.HeroSkill,{0}! (R),{0}! (R),전장 아래 버튼 (스킬 이름)
 UI.SkillKills,싹쓸이 ×{0}!,Swept ×{0}!,스킬 한 번에 쓰러뜨린 수
 Skill.HeroQuake,땅 내려찍기,Ground Slam,영웅 R 스킬 후보
 Skill.HeroSummon,졸병 떼 호출,Grunt Rush,영웅 R 스킬 후보
 SkillDesc.HeroWhirl,제자리에서 세 번 돌며 둘레의 적을 쓸어 날린다.,Spins three times and flings everything around.,
 SkillDesc.HeroQuake,한참 기를 모았다가 앞을 크게 내려찍는다. 한 방이 세다.,Charges up and slams the ground ahead. One huge hit.,
 SkillDesc.HeroSummon,냄비를 두드리면 졸병 {0}명이 땅에서 튀어나온다.,Bang the pot and {0} grunts pop out of the ground.,{0} = 나오는 수
-UI.SkillPickTitle,대장 기술 고르기 (1 · 2 · 3),Pick the Captain's move (1 · 2 · 3),판 시작
-UI.SkillPickSub,이번 판에 R로 쓸 기술 하나를 고르자.,Pick one move to use with R this stage.,
 UI.SkillCooldown,대기 {0}초,Cooldown {0}s,스킬 카드
-Skill.Picked,{0} 준비!,{0} ready!,배너
 SpellDesc.Meteor,누른 뒤 전장을 클릭한 자리에 운석이 떨어진다.,Click the field to drop a meteor there.,주문 칸 툴팁
 SpellDesc.Rally,누르면 바로: 잠깐 동안 아군 전체가 빨리 때리고 빨리 걷는다 (금빛으로 빛난다).,Instantly: all troops attack and move faster for a while (they glow gold).,주문 칸 툴팁
 SpellDesc.Ladle,전장을 클릭한 자리를 큰 국자로 쾅. 횟수가 차오른다.,Smash the clicked spot with a giant ladle. Charges refill.,주문 칸 툴팁
 Rally.Banner,함성! 공격 속도 x{0} · {1}초,War Cry! Attack x{0} · {1}s,배너
+Unit.HeroCook,요리사 대장,Chef Captain,영웅
+Unit.HeroPot,냄비 투척꾼,Pot Thrower,영웅
+HeroDesc.Hero,"칼 든 졸병 출신. 둘레를 쓸고, 땅을 찍고, 졸병을 부른다.","A grunt with a sword. Sweeps, slams, and calls grunts.",
+HeroDesc.HeroCook,국자 하나로 전장을 휘젓는다. 방패병 배식 행렬을 부른다.,Stirs the battlefield with a ladle. Calls a line of shieldbearers.,
+HeroDesc.HeroPot,뚜껑을 던지고 냄비를 터뜨린다. 한 방이 제일 세다.,Throws lids and blows up pots. Hardest single hit.,
+Skill.CookSpin,국자 회전,Ladle Spin,
+Skill.CookSplash,끓는 국 뿌리기,Boiling Splash,
+Skill.CookServe,배식 행렬,Serving Line,
+Skill.PotLid,뚜껑 원반,Lid Disc,
+Skill.PotBomb,냄비 폭탄,Pot Bomb,
+Skill.PotCall,망치 대장 호출,Hammer Call,
+SkillDesc.CookSpin,국자를 휘휘 돌려 둘레의 적을 네 번 친다.,"Spins the ladle, hitting everything around four times.",
+SkillDesc.CookSplash,앞으로 끓는 국을 두 번 뿌려 넓게 날린다.,Splashes boiling soup ahead twice.,
+SkillDesc.CookServe,방패병 {0}명이 줄 서서 튀어나온다.,{0} shieldbearers line up and pop out.,
+SkillDesc.PotLid,앞으로 솥뚜껑을 던져 줄줄이 네 번 친다.,"Throws a pot lid ahead, hitting four times.",
+SkillDesc.PotBomb,한참 불을 붙였다가 냄비 폭탄을 터뜨린다. 가장 세다.,Lights a pot bomb and blows it up. The strongest hit.,
+SkillDesc.PotCall,망치 대장 {0}명을 부른다.,Calls {0} hammer bosses.,
+UI.HeroSelectTitle,출전할 영웅 고르기,Pick your hero,월드맵 영웅 선택
+UI.HeroSelectSub,영웅마다 액티브 스킬 3개 (Z · X · C) 와 돌격 (E),Each hero has 3 skills (Z · X · C) and Charge (E),
+UI.HeroGo,출전!,Go!,
+UI.HeroBack,돌아가기,Back,
+UI.HeroSkillLine,{0} ({1}) · 대기 {2}초,{0} ({1}) · {2}s,영웅 카드 스킬 줄
+UI.ChargeName,돌격,Charge,영웅 칸

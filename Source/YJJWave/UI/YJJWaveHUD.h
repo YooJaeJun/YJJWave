@@ -165,6 +165,8 @@ public:
 	float LastUnitDrawMs() const { return UnitDrawMs; }
 	int32 LastVisibleUnits() const { return Sorted.Num(); }
 	void SetTreeOpen(bool bOpen) { bTreeOpen = bOpen; }
+	/** 월드맵 영웅 고르기를 연다 (그 스테이지로 출전, INDEX_NONE 이면 닫기) */
+	void OpenHeroSelect(int32 Stage) { HeroSelectStage = Stage; }
 	/** 오토파일럿 스크린샷용: 마우스 대신 이 별의 설명창을 띄운다 (INDEX_NONE이면 마우스) */
 	void SetForcedHoverPerk(int32 Perk) { ForcedHoverPerk = Perk; }
 	/** 지금 말풍선이 뜬 지 (없으면 음수, 오토파일럿 스크린샷용) */
@@ -183,7 +185,9 @@ private:
 		Restart,
 		NextStage,
 		Card,
-		SkillPick,
+		HeroPick,
+		HeroGo,
+		HeroBack,
 		Buy,
 		Option,
 		OpenOptions,
@@ -281,12 +285,14 @@ private:
 	void DrawBlockers();
 	/** 땅 위 전선 띠: 아군 앞줄·적 앞줄 자리, 아군 띠 위에 "전선 +N%" (밀어낸 만큼 금화·영혼) */
 	void DrawFrontLines();
-	/** 전장 아래 가운데: 영웅 돌격 버튼 (E, 쿨다운 막대) */
-	void DrawChargeButton();
+	/** 전장 아래 가운데 영웅 칸: 얼굴·이름·체력 + 돌격(E)·스킬 셋(Z·X·C) */
+	void DrawHeroBar();
 	void TryHeroCharge();
-	/** 영웅 큰 스킬 버튼 (돌격 버튼 오른쪽) */
-	void DrawHeroSkillButton();
-	void TryHeroSkill();
+	void TryHeroSkill(int32 Index);
+	/** 영웅 칸 스킬에 마우스: 이름·설명·대기 */
+	void DrawHeroBarTooltip();
+	/** 월드맵: 스테이지를 누르면 출전 영웅 고르기 */
+	void DrawHeroSelect();
 	/** 싹쓸이 글자 (스킬 한 번에 많이 쓰러뜨렸을 때) */
 	void DrawSkillTexts();
 	/** 처치한 적 자리에서 금화가 튀어 오른다 */
@@ -355,9 +361,6 @@ private:
 	void PressSpell(EYJJSpell Spell);
 	static bool NeedsAim(EYJJSpell Spell) { return Spell != EYJJSpell::Rally; }
 	void DrawCardPick();
-	/** 판 시작: 영웅 스킬 후보 카드 (1·2·3) */
-	void DrawSkillPick();
-	void PickHeroSkill(int32 Choice);
 	/** 양념 하나를 냄비에 (카드 고르기) + 배너 */
 	void PickSeasoning(int32 Choice);
 	/** 좌측 패널: 이번 판 넣은 양념 그림들 (높이를 돌려준다) */
@@ -462,6 +465,11 @@ private:
 	TArray<uint8> TalkUsed;
 	FYJJTalkPlay TalkNow;
 	int32 HoverPlot = INDEX_NONE;
+	/** 영웅 고르기 중인 스테이지 (INDEX_NONE 닫힘) */
+	int32 HeroSelectStage = INDEX_NONE;
+	/** 영웅 칸 스킬 단축키 (Z·X·C, Heroes.csv Skill1~3) */
+	inline static const FKey HeroSkillKeys[] = { EKeys::Z, EKeys::X, EKeys::C };
+	static constexpr int32 HeroBarSlots = 4;   // 돌격 + 스킬 셋
 	int32 HoverPerk = INDEX_NONE;
 	int32 ForcedHoverPerk = INDEX_NONE;
 	float FrameMs = 0.f;
@@ -497,6 +505,7 @@ private:
 
 	static constexpr float VirtualHeight = 1080.f;
 	static constexpr float Half = 0.5f;
+	static constexpr float Quarter = 0.25f;
 	static constexpr float FullTurn = 2.f * UE_PI;
 	static constexpr float Percent = 100.f;
 	static constexpr double MsPerSecond = 1000.0;

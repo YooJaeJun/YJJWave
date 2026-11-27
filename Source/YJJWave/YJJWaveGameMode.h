@@ -66,6 +66,8 @@ public:
 	void NextStage();
 	/** 영혼·특성·깬 스테이지 저장 (특성을 찍은 뒤에도 부른다) */
 	void SaveProgress();
+	/** 출전할 영웅 (월드맵 영웅 고르기) */
+	void SetHero(const FName& Hero) { Progress.Hero = Hero; }
 
 	// ---- 화면 흐름 ----
 	EYJJScreen GetScreen() const { return Screen; }

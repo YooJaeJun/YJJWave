@@ -60,6 +60,8 @@ struct FYJJProgress
 	TArray<FName> Perks;
 	int32 Cleared = 0;   // 깬 스테이지 수 (다음에 열리는 스테이지 = Cleared)
 	TArray<int32> Stars; // 스테이지 번호 → 최고 별 (0 = 아직)
+	/** 출전할 영웅 (Heroes.csv 이름, 비면 첫 영웅) */
+	FName Hero;
 };
 
 /**
@@ -106,21 +108,21 @@ public:
 	/** 돌격 준비 (0 ~ 1, 1이면 쓸 수 있다) */
 	float ChargeReady() const;
 	bool HasHero() const { return Horde.Hero() != INDEX_NONE; }
-	/** 영웅 큰 스킬 (R, Skills.csv 영웅 줄): 준비되면 다음 걸음 사이에 쓴다 */
-	bool HeroSkill();
-	/** 영웅 스킬 준비 (0 ~ 1, 스킬이 없거나 영웅이 없으면 음수). 걸음이 끝날 때 적어 둔 값 */
-	float HeroSkillReady() const { return HeroSkillReadyNow; }
-	/** 영웅 스킬 정의 (없으면 nullptr) */
-	const FYJJSkillDef* HeroSkillDef() const;
-	/** 판 시작: 영웅 스킬 후보 중 하나를 고르는 중 (시뮬이 멈춘다) */
-	bool bSkillPickPending = false;
-	/** 고를 후보 (Skills.csv 번호) */
-	TArray<int32> SkillOffer;
-	bool PickHeroSkill(int32 Choice);
-	/** 카드·스킬을 고르는 중 (전장 조작을 막는다) */
-	bool IsChoosing() const { return bCardPending || bSkillPickPending; }
+	/** 이번 판 영웅 (Heroes.csv) */
+	const FYJJHeroDef& HeroDef() const { return YJJData::Heroes()[HeroIndex]; }
+	/** 영웅 액티브 스킬 Index 번 (Z·X·C = 0·1·2): 준비되면 다음 걸음 사이에 쓴다 */
+	bool HeroSkill(int32 Index);
+	/** 그 스킬 준비 (0 ~ 1, 없거나 영웅이 없으면 음수). 걸음이 끝날 때 적어 둔 값 */
+	float HeroSkillReady(int32 Index) const { return HeroSkillReadyNow.IsValidIndex(Index) ? HeroSkillReadyNow[Index] : -1.f; }
+	/** 그 스킬 정의 (없으면 nullptr) */
+	const FYJJSkillDef* HeroSkillDef(int32 Index) const;
+	int32 NumHeroSkills() const { return HeroDef().Skills.Num(); }
+	/** 카드를 고르는 중 (전장 조작을 막는다) */
+	bool IsChoosing() const { return bCardPending; }
 	/** 봇: 지금 쓰면 둘레 적이 AutoCount 이상 걸린다 */
-	bool HeroSkillWorthIt() const;
+	bool HeroSkillWorthIt(int32 Index) const;
+	float HeroHP() const;
+	float HeroMaxHP() const;
 	FVector2f HeroPos() const { return Horde.Hero() != INDEX_NONE ? Horde.Pos[Horde.Hero()] : FVector2f::ZeroVector; }
 	/** 국자는 다음 한 번이 차오르기까지 */
 	float CooldownLeft(EYJJSpell Spell) const;
@@ -292,11 +294,11 @@ private:
 	bool bChargeQueued = false;
 	FVector2f ChargeTarget = FVector2f::ZeroVector;
 	// 영웅 큰 스킬
-	bool bSkillQueued = false;
-	/** 이번 판 영웅 스킬 (Skills.csv 번호) */
-	int32 HeroSkillIndex = INDEX_NONE;
+	/** 다음 걸음 사이에 쓸 영웅 스킬 (INDEX_NONE 없음) */
+	int32 QueuedSkill = INDEX_NONE;
+	int32 HeroIndex = 0;
 	void SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center);
-	float HeroSkillReadyNow = -1.f;
+	TArray<float> HeroSkillReadyNow;
 	void HandleSkillEvents();
 	// 맞붙은 전선 먼지
 	float ClashTimer = 0.f;

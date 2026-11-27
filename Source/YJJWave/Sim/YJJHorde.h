@@ -253,12 +253,12 @@ public:
 	int32 CountNear(const FVector2f& Center, float Radius, EYJJTeam Victims, int32 Cap) const;
 
 	// ---- 큰 범위 스킬 (Skills.csv, 유닛 하나에 하나) ----
-	/** 그 유닛 스킬을 지금 쓴다 (게임 스레드, 걸음 사이에). Dir 1 = 오른쪽, -1 = 왼쪽. 대기 중이거나 쓰는 중이면 false */
-	bool CastSkill(int32 Slot, float Dir);
-	/** 그 유닛 스킬 준비 (0 ~ 1, 쓰는 중이면 0, 스킬이 없으면 음수) */
-	float SkillReady(int32 Slot) const;
-	/** 그 유닛 스킬을 바꾼다 (영웅 스킬 고르기, 게임 스레드). 대기 시간은 그 스킬 FirstDelay 부터 */
-	void SetSkill(int32 Slot, int32 Skill);
+	/** 그 유닛의 그 스킬을 지금 쓴다 (게임 스레드, 걸음 사이에). Dir 1 = 오른쪽, -1 = 왼쪽. 대기 중이거나 다른 스킬을 쓰는 중이면 false */
+	bool CastSkill(int32 Slot, int32 Skill, float Dir);
+	/** 그 유닛 그 스킬 준비 (0 ~ 1, 쓰는 중이면 0, 그 스킬이 없으면 음수) */
+	float SkillReady(int32 Slot, int32 Skill) const;
+	/** 그 유닛 스킬들을 바꾼다 (영웅, 게임 스레드). 대기 시간은 각 스킬 FirstDelay 부터 */
+	void SetSkills(int32 Slot, TConstArrayView<int32> InSkills);
 	/** 이번 걸음의 스킬 사건 (전투가 가져가고 비운다) */
 	TArray<FYJJSkillEvent> SkillEvents;
 
@@ -402,7 +402,10 @@ private:
 	void TickSkills(float Dt);
 	void BeginSkill(FYJJSkillCaster& Caster);
 	FVector2f SkillCenter(const FYJJSkillCaster& Caster) const;
-	const FYJJSkillCaster* CasterOf(int32 Slot) const;
+	FYJJSkillCaster* FindCaster(int32 Slot, int32 Skill);
+	const FYJJSkillCaster* FindCaster(int32 Slot, int32 Skill) const;
+	/** 그 유닛이 어떤 스킬이든 기를 모으거나 쓰는 중 */
+	bool IsCasting(int32 Slot) const;
 	TArray<FYJJSkillCaster> Casters;
 	static constexpr float NoWindup = -1.f;
 	FVector2f ChargeDir = FVector2f::ZeroVector;

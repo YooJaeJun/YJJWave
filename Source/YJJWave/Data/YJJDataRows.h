@@ -222,6 +222,23 @@ struct FYJJSkillRow : public FTableRowBase
 	UPROPERTY() FString Note;
 };
 
+/** Heroes.csv: 고를 수 있는 영웅 (유닛 이름 = 줄 이름) */
+USTRUCT()
+struct FYJJHeroRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() int32 Order = 0;
+	UPROPERTY() FString DescKey;
+	/** 얼굴 그림 (UI.png 칸) */
+	UPROPERTY() int32 Portrait = -1;
+	/** 액티브 스킬 3개 (Skills.csv 이름, 단축키 Z·X·C) */
+	UPROPERTY() FString Skill1;
+	UPROPERTY() FString Skill2;
+	UPROPERTY() FString Skill3;
+	UPROPERTY() FString Note;
+};
+
 /** Broth.csv: 냄비 국물 단계 */
 USTRUCT()
 struct FYJJBrothRow : public FTableRowBase

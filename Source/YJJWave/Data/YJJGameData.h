@@ -18,6 +18,7 @@ class UScriptStruct;
  *   Perks.csv      특성 성좌 (Tools/Data/gen_perks.py)  Spells.csv     주문 Lv별 수치·특수 효과
  *   Broth.csv      냄비 국물 단계                 Dialogues.csv  게임 중 말풍선 대화
  *   Regions.csv    월드맵 지역                    Skills.csv     영웅·보스 큰 범위 스킬
+ *   Heroes.csv     고를 수 있는 영웅과 스킬 3개
  * 글자는 Localization.csv (YJJLoc).
  */
 class YJJWAVE_API FYJJGameDatabase
@@ -44,8 +45,8 @@ public:
 	TArray<FYJJTalk> Talks;
 	/** Skills.csv: 영웅·보스 큰 범위 스킬 (유닛 Def.Skill 이 번호) */
 	TArray<FYJJSkillDef> Skills;
-	/** 내 영웅이 판 시작에 고르는 스킬 후보 (Skills.csv 번호, 영웅 유닛의 Manual 줄) */
-	TArray<int32> HeroSkills;
+	/** Heroes.csv: 고를 수 있는 영웅 (Order 순서) */
+	TArray<FYJJHeroDef> Heroes;
 
 	/** 읽으면서 생긴 문제 (빠진 이름, 모르는 유닛…) */
 	TArray<FString> Problems;
@@ -69,6 +70,7 @@ private:
 	void LoadBroth();
 	void LoadDialogues();
 	void LoadSkills();
+	void LoadHeroes();
 	bool ParseTrigger(const FString& Name, EYJJTalkTrigger& Out);
 	/** Voice 열: 비우면 소리 없음 (대사는 글로만) */
 	static FName VoiceFor(const FString& Voice, const FString& Speaker);
@@ -116,7 +118,9 @@ namespace YJJData
 	YJJWAVE_API TConstArrayView<FYJJTalk> Talks();
 	YJJWAVE_API TConstArrayView<FYJJSkillDef> Skills();
 	YJJWAVE_API const FYJJSkillDef& Skill(int32 Index);
-	YJJWAVE_API TConstArrayView<int32> HeroSkills();
+	YJJWAVE_API TConstArrayView<FYJJHeroDef> Heroes();
+	/** Heroes.csv 에서 Id 인 영웅 번호 (없으면 0) */
+	YJJWAVE_API int32 HeroIndex(const FName& Id);
 	/** Dialogues.csv Trigger 열 이름 */
 	YJJWAVE_API const TCHAR* TriggerKey(EYJJTalkTrigger Trigger);
 

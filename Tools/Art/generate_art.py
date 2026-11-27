@@ -27,8 +27,8 @@ OUT = _OUT_ARGS[0] if _OUT_ARGS else os.path.join(os.path.dirname(__file__), "..
 
 UNIT_CELL = 128
 UNIT_COLS = 32
-UNIT_ROWS = 18
-PROJECTILE_ROW = 17
+UNIT_ROWS = 20
+PROJECTILE_ROW = 19
 FOOT = 0.92
 
 
@@ -134,6 +134,9 @@ UNITS.append(dict(name="GruntHero", body="#FFFFFF", head="#FFFFFF", hat="flamecr
 # 14~15: 적 진지 (AI 원화: 뼈 천막 = 일반, 해골 망루 = 큰 진지). 움직이지 않고, 부서지면 납작한 잔해
 UNITS.append(dict(name="BoneTent", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
 UNITS.append(dict(name="BoneTower", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
+# 16·17: 영웅 둘 (Gemini 원화, 리그로 움직인다)
+UNITS.append(dict(name="HeroCook", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0, faces=HOTBLOOD_FACES))
+UNITS.append(dict(name="HeroPot", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0, faces=HOTBLOOD_FACES))
 
 
 # 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다). kind는 표정 고르기에 쓴다 (UNITS faces)
@@ -619,6 +622,8 @@ ART_UNITS = {
     "Necro": dict(file="Necro.png", flip=True, shadow=True),
     "General": dict(file="General.png", flip=False, shadow=True),
     "GruntHero": dict(file="GruntHero.png", flip=False, shadow=True),
+    "HeroCook": dict(file="HeroCook.png", flip=False, shadow=True),
+    "HeroPot": dict(file="HeroPot.png", flip=False, shadow=True),
     "BoneTent": dict(file="CampTent.png", flip=False, building=True),
     "BoneTower": dict(file="CampTower.png", flip=False, building=True),
 }
@@ -1736,7 +1741,7 @@ def ui_icon(i):
     return p.done(C, C)
 
 
-UI_ICONS = 46   # 0~15 + 16 (안 씀) + 17 특성 바탕 원 + 18~32 중간 별 효과 + 33 뼈 + 34 냄비 + 35 국자 + 36~45 양념 (Cards.csv Icon) (UILayout.csv Ui*, Perks.csv Icon)
+UI_ICONS = 48   # 0~15 + 16 (안 씀) + 17 특성 바탕 원 + 18~32 중간 별 효과 + 33 뼈 + 34 냄비 + 35 국자 + 36~45 양념 (Cards.csv Icon) (UILayout.csv Ui*, Perks.csv Icon)
 
 
 def ladle_image(C):
@@ -1768,6 +1773,8 @@ UI_KIT_ICONS = {2: 0, 3: 1, 4: 2, 5: 3, 6: 34}   # 시안 아이콘 순서 (0·1
 UI_PANEL_FILL = {13: "#4A3424", 14: "#2E211A", 15: "#5A3A26"}   # 패널·어두운 패널·카드: 양피지 대신 나무판 (밝은 글자가 읽히게)
 UI_BARRACKS_ICONS = {9: "Grunt", 10: "Archer", 11: "Shield", 12: "Brute"}   # 병영 아이콘 칸: 그 병사 원화 윗몸
 UI_BARRACKS_ICON_TOP = 0.72   # 원화 위에서 이만큼만 (윗몸)
+UI_HERO_PORTRAITS = {8: "Hero", 46: "HeroCook", 47: "HeroPot"}   # 영웅 얼굴 칸 (Heroes.csv Portrait)
+UI_HERO_PORTRAIT_TOP = 0.6
 UI_ICON_FILL = 0.88        # 아이콘이 칸에서 차지하는 비율
 
 
@@ -1910,6 +1917,9 @@ def ui_atlas():
     icons = ui_kit_icons()
     for index, cell in UI_KIT_ICONS.items():
         put(cell, _fit_icon(icons[index], C))
+    for cell, name in UI_HERO_PORTRAITS.items():
+        art = art_source(name)
+        put(cell, _fit_icon(art.crop((0, 0, art.size[0], int(art.size[1] * UI_HERO_PORTRAIT_TOP))), C))
     for cell, name in UI_BARRACKS_ICONS.items():
         art = art_source(name)
         put(cell, _fit_icon(art.crop((0, 0, art.size[0], int(art.size[1] * UI_BARRACKS_ICON_TOP))), C))

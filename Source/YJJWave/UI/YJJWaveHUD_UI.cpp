@@ -717,9 +717,6 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::Card:
 			PickSeasoning(Button->Index);
 			break;
-		case EButton::SkillPick:
-			PickHeroSkill(Button->Index);
-			break;
 		case EButton::Buy:
 			Current->Buy(BuyPopupFor, Button->Index);
 			break;
@@ -736,7 +733,24 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 			TryHeroCharge();
 			break;
 		case EButton::HeroSkill:
-			TryHeroSkill();
+			TryHeroSkill(Button->Index);
+			break;
+		case EButton::HeroPick:
+			if (YJJData::Heroes().IsValidIndex(Button->Index))
+			{
+				Mode->SetHero(YJJData::Heroes()[Button->Index].Id);
+			}
+			break;
+		case EButton::HeroGo:
+			if (HeroSelectStage != INDEX_NONE)
+			{
+				const int32 Stage = HeroSelectStage;
+				HeroSelectStage = INDEX_NONE;
+				Mode->StartStage(Stage);
+			}
+			break;
+		case EButton::HeroBack:
+			HeroSelectStage = INDEX_NONE;
 			break;
 		case EButton::TitleStart:
 			Mode->GoToWorldMap();
@@ -750,7 +764,8 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::WorldStage:
 			if (Mode->IsStageOpen(Button->Index))
 			{
-				Mode->StartStage(Button->Index);
+				// 출전 영웅부터 고른다
+				HeroSelectStage = Button->Index;
 			}
 			break;
 		case EButton::WorldBack:
@@ -926,12 +941,7 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 		return;
 	}
 	const int32 BuildingIndex = BuildingIndexForKey(Key);
-	// 영웅 스킬·카드를 고르는 중이면 1·2·3 은 그 카드
-	if (Current->bSkillPickPending)
-	{
-		PickHeroSkill(BuildingIndex);
-		return;
-	}
+	// 카드를 고르는 중이면 1·2·3 은 카드
 	if (Current->bCardPending)
 	{
 		PickSeasoning(BuildingIndex);
@@ -956,9 +966,9 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	{
 		TryHeroCharge();
 	}
-	else if (Key == EKeys::R)
+	else if (Key == HeroSkillKeys[0] || Key == HeroSkillKeys[1] || Key == HeroSkillKeys[2])
 	{
-		TryHeroSkill();
+		TryHeroSkill(Key == HeroSkillKeys[0] ? 0 : Key == HeroSkillKeys[1] ? 1 : 2);
 	}
 	else if (Key == EKeys::Q)
 	{
@@ -1146,64 +1156,6 @@ void AYJJWaveHUD::DrawCardPick()
 			RowY += L.TipLineH;
 		}
 		AddButton(EButton::Card, Index, X, Y, L.CardW, L.CardPickH);
-	}
-}
-
-void AYJJWaveHUD::DrawSkillPick()
-{
-	// 판 시작: 이번 판에 R로 쓸 대장 기술 하나 (양념 고르기와 같은 카드 모양)
-	const FYJJBattle* Current = Battle();
-	const FYJJUILayout& L = UI();
-	const float Pad = L.TextPad;
-	DrawBox(0.f, 0.f, VirtualW, VirtualHeight, YJJUI::Shade);
-	const float CenterX = WorldCenterVirtualX();
-	DrawLabel(YJJLoc::Get(TEXT("UI.SkillPickTitle")), CenterX, L.CardTitleY, L.TitleText, YJJUI::Highlight, Half);
-	DrawLabel(YJJLoc::Get(TEXT("UI.SkillPickSub")), CenterX, L.CardTitleY + L.TitleText + L.CardSubGap, L.SmallText, YJJUI::Paper, Half);
-
-	const int32 Count = Current->SkillOffer.Num();
-	const float Total = Count * L.CardW + (Count - 1) * L.CardPickGap;
-	const float Y = L.CardTitleY + L.TitleText + L.CardSubGap + L.SmallText + Pad * 2.f;
-	for (int32 Index = 0; Index < Count; ++Index)
-	{
-		const FYJJSkillDef& Def = YJJData::Skill(Current->SkillOffer[Index]);
-		const float X = CenterX - Total * Half + Index * (L.CardW + L.CardPickGap);
-		const bool bHover = HoverButton(EButton::SkillPick) && ButtonAt(ToVirtual(MouseScreen()))->Index == Index;
-		DrawPanel(X, Y, L.CardW, L.CardPickH, bHover ? FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Half) : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
-		DrawLabel(FString::FromInt(Index + 1), X + Pad, Y + Pad, L.MidText, YJJUI::Highlight);
-		// 그림 → 이름 → 설명 → 대기 시간
-		float RowY = Y + Pad;
-		if (Def.Icon != INDEX_NONE)
-		{
-			DrawIcon(Def.Icon, X + (L.CardW - L.CardIconSize) * Half, RowY, L.CardIconSize);
-		}
-		RowY += L.CardIconSize + Pad * Half;
-		DrawLabel(YJJLoc::Get(Def.NameKey), X + L.CardW * Half, RowY, L.MidText, YJJUI::Paper, Half, L.CardW - Pad * 2.f);
-		RowY += L.MidText + Pad;
-		if (!Def.DescKey.IsEmpty())
-		{
-			for (const FString& Line : WrapText(YJJLoc::Format(*Def.DescKey, { Def.SummonCount }), L.SmallText, L.CardW - Pad * 2.f))
-			{
-				DrawLabel(Line, X + L.CardW * Half, RowY, L.SmallText, YJJUI::Paper, Half);
-				RowY += L.TipLineH;
-			}
-			RowY += Pad * Half;
-		}
-		DrawLabel(YJJLoc::Format(TEXT("UI.SkillCooldown"), { FMath::RoundToInt(Def.Cooldown) }), X + L.CardW * Half, RowY, L.SmallText, YJJUI::Muted, Half);
-		AddButton(EButton::SkillPick, Index, X, Y, L.CardW, L.CardPickH);
-	}
-}
-
-void AYJJWaveHUD::PickHeroSkill(int32 Choice)
-{
-	FYJJBattle* Current = EditBattle();
-	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
-	if (Mode && Mode->CutsceneLine())
-	{
-		return;
-	}
-	if (Current && Current->PickHeroSkill(Choice))
-	{
-		AddBanner(YJJLoc::Format(TEXT("Skill.Picked"), { YJJLoc::Get(Current->HeroSkillDef()->NameKey) }), YJJUI::Highlight);
 	}
 }
 

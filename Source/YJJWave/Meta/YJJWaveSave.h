@@ -21,6 +21,8 @@ public:
 	UPROPERTY() TArray<int32> Stars;
 	/** 내용 서명 (YJJGuard::Sign). 안 맞으면 고친 파일로 보고 불러오지 않는다 */
 	UPROPERTY() FString Signature;
+	/** 고른 영웅 (서명 밖: 고르는 건 자유) */
+	UPROPERTY() FName Hero;
 
 	static FYJJProgress Load();
 	static void Store(const FYJJProgress& Progress);

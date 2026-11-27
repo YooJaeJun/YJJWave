@@ -972,9 +972,19 @@ void FYJJHorde::AddCaster(int32 Slot, int32 Skill)
 	Caster.Windup = NoWindup;
 }
 
-const FYJJSkillCaster* FYJJHorde::CasterOf(int32 Slot) const
+FYJJSkillCaster* FYJJHorde::FindCaster(int32 Slot, int32 Skill)
 {
-	return Casters.FindByPredicate([this, Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot && IsValidTarget(Slot, Caster.Gen); });
+	return Casters.FindByPredicate([this, Slot, Skill](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot && Caster.Skill == Skill && IsValidTarget(Slot, Caster.Gen); });
+}
+
+const FYJJSkillCaster* FYJJHorde::FindCaster(int32 Slot, int32 Skill) const
+{
+	return Casters.FindByPredicate([this, Slot, Skill](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot && Caster.Skill == Skill && IsValidTarget(Slot, Caster.Gen); });
+}
+
+bool FYJJHorde::IsCasting(int32 Slot) const
+{
+	return Casters.ContainsByPredicate([Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot && (Caster.Windup >= 0.f || Caster.HitsLeft > 0); });
 }
 
 FVector2f FYJJHorde::SkillCenter(const FYJJSkillCaster& Caster) const
@@ -983,20 +993,27 @@ FVector2f FYJJHorde::SkillCenter(const FYJJSkillCaster& Caster) const
 	return Pos[Caster.Slot] + FVector2f(Caster.Dir * Skill.Radius * Skill.Reach, 0.f);
 }
 
-void FYJJHorde::SetSkill(int32 Slot, int32 Skill)
+void FYJJHorde::SetSkills(int32 Slot, TConstArrayView<int32> InSkills)
 {
 	Casters.RemoveAll([Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot; });
-	if (Alive.IsValidIndex(Slot) && Alive[Slot] && YJJData::Skills().IsValidIndex(Skill))
+	if (!Alive.IsValidIndex(Slot) || !Alive[Slot])
 	{
-		Flags[Slot] &= ~YJJUnitFlag::Casting;
-		AddCaster(Slot, Skill);
+		return;
+	}
+	Flags[Slot] &= ~YJJUnitFlag::Casting;
+	for (const int32 Skill : InSkills)
+	{
+		if (YJJData::Skills().IsValidIndex(Skill))
+		{
+			AddCaster(Slot, Skill);
+		}
 	}
 }
 
-bool FYJJHorde::CastSkill(int32 Slot, float Dir)
+bool FYJJHorde::CastSkill(int32 Slot, int32 Skill, float Dir)
 {
-	FYJJSkillCaster* Caster = const_cast<FYJJSkillCaster*>(CasterOf(Slot));
-	if (!Caster || Caster->Cooldown > 0.f || Caster->Windup >= 0.f || Caster->HitsLeft > 0)
+	FYJJSkillCaster* Caster = FindCaster(Slot, Skill);
+	if (!Caster || Caster->Cooldown > 0.f || IsCasting(Slot))
 	{
 		return false;
 	}
@@ -1005,9 +1022,9 @@ bool FYJJHorde::CastSkill(int32 Slot, float Dir)
 	return true;
 }
 
-float FYJJHorde::SkillReady(int32 Slot) const
+float FYJJHorde::SkillReady(int32 Slot, int32 Skill) const
 {
-	const FYJJSkillCaster* Caster = CasterOf(Slot);
+	const FYJJSkillCaster* Caster = FindCaster(Slot, Skill);
 	if (!Caster)
 	{
 		return -1.f;
@@ -1038,6 +1055,14 @@ void FYJJHorde::BeginSkill(FYJJSkillCaster& Caster)
 
 void FYJJHorde::TickSkills(float Dt)
 {
+	// 한 유닛에 스킬이 여럿일 수 있다: 표시는 다 지우고, 기를 모으거나 쓰는 시전자만 다시 켠다
+	for (const FYJJSkillCaster& Caster : Casters)
+	{
+		if (Alive.IsValidIndex(Caster.Slot))
+		{
+			Flags[Caster.Slot] &= ~YJJUnitFlag::Casting;
+		}
+	}
 	for (int32 Index = Casters.Num() - 1; Index >= 0; --Index)
 	{
 		FYJJSkillCaster& Caster = Casters[Index];
@@ -1091,15 +1116,10 @@ void FYJJHorde::TickSkills(float Dt)
 			Event.Dir = Caster.Dir;
 			Event.Kills = Caster.Kills;
 			Event.bLast = Caster.HitsLeft == 0;
-			if (Caster.HitsLeft == 0)
-			{
-				Flags[Slot] &= ~YJJUnitFlag::Casting;
-			}
 			continue;
 		}
-		Flags[Slot] &= ~YJJUnitFlag::Casting;
 		// 3) 저절로 쓰는 스킬: 바라보는 쪽 원 안에 상대가 충분하면
-		if (Skill.Trigger == EYJJSkillTrigger::Auto && Caster.Cooldown <= 0.f)
+		if (Skill.Trigger == EYJJSkillTrigger::Auto && Caster.Cooldown <= 0.f && !(Flags[Slot] & YJJUnitFlag::Casting))
 		{
 			Caster.Dir = FaceLeft[Slot] ? -1.f : 1.f;
 			if (CountNear(SkillCenter(Caster), Skill.Radius, Opponent(MyTeam), Skill.AutoCount) >= Skill.AutoCount)

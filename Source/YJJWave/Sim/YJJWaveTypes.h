@@ -198,6 +198,17 @@ struct FYJJUnitDef
 	int32 Skill = INDEX_NONE;
 };
 
+/** Heroes.csv 한 줄: 고를 수 있는 영웅 */
+struct FYJJHeroDef
+{
+	FName Id;
+	int32 Unit = INDEX_NONE;
+	FString DescKey;
+	int32 Portrait = INDEX_NONE;
+	/** 액티브 스킬 (Skills.csv 번호, 단축키 Z·X·C 순서) */
+	TArray<int32> Skills;
+};
+
 /** Skills.csv Trigger 열: 언제 쓰나 */
 enum class EYJJSkillTrigger : uint8
 {

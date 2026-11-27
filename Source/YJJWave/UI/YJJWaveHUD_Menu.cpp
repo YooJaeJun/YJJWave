@@ -191,7 +191,7 @@ void AYJJWaveHUD::DrawWorldMap()
 			const bool bEarned = Index < Mode->StageStars(Stage);
 			DrawIcon(FMath::RoundToInt(L.UiStar), StarsLeft + Index * Star, P.Y + Size * Half + L.StageNameGap + L.MidText, Star, bEarned ? YJJUI::PerkTaken : YJJUI::WithAlpha(YJJUI::Ink, L.ResultStarEmptyAlpha));
 		}
-		if (bOpen)
+		if (bOpen && HeroSelectStage == INDEX_NONE)
 		{
 			AddButton(EButton::WorldStage, Stage, P.X - Size * Half, P.Y - Size * Half, Size, Size);
 		}
@@ -204,4 +204,57 @@ void AYJJWaveHUD::DrawWorldMap()
 	DrawLabel(YJJLoc::Get(TEXT("Map.Title")), Pad + L.TextPad, Pad + L.TextPad, L.TitleText, YJJUI::Highlight);
 	DrawLabel(YJJLoc::Get(TEXT("Map.Hint")), Pad + L.TextPad, Pad + L.TextPad + L.TitleText + Pad, L.SmallText, YJJUI::Paper);
 	DrawMenuButton(EButton::WorldBack, 0, VirtualW - Pad - L.TitleButtonW, Pad, L.TitleButtonW, L.TitleButtonH, YJJLoc::Get(TEXT("Map.Back")), false);
+}
+
+void AYJJWaveHUD::DrawHeroSelect()
+{
+	// 출전 영웅 고르기: 카드 셋 (얼굴·이름·설명·스킬 셋) → 출전
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	const TConstArrayView<FYJJHeroDef> Heroes = YJJData::Heroes();
+	if (!Mode || Heroes.Num() == 0)
+	{
+		return;
+	}
+	const FYJJUILayout& L = UI();
+	const float Pad = L.TextPad;
+	const int32 Picked = YJJData::HeroIndex(Mode->GetProgress().Hero);
+	DrawBox(0.f, 0.f, VirtualW, VirtualHeight, YJJUI::Shade);
+	const float CenterX = VirtualW * Half;
+	DrawLabel(YJJLoc::Get(TEXT("UI.HeroSelectTitle")), CenterX, L.CardTitleY, L.TitleText, YJJUI::Highlight, Half);
+	DrawLabel(YJJLoc::Get(TEXT("UI.HeroSelectSub")), CenterX, L.CardTitleY + L.TitleText + L.CardSubGap, L.SmallText, YJJUI::Paper, Half);
+	const float CardW = L.HeroSelectCardW;
+	const float CardH = L.HeroSelectCardH;
+	const float Total = Heroes.Num() * CardW + (Heroes.Num() - 1) * L.HeroSelectGap;
+	const float Y = L.HeroSelectY;
+	for (int32 Index = 0; Index < Heroes.Num(); ++Index)
+	{
+		const FYJJHeroDef& Hero = Heroes[Index];
+		const float X = CenterX - Total * Half + Index * (CardW + L.HeroSelectGap);
+		const bool bPicked = Index == Picked;
+		const bool bHover = HoverButton(EButton::HeroPick) && ButtonAt(ToVirtual(MouseScreen()))->Index == Index;
+		DrawPanel(X, Y, CardW, CardH, bPicked ? FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Quarter) : (bHover ? FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Quarter * Half) : YJJUI::PanelTint), FMath::RoundToInt(L.UiCard));
+		float RowY = Y + Pad;
+		DrawIcon(Hero.Portrait, X + (CardW - L.HeroSelectPortrait) * Half, RowY, L.HeroSelectPortrait);
+		RowY += L.HeroSelectPortrait + Pad * Half;
+		DrawLabel(YJJLoc::Get(YJJData::Unit(Hero.Unit).NameKey), X + CardW * Half, RowY, L.BigText, bPicked ? YJJUI::Highlight : YJJUI::Paper, Half, CardW - Pad * 2.f);
+		RowY += L.BigText + Pad * Half;
+		for (const FString& Line : WrapText(YJJLoc::Get(Hero.DescKey), L.SmallText, CardW - Pad * 2.f))
+		{
+			DrawLabel(Line, X + CardW * Half, RowY, L.SmallText, YJJUI::Paper, Half);
+			RowY += L.TipLineH;
+		}
+		RowY += Pad * Half;
+		for (int32 Skill = 0; Skill < Hero.Skills.Num(); ++Skill)
+		{
+			const FYJJSkillDef& Def = YJJData::Skill(Hero.Skills[Skill]);
+			DrawIcon(Def.Icon, X + Pad, RowY, L.SmallText + Pad * Half);
+			DrawLabel(YJJLoc::Format(TEXT("UI.HeroSkillLine"), { YJJLoc::Get(Def.NameKey), HeroSkillKeys[Skill].GetDisplayName().ToString(), FMath::RoundToInt(Def.Cooldown) }),
+				X + Pad + L.SmallText + Pad, RowY + Pad * Quarter, L.SmallText, YJJUI::Paper, 0.f, CardW - Pad * 3.f - L.SmallText);
+			RowY += L.TipLineH + Pad * Quarter;
+		}
+		AddButton(EButton::HeroPick, Index, X, Y, CardW, CardH);
+	}
+	const float ButtonY = Y + CardH + L.HeroSelectGap;
+	DrawMenuButton(EButton::HeroGo, 0, CenterX - L.HeroGoW - L.HeroSelectGap * Half, ButtonY, L.HeroGoW, L.HeroGoH, YJJLoc::Get(TEXT("UI.HeroGo")), true);
+	DrawMenuButton(EButton::HeroBack, 0, CenterX + L.HeroSelectGap * Half, ButtonY, L.HeroGoW, L.HeroGoH, YJJLoc::Get(TEXT("UI.HeroBack")), false);
 }

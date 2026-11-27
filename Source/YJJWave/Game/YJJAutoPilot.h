@@ -19,6 +19,8 @@ public:
 	FYJJAutoPilot(AYJJWaveGameMode* InMode, float InDuration, float InShotInterval, bool bInBench);
 	/** 판에 들어가기 전: 타이틀 한 장 → 월드맵 한 장. 다 찍으면 true (게임 모드가 판을 시작한다) */
 	bool TickMenus(float RealDeltaSeconds);
+	/** 스테이지마다 영웅을 돌아가며 (마지막 영웅부터, 새 영웅을 먼저 써 보게) */
+	void PickHeroFor(int32 Stage);
 
 	void Tick(float RealDeltaSeconds);
 
@@ -57,7 +59,6 @@ private:
 	bool bHeroSkillShot = false;
 	bool bBossSkillShot = false;
 	bool bSkillTextShot = false;
-	bool bSkillPickShot = false;
 	/** 줌 확인: 0 = 가장 멀리 한 장, 1 = 가장 가까이 한 장, 2 = 끝 */
 	int32 ZoomShotStep = 0;
 	/** 그 줌을 유지하는 남은 시간 (실제 초, 스크린샷이 저장될 때까지) */
