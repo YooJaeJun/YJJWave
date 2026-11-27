@@ -331,6 +331,7 @@ void AYJJWaveHUD::DrawHUD()
 	if (!bTreeOpen)
 	{
 		DrawPotTooltip();
+		DrawSpellTooltip();
 		DrawSeasoningTooltip();
 	}
 	DrawCutscene();

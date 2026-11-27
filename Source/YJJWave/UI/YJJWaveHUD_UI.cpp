@@ -998,8 +998,14 @@ void AYJJWaveHUD::PressSpell(EYJJSpell Spell)
 	const int32 Index = static_cast<int32>(Spell);
 	if (!NeedsAim(Spell))
 	{
-		Current->Cast(Spell, FVector2f::ZeroVector);
+		const bool bCast = Current->Cast(Spell, FVector2f::ZeroVector);
 		AimingSpell = INDEX_NONE;
+		if (bCast && Spell == EYJJSpell::Rally)
+		{
+			// 무엇이 좋아졌는지 바로 보이게
+			const FYJJSpellStats Stats = Current->SpellNow(Spell);
+			AddBanner(YJJLoc::Format(TEXT("Rally.Banner"), { FString::Printf(TEXT("%g"), Stats.Power), FMath::RoundToInt(Current->RallyLeft()) }), YJJUI::Highlight);
+		}
 	}
 	else
 	{

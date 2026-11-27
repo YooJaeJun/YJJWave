@@ -228,6 +228,8 @@ private:
 	/** 좌측 패널 솥 칸: 솥 그림 · 단계 · 뼈 숫자(+N) · 단계 눈금 게이지. 누르면(Q) 뚜껑을 연다. 높이를 돌려준다 */
 	float DrawPotPanel(float X, float Y, float W);
 	void DrawPotTooltip();
+	/** 주문 칸(F1·F2·F3)에 마우스: 무엇을 하는지 + Lv 수치 */
+	void DrawSpellTooltip();
 	/** 냄비 뚜껑 열기 (클릭·Q) */
 	void OpenPot();
 	// 말풍선 대화 (Dialogues.csv): 판 사건을 듣고 조건이 맞는 대화를 한 판에 한 번

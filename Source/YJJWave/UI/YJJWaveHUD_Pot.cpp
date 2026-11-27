@@ -283,6 +283,50 @@ FLinearColor AYJJWaveHUD::PotStatusColor() const
 	return Current->PotStage() == INDEX_NONE ? YJJUI::Paper : Current->PotOverflowLeft() >= 0.f ? YJJUI::Bad : YJJUI::Highlight;
 }
 
+void AYJJWaveHUD::DrawSpellTooltip()
+{
+	if (!HoverButton(EButton::Spell) || Battle()->bGameOver)
+	{
+		return;
+	}
+	const FYJJButton* Button = ButtonAt(ToVirtual(MouseScreen()));
+	if (!Button || Button->Index < 0 || Button->Index >= static_cast<int32>(EYJJSpell::Count))
+	{
+		return;
+	}
+	const EYJJSpell Spell = static_cast<EYJJSpell>(Button->Index);
+	const FString Key = YJJData::SpellKey(Spell);
+	const FYJJUILayout& L = UI();
+	const float W = L.TipW;
+	const float Pad = L.TextPad;
+	// 이름 → 무엇을 하는지 → Lv 수치
+	TArray<TPair<FString, FLinearColor>> Lines;
+	Lines.Emplace(YJJLoc::Get(TEXT("Spell.") + Key), YJJUI::Highlight);
+	for (const FString& Wrapped : WrapText(YJJLoc::Get(TEXT("SpellDesc.") + Key), L.SmallText, W - Pad * 2.f))
+	{
+		Lines.Emplace(Wrapped, YJJUI::Paper);
+	}
+	TArray<FString> Stats;
+	SpellText(Spell).ParseIntoArray(Stats, TEXT("\n"));
+	for (const FString& Stat : Stats)
+	{
+		for (const FString& Wrapped : WrapText(Stat, L.SmallText, W - Pad * 2.f))
+		{
+			Lines.Emplace(Wrapped, YJJUI::Muted);
+		}
+	}
+	const FVector2f Mouse = ToVirtual(MouseScreen());
+	const float LineH = L.TipLineH;
+	const float H = Pad * 2.f + LineH * Lines.Num();
+	const float X = FMath::Min(Mouse.X + L.TipOffset, VirtualW - W);
+	const float Y = FMath::Clamp(Mouse.Y - H - L.TipOffset, 0.f, VirtualHeight - H);
+	DrawPanel(X, Y, W, H, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
+	for (int32 Line = 0; Line < Lines.Num(); ++Line)
+	{
+		DrawValueLabel(Lines[Line].Key, X + Pad, Y + Pad + LineH * Line, L.SmallText, Lines[Line].Value, W - Pad * 2.f);
+	}
+}
+
 void AYJJWaveHUD::DrawPotTooltip()
 {
 	const FYJJBattle* Current = Battle();

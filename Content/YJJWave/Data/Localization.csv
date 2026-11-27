@@ -35,7 +35,7 @@ Perk.KindSpell,스킬,Skill,성좌 설명창 종류
 Spell.Lv,Lv{0},Lv{0},좌측 패널 스킬 칸
 Spell.LvOf,Lv {0}/{1},Lv {0}/{1},스킬 별
 SpellStat.Meteor,피해 {0} · 반경 {1} · 대기 {2}초,Damage {0} · Radius {1} · Cooldown {2}s,{0} 위력 {1} 반경 {2} 대기 {3} 지속 {4} 폭
-SpellStat.Rally,공격 속도 x{0} · {3}초 · 대기 {2}초,Attack speed x{0} · {3}s · Cooldown {2}s,
+SpellStat.Rally,아군 전체 공격 속도 x{0} · 이동 빨라짐 · {3}초 · 대기 {2}초,All troops attack x{0} faster and move faster · {3}s · Cooldown {2}s,
 Spell.Next,다음 Lv {0}: {1},Next Lv {0}: {1},
 Spell.FxOn,[Lv{0}] {1},[Lv{0}] {1},열린 특수 효과
 Spell.FxLocked,[Lv{0} 잠김] {1},[Lv{0} locked] {1},아직 안 열린 특수 효과
@@ -46,13 +46,13 @@ SpellFx.Shower,유성우: 작은 운석 {0}개 더 (피해 {3}%),Meteor shower: 
 SpellFx.Heal,함성 때 아군 전체 체력 {2}% 회복,War Cry heals all troops {2}%,
 SpellFx.Reinforce,지원군: 지어 둔 병영마다 병사 {0}명 바로 출전,Reinforcements: {0} troops from each built barracks,
 Building.Barracks,졸병 막사,Barracks,
-Building.BarracksDesc,싸고 많다. 물량의 기본,Cheap and many,
+Building.BarracksDesc,졸병이 나온다. 싸고 많다. 물량의 기본,Grunts. Cheap and many,
 Building.ArcherPost,궁수 초소,Archer Post,
-Building.ArcherPostDesc,뒤에서 화살 일제 사격,Volleys from the back,
+Building.ArcherPostDesc,궁수가 나온다. 뒤에서 화살 일제 사격,Archers. Volleys from the back,
 Building.ShieldHall,방패 막사,Shield Hall,
-Building.ShieldHallDesc,느리고 단단하다. 전선 유지,Slow and sturdy,
-Building.Forge,대장간,Forge,
-Building.ForgeDesc,망치로 여럿을 날린다,Hammers that send many flying,
+Building.ShieldHallDesc,방패병이 나온다. 느리고 단단하다. 전선 유지,Shieldbearers. Slow and sturdy,
+Building.Forge,망치 막사,Hammer Hall,
+Building.ForgeDesc,망치 대장이 나온다. 느리지만 한 번에 여럿을 날린다,"Hammer Bosses. Slow, but send many flying at once",
 Unit.Grunt,졸병,Grunt,
 Unit.Archer,궁수,Archer,
 Unit.Shield,방패병,Shieldbearer,
@@ -271,3 +271,7 @@ UI.SkillPickTitle,대장 기술 고르기 (1 · 2 · 3),Pick the Captain's move 
 UI.SkillPickSub,이번 판에 R로 쓸 기술 하나를 고르자.,Pick one move to use with R this stage.,
 UI.SkillCooldown,대기 {0}초,Cooldown {0}s,스킬 카드
 Skill.Picked,{0} 준비!,{0} ready!,배너
+SpellDesc.Meteor,누른 뒤 전장을 클릭한 자리에 운석이 떨어진다.,Click the field to drop a meteor there.,주문 칸 툴팁
+SpellDesc.Rally,누르면 바로: 잠깐 동안 아군 전체가 빨리 때리고 빨리 걷는다 (금빛으로 빛난다).,Instantly: all troops attack and move faster for a while (they glow gold).,주문 칸 툴팁
+SpellDesc.Ladle,전장을 클릭한 자리를 큰 국자로 쾅. 횟수가 차오른다.,Smash the clicked spot with a giant ladle. Charges refill.,주문 칸 툴팁
+Rally.Banner,함성! 공격 속도 x{0} · {1}초,War Cry! Attack x{0} · {1}s,배너
