@@ -133,6 +133,9 @@ public:
 	void HandleWheel(float Delta);
 	/** 터치: 손가락 자리를 마우스 자리로 쓴다 (모바일엔 마우스가 없다) */
 	void SetTouchPointer(const FVector2f& Screen) { TouchPos = Screen; bTouchPointer = true; }
+	/** 진짜 마우스를 쓰면 손가락 자리를 버리고 마우스 자리로 돌아간다 (터치 뒤 마우스가 먹통이 되지 않게) */
+	void ClearTouchPointer() { bTouchPointer = false; }
+	bool UsingTouchPointer() const { return bTouchPointer; }
 	/** 두 번째 손가락이 닿으면: 누르던 클릭·끌기를 취소한다 */
 	void CancelPointer() { bLeftDown = bLeftDragged = false; }
 	/** 두 손가락 확대·이동: 시작 → (손가락 사이 비율, 가운데 자리) */

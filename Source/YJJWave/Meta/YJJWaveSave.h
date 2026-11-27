@@ -19,12 +19,16 @@ public:
 	UPROPERTY() TArray<FName> Perks;
 	UPROPERTY() int32 Cleared = 0;
 	UPROPERTY() TArray<int32> Stars;
+	/** 내용 서명 (YJJGuard::Sign). 안 맞으면 고친 파일로 보고 불러오지 않는다 */
+	UPROPERTY() FString Signature;
 
 	static FYJJProgress Load();
 	static void Store(const FYJJProgress& Progress);
 
 private:
 	static FString SlotName();
+	/** 서명할 내용 (순서·형식이 바뀌면 옛 저장이 무효가 된다) */
+	FString SignedContent() const;
 
 	static constexpr int32 UserIndex = 0;
 	static constexpr const TCHAR* DefaultSlot = TEXT("YJJWave");

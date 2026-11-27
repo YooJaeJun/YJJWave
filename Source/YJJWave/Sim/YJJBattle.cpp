@@ -649,7 +649,7 @@ void FYJJBattle::StartLevel(int32 NewLevel)
 		OfferCards();
 	}
 	AddEvent(EYJJTalkTrigger::WaveStart);
-	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 스테이지 %d 웨이브 %d/%d 시작 (아군 %d, 적 %d, 금화 %.0f)"), Stage + 1, Level, NumWaves(), Horde.Num(EYJJTeam::Player), Horde.Num(EYJJTeam::Enemy), Gold);
+	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 스테이지 %d 웨이브 %d/%d 시작 (아군 %d, 적 %d, 금화 %.0f)"), Stage + 1, Level, NumWaves(), Horde.Num(EYJJTeam::Player), Horde.Num(EYJJTeam::Enemy), Gold.Get());
 }
 
 const FYJJStageDef& FYJJBattle::StageDef() const

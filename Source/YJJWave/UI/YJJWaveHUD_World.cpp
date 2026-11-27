@@ -51,11 +51,9 @@ void AYJJWaveHUD::DrawFrontLines()
 		{
 			continue;
 		}
+		// 전선 띠는 그리지 않고, 아군 앞줄 위에 금화·영혼 보너스 글자만
 		const bool bMine = Team == EYJJTeam::Player;
 		const FVector2f Top = WorldToVirtual(FVector2f(FrontX, 0.f));
-		const FVector2f Bottom = WorldToVirtual(FVector2f(FrontX, Current->FieldHeight));
-		const float Pulse = L.FrontStripAlpha * (1.f + L.FrontStripPulse * FMath::Sin(AnimClock * L.GlowSpeed));
-		DrawBox(Top.X - L.FrontStripW * Half, Top.Y, L.FrontStripW, Bottom.Y - Top.Y, YJJUI::WithAlpha(bMine ? YJJUI::HeroBar : YJJUI::BossBar, Pulse));
 		if (bMine && Current->FrontBonus > 1.f)
 		{
 			DrawLabel(YJJLoc::Format(TEXT("UI.FrontBonus"), { FMath::RoundToInt((Current->FrontBonus - 1.f) * Percent) }), Top.X, FMath::Max(Top.Y, 0.f) + L.FrontLabelY, L.SmallText, YJJUI::Good, Half);

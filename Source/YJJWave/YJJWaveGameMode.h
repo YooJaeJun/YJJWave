@@ -94,6 +94,8 @@ private:
 	FYJJProgress Progress;
 	EYJJScreen Screen = EYJJScreen::Title;
 	bool bResultSaved = false;
+	/** 스피드핵 감지 (Meta/YJJGuard.h) */
+	FYJJSpeedWatch SpeedWatch;
 	int32 CutIndex = INDEX_NONE;
 	float CutTime = 0.f;
 	void StartCutscene();

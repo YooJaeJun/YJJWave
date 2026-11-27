@@ -37,6 +37,18 @@ void AYJJWavePlayerController::PlayerTick(float DeltaTime)
 		Pan.Y += (IsInputKeyDown(EKeys::S) || IsInputKeyDown(EKeys::Down)) ? 1.f : 0.f;
 		Pan.Y -= (IsInputKeyDown(EKeys::W) || IsInputKeyDown(EKeys::Up)) ? 1.f : 0.f;
 		HUD->SetPanInput(Pan);
+		// 터치를 한 번 쓴 뒤라도 마우스가 움직이면 다시 마우스 자리로
+		float MouseX = 0.f;
+		float MouseY = 0.f;
+		if (Touches.Num() == 0 && GetMousePosition(MouseX, MouseY))
+		{
+			const FVector2f Mouse(MouseX, MouseY);
+			if (HUD->UsingTouchPointer() && !Mouse.Equals(LastMouse))
+			{
+				HUD->ClearTouchPointer();
+			}
+			LastMouse = Mouse;
+		}
 	}
 }
 
@@ -118,6 +130,10 @@ bool AYJJWavePlayerController::InputKey(const FInputKeyEventArgs& Params)
 	if (AYJJWaveHUD* HUD = WaveHUD())
 	{
 		const bool bPressed = Params.Event == IE_Pressed || Params.Event == IE_DoubleClick;
+		if (Params.Key.IsMouseButton() && Touches.Num() == 0)
+		{
+			HUD->ClearTouchPointer();
+		}
 		if (Params.Key == EKeys::LeftMouseButton || Params.Key == EKeys::RightMouseButton)
 		{
 			const bool bRight = Params.Key == EKeys::RightMouseButton;

@@ -218,9 +218,6 @@ struct FYJJUILayout
 	UPROPERTY() float SparkStartScale = 0.f;   // 불꽃이 터지기 시작하는 크기
 	UPROPERTY() float SparkLift = 0.f;   // 불꽃 높이 (크기 배율, 몸통께)
 	UPROPERTY() float ChargeButtonW = 0.f;   // 영웅 돌격 버튼 너비 (전장 아래 가운데)
-	UPROPERTY() float FrontStripW = 0.f;   // 땅 위 전선 띠 너비
-	UPROPERTY() float FrontStripAlpha = 0.f;   // 전선 띠 진하기
-	UPROPERTY() float FrontStripPulse = 0.f;   // 전선 띠 깜빡임 세기
 	UPROPERTY() float FrontLabelY = 0.f;   // 전선 띠 위 보너스 글자 높이 (전장 위끝에서)
 	UPROPERTY() float ChargeButtonH = 0.f;   // 영웅 돌격 버튼 높이
 	UPROPERTY() float ChargeButtonMargin = 0.f;   // 화면 아래와 돌격 버튼 사이

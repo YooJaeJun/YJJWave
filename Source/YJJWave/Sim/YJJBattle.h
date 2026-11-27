@@ -4,6 +4,7 @@
 #include "Sim/YJJHorde.h"
 #include "Sim/YJJWaveTypes.h"
 #include "Data/YJJGameData.h"
+#include "Meta/YJJGuard.h"
 
 /** 진지의 건설 칸 하나 */
 struct FYJJPlot
@@ -191,8 +192,9 @@ public:
 	TArray<FName> Sounds;
 
 	int32 Stage = 0;
-	double Gold = 0.0;
-	double Souls = 0.0;
+	/** 금화·영혼은 메모리에 숨겨 둔다 (Meta/YJJGuard.h) */
+	FYJJGuardedNumber Gold = 0.0;
+	FYJJGuardedNumber Souls = 0.0;
 	/** 이번 판에 얻은 영혼 (결과 창) */
 	double SoulsEarned = 0.0;
 	int32 Level = 1;   // 지금 웨이브 (1부터)

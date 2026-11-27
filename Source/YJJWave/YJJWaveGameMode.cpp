@@ -231,6 +231,10 @@ void AYJJWaveGameMode::SpawnBenchmark(int32 PerTeam)
 void AYJJWaveGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (!AutoPilot)
+	{
+		SpeedWatch.Tick(DeltaSeconds);
+	}
 	// 지난 프레임에 띄운 시뮬이 끝나야 판을 만질 수 있다
 	WaitForSim();
 

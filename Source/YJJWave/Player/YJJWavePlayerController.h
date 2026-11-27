@@ -24,6 +24,8 @@ private:
 	/** 지금 닿아 있는 손가락 자리 */
 	TMap<FTouchId, FVector2f> Touches;
 	float PinchStartDist = 0.f;
+	/** 지난 틱 마우스 자리 (움직이면 터치 자리를 버린다) */
+	FVector2f LastMouse = FVector2f::ZeroVector;
 	/** 두 손가락 사이 거리와 가운데 */
 	float TouchSpread(FVector2f& OutMid) const;
 };

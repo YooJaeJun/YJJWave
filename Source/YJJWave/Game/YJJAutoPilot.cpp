@@ -267,7 +267,7 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] 웨이브 %d: 아군 %d, 적 %d, 병영 %d, 특성 %d, 금화 %.0f, 시뮬 %.2fms"),
 			Battle.Level, Battle.Horde.Num(EYJJTeam::Player), Battle.Horde.Num(EYJJTeam::Enemy),
 			Battle.Plots.FilterByPredicate([](const FYJJPlot& Plot) { return Plot.Building != INDEX_NONE; }).Num(),
-			Battle.NumAllocated(), Battle.Gold, Battle.Horde.LastStepMs());
+			Battle.NumAllocated(), Battle.Gold.Get(), Battle.Horde.LastStepMs());
 	}
 
 	if (ShotInterval > 0.f)
@@ -470,7 +470,7 @@ void FYJJAutoPilot::Finish(const FYJJBattle& Battle)
 	const double AvgStep = Samples > 0 ? StepMsSum / Samples : 0.0;
 	const double AvgFrame = Samples > 0 ? FrameMsSum / Samples : 0.0;
 	UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] DONE %s: 스테이지 %d 웨이브 %d, 시간 %.0f초, 처치 %d, 영혼 %.0f, 특성 %.0f개, 최대 유닛 %d, 시뮬 평균 %.2fms 최악 %.2fms, 프레임 평균 %.1fms (%.0f fps)"),
-		Battle.bGameOver ? (Battle.bVictory ? TEXT("모든 스테이지 돌파") : TEXT("패배")) : TEXT("시간 끝"), Battle.Stage + 1, Battle.Level, Battle.Time, Battle.Kills, Battle.Souls, static_cast<float>(Battle.NumAllocated()),
+		Battle.bGameOver ? (Battle.bVictory ? TEXT("모든 스테이지 돌파") : TEXT("패배")) : TEXT("시간 끝"), Battle.Stage + 1, Battle.Level, Battle.Time, Battle.Kills, Battle.Souls.Get(), static_cast<float>(Battle.NumAllocated()),
 		PeakUnits, AvgStep, WorstStepMs, AvgFrame, AvgFrame > 0.0 ? MsPerSecond / AvgFrame : 0.0);
 	const double DenseStep = DenseSamples > 0 ? DenseStepMsSum / DenseSamples : 0.0;
 	const double DenseFrame = DenseSamples > 0 ? DenseFrameMsSum / DenseSamples : 0.0;
