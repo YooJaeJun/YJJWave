@@ -8,9 +8,9 @@ UiBadge,17,UI 칸: 중간·주문 별 바탕 원
 UiBone,33,UI 칸: 뼈
 UiPot,34,UI 칸: 냄비
 PotAnchorY,0.94,냄비 그림에서 바닥 자리 (칸 높이 비율)
-PotRimY,0.39,"솥 아가리 가운데 높이 (칸 비율, generate_art POT_RIM_Y/256)"
-PotRimW,0.67,솥 아가리 너비 (칸 비율)
-PotRimH,0.19,솥 아가리 높이 (칸 비율)
+PotRimY,0.231,"솥 아가리 가운데 높이 (칸 비율, generate_art POT_RIM_Y/256)"
+PotRimW,0.539,솥 아가리 너비 (칸 비율)
+PotRimH,0.122,솥 아가리 높이 (칸 비율)
 PotFillMin,0.35,국물이 막 생겼을 때 아가리를 채운 비율
 PotBubbles,6,끓는 거품 수 (단계가 오를수록 다 보인다)
 PotBubbleSize,0.12,거품 크기 (아가리 너비 비율)
@@ -250,6 +250,8 @@ ShadowWidth,0.7,그림자 너비 (그림 크기 비율)
 ShadowHeight,0.28,그림자 높이
 BigShadowWidth,0.5,"큰 유닛(AI 원화) 그림자 너비 (그림 크기 비율, 몸통 폭에 맞게)"
 BigShadowAlpha,0.75,큰 유닛 그림자 진하기 (발이 땅에 붙어 보이게)
+ContactShadowScale,0.5,"발밑 접지 그림자 크기 (그림자 너비 비율, 작고 진하게 → 땅에 붙어 보인다)"
+ContactShadowAlpha,0.55,발밑 접지 그림자 진하기
 ArtTintR,0.95,큰 유닛 원화에 곱하는 땅 빛 R (쨍한 원화를 땅 톤에 맞춤)
 ArtTintG,0.92,땅 빛 G
 ArtTintB,0.85,땅 빛 B

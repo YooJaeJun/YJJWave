@@ -181,6 +181,7 @@ void FYJJGameDatabase::LoadUnits()
 		Def.BigRow = Row.BigRow;
 		Def.BigCell = Row.BigCell;
 		Def.BigSub = FMath::Max(Row.BigSub, 1);
+		Def.ShadowW = Row.ShadowW;
 		if (Row.BigRow >= 0 && Row.BigCell <= 0.f)
 		{
 			Problem(FString::Printf(TEXT("Units.csv %s: BigRow 가 있으면 BigCell 도 있어야 한다"), *Name.ToString()));

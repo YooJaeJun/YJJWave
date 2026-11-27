@@ -320,7 +320,9 @@ void AYJJWaveHUD::DrawHUD()
 	DrawSkillTexts();
 	DrawChargeButton();
 	DrawHeroSkillButton();
-	if (Battle()->bSkillPickPending && !Battle()->bGameOver)
+	const AYJJWaveGameMode* PickMode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	const bool bInCutscene = PickMode && PickMode->CutsceneLine();
+	if (Battle()->bSkillPickPending && !Battle()->bGameOver && !bInCutscene)
 	{
 		DrawSkillPick();
 	}

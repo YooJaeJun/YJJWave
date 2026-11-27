@@ -380,9 +380,11 @@ void AYJJWaveHUD::DrawUnits()
 	// 그림자 (가까이 볼 때만). 인스턴스는 ParallelFor로 채우고 GPU 인스턴싱 한 번으로 그린다
 	if (Zoom >= L.ShadowMinZoom)
 	{
-		TArray<FYJJSpriteInstance>& Shadows = FYJJSpriteRenderItem::Add(Canvas->Canvas, FxAtlas.Texture->GetResource(), Count);
+		// 유닛마다 두 장: 넓고 옅은 그림자 + 발밑의 작고 진한 접지 그림자 (땅에 붙어 보이게)
+		TArray<FYJJSpriteInstance>& Shadows = FYJJSpriteRenderItem::Add(Canvas->Canvas, FxAtlas.Texture->GetResource(), Count * 2);
 		const FVector2f ShadowUV = FxAtlas.UV(FMath::RoundToInt(L.FxShadow));
 		const FLinearColor ShadowColor(1.f, 1.f, 1.f, L.ShadowAlpha);
+		const FLinearColor ContactColor(1.f, 1.f, 1.f, L.ContactShadowAlpha);
 		ParallelFor(NumChunks, [&](int32 Chunk)
 		{
 			const int32 End = FMath::Min((Chunk + 1) * SpriteChunk, Count);
@@ -394,11 +396,18 @@ void AYJJWaveHUD::DrawUnits()
 				const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
 				// 큰 유닛(AI 원화)은 발 붙은 자리를 진하게: 안 그러면 땅에서 떠 보인다
 				const bool bBig = Def.BigRow != INDEX_NONE;
-				const float Width = bBig ? L.BigShadowWidth : L.ShadowWidth;
-				FYJJSpriteInstance& Sprite = Shadows[Index];
-				Sprite.Rect = FVector4f(Feet.X, Feet.Y, Size * Width * Half, Size * L.ShadowHeight * Width / L.ShadowWidth * Half);
-				Sprite.UV = FVector4f(ShadowUV.X, ShadowUV.Y, FxAtlas.CellUV.X, FxAtlas.CellUV.Y);
+				const float Width = Def.ShadowW > 0.f ? Def.ShadowW : (bBig ? L.BigShadowWidth : L.ShadowWidth);
+				const float HalfW = Size * Width * Half;
+				const float HalfH = Size * L.ShadowHeight * Width / L.ShadowWidth * Half;
+				const FVector4f UV(ShadowUV.X, ShadowUV.Y, FxAtlas.CellUV.X, FxAtlas.CellUV.Y);
+				FYJJSpriteInstance& Sprite = Shadows[Index * 2];
+				Sprite.Rect = FVector4f(Feet.X, Feet.Y, HalfW, HalfH);
+				Sprite.UV = UV;
 				Sprite.Color = bBig ? FLinearColor(1.f, 1.f, 1.f, L.BigShadowAlpha) : ShadowColor;
+				FYJJSpriteInstance& Contact = Shadows[Index * 2 + 1];
+				Contact.Rect = FVector4f(Feet.X, Feet.Y, HalfW * L.ContactShadowScale, HalfH * L.ContactShadowScale);
+				Contact.UV = UV;
+				Contact.Color = ContactColor;
 			}
 		});
 	}

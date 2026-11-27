@@ -612,6 +612,13 @@ ART_UNITS = {
     "Archer": dict(file="Archer.png", flip=False, shadow=True),
     "Shield": dict(file="Shield.png", flip=False, shadow=True),
     "Brute": dict(file="Brute.png", flip=False, shadow=True),
+    # Gemini 로 승인 원화를 고쳐 만든 원화 (적은 왼쪽을 보고 그려져 뒤집는다)
+    "Imp": dict(file="Imp.png", flip=True, shadow=True),
+    "Fatty": dict(file="Fatty.png", flip=True, shadow=True),
+    "BoneArcher": dict(file="BoneArcher.png", flip=True, shadow=True),
+    "Necro": dict(file="Necro.png", flip=True, shadow=True),
+    "General": dict(file="General.png", flip=False, shadow=True),
+    "GruntHero": dict(file="GruntHero.png", flip=False, shadow=True),
     "BoneTent": dict(file="CampTent.png", flip=False, building=True),
     "BoneTower": dict(file="CampTower.png", flip=False, building=True),
 }
@@ -1436,12 +1443,37 @@ def pot_lid():
     return p.done(C, C)
 
 
+def gemini_pot():
+    """솥(장작불 포함)과 뚜껑 (Gemini UI 그림). 솥은 바닥을 칸 POT_FOOT 에 맞추고,
+    아가리는 GEMINI_POT_MOUTH (= UILayout PotRimY/W/H). 뚜껑은 그 아가리에 맞춘다"""
+    C = 256
+    icons = {name: gemini_icons(name) for name in ("UIIconsA",)}
+    body = icons[GEMINI_POT[0]][GEMINI_POT[1]]
+    scale = C * GEMINI_POT_WIDTH / body.size[0]
+    body = body.resize((round(body.size[0] * scale), round(body.size[1] * scale)), Image.LANCZOS)
+    pot = Image.new("RGBA", (C, C), (0, 0, 0, 0))
+    ox, oy = (C - body.size[0]) // 2, round(C * 0.94) - body.size[1]
+    pot.alpha_composite(body, (ox, oy))
+    # 아가리 (안쪽 어두운 타원): 그림을 보고 잰 값 = UILayout PotRimY·PotRimW·PotRimH
+    my, mw, mh = GEMINI_POT_MOUTH
+    x0, x1 = C * (0.5 - mw / 2), C * (0.5 + mw / 2)
+    y0, y1 = C * (my - mh / 2), C * (my + mh / 2)
+    lid_src = icons[GEMINI_LID[0]][GEMINI_LID[1]]
+    lw = (x1 - x0) * GEMINI_LID_OVER
+    ls = lw / lid_src.size[0]
+    lid_img = lid_src.resize((round(lid_src.size[0] * ls), round(lid_src.size[1] * ls)), Image.LANCZOS)
+    lid = Image.new("RGBA", (C, C), (0, 0, 0, 0))
+    lid.alpha_composite(lid_img, (round((x0 + x1) / 2 - lid_img.size[0] / 2), round((y0 + y1) / 2 - lid_img.size[1] * GEMINI_LID_SEAT)))
+    return pot, lid
+
+
 def buildings_atlas():
     """줄 = 강화 단계 (병영 0~3 칸). 0줄: 4 빈 칸, 5 성벽 탑(옛), 6 냄비, 7 뚜껑 / 1줄: 4 성벽 조각, 5 성문 탑 (UILayout.csv Wall*·Gate*)"""
     C = 256
     atlas = Image.new("RGBA", (C * 8, C * 4), (0, 0, 0, 0))
-    atlas.alpha_composite(pot_body(), (6 * C, 0))
-    atlas.alpha_composite(pot_lid(), (7 * C, 0))
+    pot, lid = gemini_pot()
+    atlas.alpha_composite(pot, (6 * C, 0))
+    atlas.alpha_composite(lid, (7 * C, 0))
     for k in range(6):
         atlas.alpha_composite(building(k), (k * C, 0))
     for tier in range(1, 4):
@@ -1775,6 +1807,51 @@ def ui_kit_icons():
     return icons
 
 
+# Gemini UI 그림 (승인 시안, UIKit 화풍): 판마다 열×줄로 고르게 놓인 아이콘
+GEMINI_ICON_SHEETS = {
+    "UIIconsA": (4, 2),   # 국자, 솥+장작불, 솥뚜껑, 유성, 뿔나팔, 뼈, 별, 큰 별
+    "UIIconsB": (5, 2),   # 쌀, 고춧가루, 사골, 마늘, 후추, 선지, 인삼, 금가루, 청양고추, 대파
+}
+GEMINI_UI_CELLS = {("UIIconsA", 0): 35, ("UIIconsA", 3): 4, ("UIIconsA", 4): 5, ("UIIconsA", 5): 33}
+GEMINI_UI_CELLS.update({("UIIconsB", k): 36 + k for k in range(10)})
+GEMINI_STAR_CELLS = {("UIIconsA", 6): 6, ("UIIconsA", 7): 7}   # 별: 게임이 색을 곱하므로 흰 별로 바꾼다
+GEMINI_POT = ("UIIconsA", 1)       # Buildings.png 6 = 솥과 장작불
+GEMINI_LID = ("UIIconsA", 2)       # Buildings.png 7 = 뚜껑
+GEMINI_POT_WIDTH = 0.82            # 솥 그림 너비 (칸 비율)
+GEMINI_LID_OVER = 1.12             # 뚜껑 너비 = 아가리 너비 × 이 배
+GEMINI_LID_SEAT = 0.62             # 뚜껑 그림에서 아가리 가운데에 걸리는 높이 (뚜껑 높이 비율)
+GEMINI_POT_MOUTH = (0.231, 0.539, 0.122)   # 솥 아가리 가운데 y, 너비, 높이 (칸 비율, 솥 너비 GEMINI_POT_WIDTH 기준)
+STAR_WHITE_LIFT = 70               # 흰 별: 밝기를 이만큼 올린다
+
+
+def gemini_icons(sheet):
+    """판 하나를 열×줄 칸으로 나눠 칸마다 그림 둘레로 자른다 (바탕은 art_source 가 지운다)"""
+    ART_UNITS.setdefault(sheet, dict(file=sheet + ".png", flip=False))
+    img = art_source(sheet)
+    cols, rows = GEMINI_ICON_SHEETS[sheet]
+    w, h = img.size
+    icons = []
+    for r in range(rows):
+        for c in range(cols):
+            cell = img.crop((c * w // cols, r * h // rows, (c + 1) * w // cols, (r + 1) * h // rows))
+            box = cell.getbbox()
+            icons.append(cell.crop(box) if box else cell)
+    return icons
+
+
+def _white_star(img):
+    """금별 → 먹선은 그대로, 안쪽은 밝은 회색 (게임이 상태 색을 곱한다)"""
+    gray = img.convert("LA")
+    out = Image.new("RGBA", img.size)
+    px, gp = out.load(), gray.load()
+    for y in range(img.size[1]):
+        for x in range(img.size[0]):
+            l, a = gp[x, y]
+            v = l if l < 80 else min(255, l + STAR_WHITE_LIFT)
+            px[x, y] = (v, v, v, a)
+    return out
+
+
 def ui_atlas():
     C = 128
     atlas = Image.new("RGBA", (C * 8, C * ((UI_ICONS + 7) // 8)), (0, 0, 0, 0))
@@ -1794,6 +1871,12 @@ def ui_atlas():
     for cell, name in UI_BARRACKS_ICONS.items():
         art = art_source(name)
         put(cell, _fit_icon(art.crop((0, 0, art.size[0], int(art.size[1] * UI_BARRACKS_ICON_TOP))), C))
+    # Gemini UI 그림: 국자·유성·뿔나팔·뼈·국 재료, 흰 별
+    sheets = {name: gemini_icons(name) for name in GEMINI_ICON_SHEETS}
+    for (sheet, index), cell in GEMINI_UI_CELLS.items():
+        put(cell, _fit_icon(sheets[sheet][index], C))
+    for (sheet, index), cell in GEMINI_STAR_CELLS.items():
+        put(cell, _fit_icon(_white_star(sheets[sheet][index]), C))
     return atlas
 
 

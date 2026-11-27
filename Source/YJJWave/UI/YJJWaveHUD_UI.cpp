@@ -1196,6 +1196,11 @@ void AYJJWaveHUD::DrawSkillPick()
 void AYJJWaveHUD::PickHeroSkill(int32 Choice)
 {
 	FYJJBattle* Current = EditBattle();
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	if (Mode && Mode->CutsceneLine())
+	{
+		return;
+	}
 	if (Current && Current->PickHeroSkill(Choice))
 	{
 		AddBanner(YJJLoc::Format(TEXT("Skill.Picked"), { YJJLoc::Get(Current->HeroSkillDef()->NameKey) }), YJJUI::Highlight);

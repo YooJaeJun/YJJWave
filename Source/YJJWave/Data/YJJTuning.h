@@ -449,6 +449,8 @@ struct FYJJUILayout
 	UPROPERTY() float ShadowHeight = 0.f;   // 그림자 높이
 	UPROPERTY() float BigShadowWidth = 0.f;   // 큰 유닛(AI 원화) 그림자 너비 (그림 크기 비율, 몸통 폭에 맞게)
 	UPROPERTY() float BigShadowAlpha = 0.f;   // 큰 유닛 그림자 진하기 (발이 땅에 붙어 보이게)
+	UPROPERTY() float ContactShadowScale = 0.f;   // 발밑 접지 그림자 크기 (그림자 너비 비율, 작고 진하게 → 땅에 붙어 보인다)
+	UPROPERTY() float ContactShadowAlpha = 0.f;   // 발밑 접지 그림자 진하기
 	UPROPERTY() float ArtTintR = 0.f;   // 큰 유닛 원화에 곱하는 땅 빛 R (쨍한 원화를 땅 톤에 맞춤)
 	UPROPERTY() float ArtTintG = 0.f;   // 땅 빛 G
 	UPROPERTY() float ArtTintB = 0.f;   // 땅 빛 B

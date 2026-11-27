@@ -183,6 +183,7 @@ struct FYJJUnitDef
 	int32 BigRow = INDEX_NONE;
 	float BigCell = 0.f;        // 큰 유닛 그림 칸 크기 (Big_이름.png)
 	int32 BigSub = 1;           // 큰 유닛 중간 프레임 수
+	float ShadowW = 0.f;        // 그림자 너비 (그림 크기 비율, 0 = UILayout 기본)
 	/** 진급: 적을 PromoteKills 마리 잡으면 PromoteTo 가 된다 (졸병 → 베테랑 → 장군 → 영웅) */
 	int32 PromoteTo = INDEX_NONE;
 	int32 PromoteKills = 0;

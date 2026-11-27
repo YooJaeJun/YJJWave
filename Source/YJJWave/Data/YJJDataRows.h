@@ -51,6 +51,8 @@ struct FYJJUnitRow : public FTableRowBase
 	UPROPERTY() float BigCell = 0.f;
 	/** 큰 유닛 논리 칸 하나의 중간 프레임 수 */
 	UPROPERTY() int32 BigSub = 1;
+	/** 그림자 너비 (그림 크기 비율, 발 폭에 맞춘다. 0 = UILayout 기본) */
+	UPROPERTY() float ShadowW = 0.f;
 	UPROPERTY() FString PromoteTo;
 	UPROPERTY() int32 PromoteKills = 0;
 	UPROPERTY() float Bones = 0.f;
