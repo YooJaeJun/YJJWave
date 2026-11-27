@@ -1,4 +1,4 @@
-// 전장 그리기: 바닥 → 진지·성벽 → 그림자 → 유닛 → 날아가는 시체 → 투사체 → 연출
+﻿// 전장 그리기: 바닥 → 진지·성벽 → 그림자 → 유닛 → 날아가는 시체 → 투사체 → 연출
 #include "CanvasItem.h"
 #include "CanvasTypes.h"
 #include "Data/YJJGameData.h"
@@ -360,41 +360,62 @@ void AYJJWaveHUD::DrawUnits()
 			for (int32 Index = Chunk * SpriteChunk; Index < End; ++Index)
 			{
 				const int32 Slot = Sorted[Index];
-				const float Size = Defs[Horde.Type[Slot]].DrawSize * Zoom;
+				const FYJJUnitDef& Def = Defs[Horde.Type[Slot]];
+				const float Size = Def.DrawSize * Zoom;
 				const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
+				// 큰 유닛(AI 원화)은 발 붙은 자리를 진하게: 안 그러면 땅에서 떠 보인다
+				const bool bBig = Def.BigRow != INDEX_NONE;
+				const float Width = bBig ? L.BigShadowWidth : L.ShadowWidth;
 				FYJJSpriteInstance& Sprite = Shadows[Index];
-				Sprite.Rect = FVector4f(Feet.X, Feet.Y, Size * L.ShadowWidth * Half, Size * L.ShadowHeight * Half);
+				Sprite.Rect = FVector4f(Feet.X, Feet.Y, Size * Width * Half, Size * L.ShadowHeight * Width / L.ShadowWidth * Half);
 				Sprite.UV = FVector4f(ShadowUV.X, ShadowUV.Y, FxAtlas.CellUV.X, FxAtlas.CellUV.Y);
-				Sprite.Color = ShadowColor;
+				Sprite.Color = bBig ? FLinearColor(1.f, 1.f, 1.f, L.BigShadowAlpha) : ShadowColor;
 			}
 		});
 	}
 
-	const bool bRally = Current->RallyLeft() > 0.f;
-	// 큰 유닛(보스·영웅)은 고해상도 아틀라스로 따로, 작은 유닛 위에 그린다
+	// 큰 유닛(보스·영웅)은 고해상도 아틀라스라 따로 그리되, 앞뒤(y) 순서를 지키도록 작은 유닛을 큰 유닛 사이사이로 끊어 그린다.
+	// (작은 유닛을 다 그린 뒤 몰아 그리면 앞에 선 졸병까지 영웅 뒤로 깔려 영웅이 땅에서 떠 보인다)
 	BigSorted.Reset();
-	if (BigAtlas.Texture && BigAtlas.Texture->GetResource())
+	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		for (const int32 Slot : Sorted)
+		if (BigAtlasFor(Defs[Horde.Type[Sorted[Index]]]))
 		{
-			if (Defs[Horde.Type[Slot]].BigRow != INDEX_NONE)
-			{
-				BigSorted.Add(Slot);
-			}
+			BigSorted.Add(Index);
 		}
 	}
-	TArray<FYJJSpriteInstance>& Sprites = FYJJSpriteRenderItem::Add(Canvas->Canvas, UnitAtlas.Texture->GetResource(), Count);
-	ParallelFor(NumChunks, [&](int32 Chunk)
+	int32 Cursor = 0;
+	for (const int32 BigIndex : BigSorted)
 	{
-		const int32 End = FMath::Min((Chunk + 1) * SpriteChunk, Count);
-		for (int32 Index = Chunk * SpriteChunk; Index < End; ++Index)
+		DrawSmallUnits(Cursor, BigIndex);
+		DrawBigUnit(Sorted[BigIndex]);
+		Cursor = BigIndex + 1;
+	}
+	DrawSmallUnits(Cursor, Count);
+	UnitDrawMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);
+}
+
+void AYJJWaveHUD::DrawSmallUnits(int32 Begin, int32 End)
+{
+	if (End <= Begin)
+	{
+		return;
+	}
+	const FYJJHordeView& Horde = View();
+	const TConstArrayView<FYJJUnitDef> Defs = YJJData::Units();
+	const FYJJUILayout& L = UI();
+	const bool bRally = Battle()->RallyLeft() > 0.f;
+	TArray<FYJJSpriteInstance>& Sprites = FYJJSpriteRenderItem::Add(Canvas->Canvas, UnitAtlas.Texture->GetResource(), End - Begin);
+	ParallelFor(FMath::DivideAndRoundUp(End - Begin, SpriteChunk), [&](int32 Chunk)
+	{
+		const int32 ChunkEnd = FMath::Min(Begin + (Chunk + 1) * SpriteChunk, End);
+		for (int32 Index = Begin + Chunk * SpriteChunk; Index < ChunkEnd; ++Index)
 		{
 			const int32 Slot = Sorted[Index];
 			const FYJJUnitDef& Def = Defs[Horde.Type[Slot]];
 			const float Size = Def.DrawSize * Zoom;
 			const int32 Frame = PickFrame(Horde, Slot);
 			const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
-
 			FLinearColor Color = FLinearColor::White;
 			if (Horde.Flash[Slot] > 0.f)
 			{
@@ -406,15 +427,7 @@ void AYJJWaveHUD::DrawUnits()
 			}
 			const FVector2f UV0 = UnitAtlas.UV(Frame, Def.AtlasRow);
 			const bool bFlip = Horde.FaceLeft[Slot] != 0;
-			FYJJSpriteInstance& Sprite = Sprites[Index];
-			if (BigSorted.Num() > 0 && Def.BigRow != INDEX_NONE)
-			{
-				// 큰 유닛 자리는 비워 둔다 (아래에서 고해상도로)
-				Sprite.Rect = FVector4f::Zero();
-				Sprite.UV = FVector4f::Zero();
-				Sprite.Color = FLinearColor::Transparent;
-				continue;
-			}
+			FYJJSpriteInstance& Sprite = Sprites[Index - Begin];
 			Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half, Size * Half, Size * Half);
 			Sprite.UV = bFlip
 				? FVector4f(UV0.X + UnitAtlas.CellUV.X, UV0.Y, -UnitAtlas.CellUV.X, UnitAtlas.CellUV.Y)
@@ -422,28 +435,27 @@ void AYJJWaveHUD::DrawUnits()
 			Sprite.Color = Color;
 		}
 	});
-	if (BigSorted.Num() > 0)
-	{
-		TArray<FYJJSpriteInstance>& Bigs = FYJJSpriteRenderItem::Add(Canvas->Canvas, BigAtlas.Texture->GetResource(), BigSorted.Num());
-		for (int32 Index = 0; Index < BigSorted.Num(); ++Index)
-		{
-			const int32 Slot = BigSorted[Index];
-			const FYJJUnitDef& Def = Defs[Horde.Type[Slot]];
-			const float Size = Def.DrawSize * Zoom;
-			const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
-			float Sub = 0.f;
-			const int32 Frame = PickFrame(Horde, Slot, &Sub);
-			const FVector2f UV0 = BigAtlas.UV(Frame, Def.BigRow, FMath::Min(FMath::FloorToInt(Sub * BigAtlas.FrameMul), BigAtlas.FrameMul - 1));
-			const bool bFlip = Horde.FaceLeft[Slot] != 0;
-			FYJJSpriteInstance& Sprite = Bigs[Index];
-			Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half, Size * Half, Size * Half);
-			Sprite.UV = bFlip
-				? FVector4f(UV0.X + BigAtlas.CellUV.X, UV0.Y, -BigAtlas.CellUV.X, BigAtlas.CellUV.Y)
-				: FVector4f(UV0.X, UV0.Y, BigAtlas.CellUV.X, BigAtlas.CellUV.Y);
-			Sprite.Color = Horde.Flash[Slot] > 0.f ? YJJUI::HitTint : FLinearColor::White;
-		}
-	}
-	UnitDrawMs = static_cast<float>((FPlatformTime::Seconds() - StartTime) * MsPerSecond);
+}
+
+void AYJJWaveHUD::DrawBigUnit(int32 Slot)
+{
+	const FYJJHordeView& Horde = View();
+	const FYJJUnitDef& Def = YJJData::Unit(Horde.Type[Slot]);
+	const FYJJUILayout& L = UI();
+	const float Size = Def.DrawSize * Zoom;
+	const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
+	float Sub = 0.f;
+	const int32 Frame = PickFrame(Horde, Slot, &Sub);
+	const FYJJAtlas& BigAtlas = *BigAtlasFor(Def);
+	const FVector2f UV0 = BigAtlas.UV(Frame, 0, FMath::Min(FMath::FloorToInt(Sub * BigAtlas.FrameMul), BigAtlas.FrameMul - 1));
+	const bool bFlip = Horde.FaceLeft[Slot] != 0;
+	FYJJSpriteInstance& Sprite = FYJJSpriteRenderItem::Add(Canvas->Canvas, BigAtlas.Texture->GetResource(), 1)[0];
+	Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half, Size * Half, Size * Half);
+	Sprite.UV = bFlip
+		? FVector4f(UV0.X + BigAtlas.CellUV.X, UV0.Y, -BigAtlas.CellUV.X, BigAtlas.CellUV.Y)
+		: FVector4f(UV0.X, UV0.Y, BigAtlas.CellUV.X, BigAtlas.CellUV.Y);
+	// AI 원화는 쨍해서 땅 위에 붙여 놓은 듯 뜬다 → 땅 빛(조금 어둡고 따뜻하게)을 곱한다
+	Sprite.Color = Horde.Flash[Slot] > 0.f ? YJJUI::HitTint : FLinearColor(L.ArtTintR, L.ArtTintG, L.ArtTintB, 1.f);
 }
 
 int32 AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot, float* OutSub) const
@@ -500,9 +512,9 @@ void AYJJWaveHUD::DrawDying()
 		return;
 	}
 	// 작은 몸 → 큰 몸 순서로 아틀라스별 배치
-	for (int32 Pass = 0; Pass < 2; ++Pass)
+	for (int32 Pass = 0; Pass <= BigAtlases.Num(); ++Pass)
 	{
-		const FYJJAtlas& Atlas = Pass == 0 ? UnitAtlas : BigAtlas;
+		const FYJJAtlas& Atlas = Pass == 0 ? UnitAtlas : BigAtlases[Pass - 1];
 		if (!Atlas.Texture)
 		{
 			continue;

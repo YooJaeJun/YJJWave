@@ -36,8 +36,8 @@ struct FYJJStamp
 	float Size = 0.f;
 	float Angle = 0.f;
 	int32 Cell = 0;           // 아틀라스 칸 번호
-	bool bUnits = false;      // true: Units.png(또는 BigUnits.png), false: Fx.png
-	bool bBig = false;        // BigUnits.png
+	bool bUnits = false;      // true: 유닛 그림, false: Fx.png
+	int32 BigRow = INDEX_NONE; // 큰 유닛 그림 (BigAtlases 번호), 아니면 Units.png
 	bool bFlip = false;
 	FLinearColor Color = FLinearColor::White;
 };
@@ -210,6 +210,10 @@ private:
 	void DrawGround();
 	void DrawCamp();
 	void DrawUnits();
+	/** Sorted[Begin, End) 작은 유닛을 인스턴싱 한 번으로 */
+	void DrawSmallUnits(int32 Begin, int32 End);
+	/** 큰 유닛 하나 (고해상도 아틀라스) */
+	void DrawBigUnit(int32 Slot);
 	/** 유닛 그림 칸: 공격 > 맞음 > 걷기 > 숨쉬기 (ParallelFor 안에서 부른다: 읽기만) */
 	/** OutSub: 그 칸 안에서 얼마나 진행했나 (0~1, 큰 유닛 중간 프레임용) */
 	int32 PickFrame(const FYJJHordeView& Horde, int32 Slot, float* OutSub = nullptr) const;
@@ -357,7 +361,7 @@ private:
 	static int32 SpellIndexForKey(const FKey& Key);
 
 	UPROPERTY() TObjectPtr<UTexture2D> UnitTexture;
-	UPROPERTY() TObjectPtr<UTexture2D> BigUnitTexture;
+	UPROPERTY() TArray<TObjectPtr<UTexture2D>> BigUnitTextures;
 	UPROPERTY() TObjectPtr<UTexture2D> FxTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> BuildingTexture;
 	UPROPERTY() TObjectPtr<UTexture2D> UiTexture;
@@ -378,10 +382,13 @@ private:
 	UPROPERTY() TObjectPtr<UFont> BaseFont;
 
 	FYJJAtlas UnitAtlas;
-	FYJJAtlas BigAtlas;
+	/** 큰 유닛마다 한 장 (Units.csv BigRow 번호, Big_이름.png) */
+	TArray<FYJJAtlas> BigAtlases;
 	/** 유닛 그림이 있는 아틀라스와 줄 (큰 유닛은 BigUnits.png) */
-	const FYJJAtlas& AtlasFor(const FYJJUnitDef& Def) const { return Def.BigRow != INDEX_NONE && BigAtlas.Texture ? BigAtlas : UnitAtlas; }
-	int32 RowFor(const FYJJUnitDef& Def) const { return Def.BigRow != INDEX_NONE && BigAtlas.Texture ? Def.BigRow : Def.AtlasRow; }
+	const FYJJAtlas* BigAtlasFor(const FYJJUnitDef& Def) const { return BigAtlases.IsValidIndex(Def.BigRow) && BigAtlases[Def.BigRow].Texture && BigAtlases[Def.BigRow].Texture->GetResource() ? &BigAtlases[Def.BigRow] : nullptr; }
+	const FYJJAtlas& AtlasFor(const FYJJUnitDef& Def) const { const FYJJAtlas* Big = BigAtlasFor(Def); return Big ? *Big : UnitAtlas; }
+	/** 큰 유닛 그림은 한 장에 한 유닛이라 줄 0 */
+	int32 RowFor(const FYJJUnitDef& Def) const { return BigAtlasFor(Def) ? 0 : Def.AtlasRow; }
 	/** 큰 유닛만 따로 그리는 목록 */
 	TArray<int32> BigSorted;
 	FYJJAtlas FxAtlas;
@@ -470,7 +477,7 @@ private:
 	static constexpr int32 QuadVertices = 4;
 	static constexpr int32 QuadTriangles = 2;
 	static constexpr int32 SpriteChunk = 1024;
-	static constexpr int32 BakePasses = 3;   // 피 → 시체 → 큰 시체
+	static constexpr int32 BakeFirstBigPass = 2;   // 피 → 시체 → 큰 유닛마다 큰 시체
 	inline static const FName SoundClick = TEXT("Click");
 	inline static const FName SoundStar = TEXT("Star");
 

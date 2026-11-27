@@ -220,7 +220,6 @@ struct FYJJUILayout
 	UPROPERTY() float RockRowOverlap = 0.f;   // 바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)
 	UPROPERTY() float RockWidthPad = 0.f;   // 바위 그림을 타원 너비보다 이만큼 넓게
 	UPROPERTY() float RockJitter = 0.f;   // 바위 줄마다 옆으로 어긋나는 비율
-	UPROPERTY() float BigFrameMul = 0.f;   // BigUnits.png: 논리 칸 하나를 이만큼 중간 프레임으로 쪼갰다 (generate_art BIG_SUB)
 	UPROPERTY() float BigLogicalCols = 0.f;   // BigUnits.png: 유닛 한 줄의 논리 칸 수 (generate_art BIG_LOGICAL)
 	UPROPERTY() float FxSlash = 0.f;   // Fx 칸: 붓 초승달 (영웅·보스 휘두르기)
 	UPROPERTY() float FxImpact = 0.f;   // Fx 칸: 먹 튀김 (맞은 자리)
@@ -361,7 +360,6 @@ struct FYJJUILayout
 	UPROPERTY() float PerkIconDim = 0.f;   // 아직 못 찍는 별 효과 그림 밝기
 	// ---- 아틀라스 (Tools/Art/generate_art.py 와 같아야 한다) ----
 	UPROPERTY() float UnitCell = 0.f;   // Units.png 칸 크기
-	UPROPERTY() float BigUnitCell = 0.f;   // BigUnits.png 칸 크기 (보스·영웅)
 	UPROPERTY() float FxCell = 0.f;   // Fx.png 칸 크기
 	UPROPERTY() float BuildingCell = 0.f;   // Buildings.png 칸 크기
 	UPROPERTY() float UiCell = 0.f;   // UI.png 칸 크기
@@ -423,6 +421,11 @@ struct FYJJUILayout
 	UPROPERTY() float ShadowAlpha = 0.f;   // 그림자 진하기
 	UPROPERTY() float ShadowWidth = 0.f;   // 그림자 너비 (그림 크기 비율)
 	UPROPERTY() float ShadowHeight = 0.f;   // 그림자 높이
+	UPROPERTY() float BigShadowWidth = 0.f;   // 큰 유닛(AI 원화) 그림자 너비 (그림 크기 비율, 몸통 폭에 맞게)
+	UPROPERTY() float BigShadowAlpha = 0.f;   // 큰 유닛 그림자 진하기 (발이 땅에 붙어 보이게)
+	UPROPERTY() float ArtTintR = 0.f;   // 큰 유닛 원화에 곱하는 땅 빛 R (쨍한 원화를 땅 톤에 맞춤)
+	UPROPERTY() float ArtTintG = 0.f;   // 땅 빛 G
+	UPROPERTY() float ArtTintB = 0.f;   // 땅 빛 B
 	UPROPERTY() float ProjectileSize = 0.f;   // 화살 그림 크기
 	UPROPERTY() float ArrowArcPerDistance = 0.f;   // 화살 포물선 높이 (거리 비율)
 	UPROPERTY() float ArrowArcMax = 0.f;   // 화살 포물선 최대 높이

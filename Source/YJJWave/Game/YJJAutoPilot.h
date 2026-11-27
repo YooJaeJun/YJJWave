@@ -54,6 +54,12 @@ private:
 	bool bTalkShot = false;
 	bool bPromoteShot = false;
 	bool bSmackShot = false;
+	// 배속 토글 확인: 두 번째 웨이브에서 토글을 눌러 게임 시간이 몇 배로 흐르는지 재고 되돌린다 (0 아직, 1 재는 중, 2 끝)
+	int32 SpeedCheck = 0;
+	float SpeedCheckReal = 0.f;
+	float SpeedCheckStart = 0.f;
+	static constexpr int32 SpeedCheckWave = 2;
+	static constexpr float SpeedCheckSeconds = 4.f;
 	int32 MenuStep = 0;
 	bool bEndingShot = false;
 	bool bResultShot = false;

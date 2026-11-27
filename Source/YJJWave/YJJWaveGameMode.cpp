@@ -56,11 +56,9 @@ bool AYJJWaveGameMode::IsRunning() const
 
 float AYJJWaveGameMode::GetSpeed() const
 {
-	if (AutoPilot)
-	{
-		return FMath::Max(CVarAutoPlaySpeed.GetValueOnGameThread(), 0.f);
-	}
-	return FMath::Pow(YJJData::Tune().SpeedFactor, static_cast<float>(SpeedIndex));
+	// 오토파일럿은 정한 배속에 배속 토글을 곱한다 (토글 확인용)
+	const float Toggle = FMath::Pow(YJJData::Tune().SpeedFactor, static_cast<float>(SpeedIndex));
+	return AutoPilot ? FMath::Max(CVarAutoPlaySpeed.GetValueOnGameThread(), 0.f) * Toggle : Toggle;
 }
 
 void AYJJWaveGameMode::CycleSpeed()

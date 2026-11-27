@@ -4,17 +4,17 @@
 동작: idle(숨쉬기) walk(걷기) attack(휘두르기) hit(맞음) dazed(휘청) corpse(쓰러짐)"""
 import math
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw, ImageMath
 
 RIGS = {
     # 영웅급: 왕관 투구·깃털, 치켜든 금빛 대검, 금테 망토, 두 다리
     "Hero": dict(
         feet=(430, 900),
         parts={
-            "cape": dict(poly=[(0, 830), (40, 700), (160, 600), (270, 545), (300, 560), (290, 630), (250, 640), (245, 720), (300, 760), (300, 850), (150, 850), (40, 840)], pivot=(300, 560)),
+            "cape": dict(poly=[(0, 830), (40, 700), (160, 600), (270, 545), (300, 560), (290, 630), (250, 640), (245, 720), (300, 760), (300, 850), (150, 850), (40, 840)], pivot=(300, 560), blur=26),
             "back_leg": dict(poly=[(225, 822), (348, 822), (348, 905), (225, 905)], pivot=(300, 822)),
             "front_leg": dict(poly=[(468, 822), (632, 822), (632, 905), (468, 905)], pivot=(520, 822)),
-            "crown": dict(poly=[(150, 180), (260, 60), (400, 170), (445, 255), (535, 360), (522, 398), (262, 405), (238, 352), (150, 250)], pivot=(390, 405)),
+            "crown": dict(poly=[(150, 180), (260, 60), (400, 170), (445, 255), (535, 360), (556, 430), (552, 500), (300, 500), (262, 440), (238, 352), (150, 250)], pivot=(410, 520), blur=34),
             "sword": dict(poly=[(545, 560), (600, 520), (648, 452), (618, 410), (758, 0), (867, 0), (867, 62), (762, 462), (722, 522), (692, 562), (622, 592), (560, 602)], pivot=(555, 560)),
         },
         windup=-32, strike=100,
@@ -42,28 +42,102 @@ RIGS = {
         windup=-200, strike=-40,
     ),
 }
-ORDER = ["cape", "back_leg", "body", "front_leg", "crown", "sword"]
 FILL = 0.84        # 칸 높이 중 그림 비율 (generate_art.ART_FILL과 같게)
 FOOT = 0.92        # 칸에서 발 높이 (generate_art.FOOT)
+PAD = 160          # 휘어 나간 칼·망토가 잘리지 않게 둘레에 두는 여백 (원화 픽셀)
+BLUR = {"cape": 26, "back_leg": 14, "front_leg": 14, "crown": 30, "sword": 8}   # 부위 경계를 흐리는 폭 (원화 픽셀)
+SPARKLE_KEEP = ("Hero",)   # 몸에서 떨어진 반짝이를 지우는 원화 (칼과 따로 놀아서)
 _cache = {}
 
 
-def _layers(name, source):
+def _main_only(img):
+    """몸에 붙은 가장 큰 덩어리만 남긴다 (떨어진 반짝이 지우기)"""
+    from collections import deque
+    w, h = img.size
+    a = img.getchannel("A").load()
+    label = [0] * (w * h)
+    sizes = [0]
+    for sy in range(h):
+        for sx in range(w):
+            if a[sx, sy] < 24 or label[sy * w + sx]:
+                continue
+            n = len(sizes)
+            sizes.append(0)
+            q = deque([(sx, sy)])
+            label[sy * w + sx] = n
+            while q:
+                x, y = q.popleft()
+                sizes[n] += 1
+                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= nx < w and 0 <= ny < h and not label[ny * w + nx] and a[nx, ny] >= 24:
+                        label[ny * w + nx] = n
+                        q.append((nx, ny))
+    big = max(range(1, len(sizes)), key=lambda i: sizes[i])
+    out = img.copy()
+    px = out.load()
+    for y in range(h):
+        for x in range(w):
+            if label[y * w + x] not in (0, big):
+                px[x, y] = (0, 0, 0, 0)
+            elif label[y * w + x] == 0 and a[x, y]:
+                px[x, y] = (0, 0, 0, 0)
+    return out
+
+
+def _prepared(name):
+    """여백 두른 원화와 부위별 흐린 가중치 (원화 좌표 + PAD)"""
     if name in _cache:
         return _cache[name]
+    from PIL import ImageFilter
+    from generate_art import art_source
+    source = art_source(name)
+    if name in SPARKLE_KEEP:
+        source = _main_only(source)
     rig = RIGS[name]
-    layers = {}
-    body = source.copy()
+    padded = Image.new("RGBA", (source.size[0] + PAD * 2, source.size[1] + PAD * 2), (0, 0, 0, 0))
+    padded.paste(source, (PAD, PAD))
+    weights = {}
     for part, spec in rig["parts"].items():
-        mask = Image.new("L", source.size, 0)
-        ImageDraw.Draw(mask).polygon(spec["poly"], fill=255)
-        layer = Image.new("RGBA", source.size, (0, 0, 0, 0))
-        layer.paste(source, (0, 0), mask)
-        layers[part] = layer
-        body.paste(Image.new("RGBA", source.size, (0, 0, 0, 0)), (0, 0), mask)
-    layers["body"] = body
-    _cache[name] = layers
-    return layers
+        mask = Image.new("L", padded.size, 0)
+        ImageDraw.Draw(mask).polygon([(x + PAD, y + PAD) for x, y in spec["poly"]], fill=255)
+        weights[part] = mask.filter(ImageFilter.GaussianBlur(spec.get("blur", BLUR[part]) / 2))
+    # 겹치는 부위는 먼저 온 쪽을 덜어 합이 255를 넘지 않게, 몸은 나머지
+    used = Image.new("L", padded.size, 0)
+    for part in list(weights):
+        weights[part] = ImageChops.subtract(weights[part], used)
+        used = ImageChops.add(used, weights[part])
+    weights["body"] = ImageChops.invert(used)
+    _cache[name] = (source, padded, weights)
+    return _cache[name]
+
+
+def _premul(img, weight):
+    """부위 몫만큼 투명도를 곱하고(가중치) 색도 미리 곱해 둔다 → (색×투명, 투명)"""
+    alpha = ImageChops.multiply(img.getchannel("A"), weight)
+    rgb = ImageChops.multiply(img.convert("RGB"), Image.merge("RGB", (alpha, alpha, alpha)))
+    return rgb, alpha
+
+
+def _warp(name, q):
+    """부위마다 흐린 몫으로 나눠 각자 돌린 뒤 더한다. 몫의 합이 1이라 안 움직이면 원화 그대로,
+    움직이면 경계가 금 대신 부드럽게 겹친다"""
+    source, padded, weights = _prepared(name)
+    rig = RIGS[name]
+    rgb_sum, alpha_sum = None, None
+    for part, weight in weights.items():
+        rgb, alpha = _premul(padded, weight)
+        if part != "body":
+            spec = rig["parts"][part]
+            center = (spec["pivot"][0] + PAD, spec["pivot"][1] + PAD)
+            shift = (0, q["crown_dy"]) if part == "crown" else (0, 0)
+            rgb = rgb.rotate(-q[part], resample=Image.BICUBIC, center=center, translate=shift)
+            alpha = alpha.rotate(-q[part], resample=Image.BICUBIC, center=center, translate=shift)
+        rgb_sum = rgb if rgb_sum is None else ImageChops.add(rgb_sum, rgb)
+        alpha_sum = alpha if alpha_sum is None else ImageChops.add(alpha_sum, alpha)
+    # 미리 곱한 색을 되돌린다
+    bands = [ImageMath.lambda_eval(lambda v: v["convert"](v["min"](v["c"] * 255 / v["max"](v["a"], 1), 255), "L"), c=band, a=alpha_sum)
+             for band in rgb_sum.split()]
+    return Image.merge("RGBA", (*bands, alpha_sum)), source
 
 
 def _ease(keys, t):
@@ -106,22 +180,10 @@ def pose(name, action, p):
 
 
 def frame(name, action, p, out):
-    from generate_art import art_source
-    source = art_source(name)
     rig = RIGS[name]
-    layers = _layers(name, source)
     q = pose(name, action, p)
-    full = Image.new("RGBA", source.size, (0, 0, 0, 0))
-    for part in ORDER:
-        if part != "body" and part not in rig["parts"]:
-            continue
-        if part == "body":
-            full.alpha_composite(layers["body"])
-            continue
-        spec = rig["parts"][part]
-        shift = (0, q["crown_dy"]) if part == "crown" else (0, 0)
-        full.alpha_composite(layers[part].rotate(-q[part], resample=Image.BICUBIC, center=spec["pivot"], translate=shift))
-    fx, fy = rig["feet"]
+    full, source = _warp(name, q)
+    fx, fy = rig["feet"][0] + PAD, rig["feet"][1] + PAD
     full = full.rotate(-q["lean"], resample=Image.BICUBIC, center=(fx, fy))
     # 납작해졌다 늘어났다 (발은 그대로)
     sy = 1.0 - q["squash"]

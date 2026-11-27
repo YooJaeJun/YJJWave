@@ -178,6 +178,12 @@ void FYJJGameDatabase::LoadUnits()
 		Def.bPassTerrain = Row.PassTerrain != 0;
 		Def.bCamp = Row.Camp != 0;
 		Def.BigRow = Row.BigRow;
+		Def.BigCell = Row.BigCell;
+		Def.BigSub = FMath::Max(Row.BigSub, 1);
+		if (Row.BigRow >= 0 && Row.BigCell <= 0.f)
+		{
+			Problem(FString::Printf(TEXT("Units.csv %s: BigRow 가 있으면 BigCell 도 있어야 한다"), *Name.ToString()));
+		}
 		Def.VoiceKey = FName(*(FString(TEXT("Voice_")) + Name.ToString()));
 		Def.Bones = Row.Bones;
 		Def.PromoteKills = Row.PromoteKills;

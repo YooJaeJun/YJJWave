@@ -40,7 +40,6 @@ RockAspect,4,Props.png 바위 무더기 칸 가로/세로
 RockRowOverlap,0.5,"바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)"
 RockWidthPad,1.2,바위 그림을 타원 너비보다 이만큼 넓게
 RockJitter,0.08,바위 줄마다 옆으로 어긋나는 비율
-BigFrameMul,4,BigUnits.png: 논리 칸 하나를 이만큼 중간 프레임으로 쪼갰다 (generate_art BIG_SUB)
 BigLogicalCols,24,BigUnits.png: 유닛 한 줄의 논리 칸 수 (generate_art BIG_LOGICAL)
 FxSlash,17,Fx 칸: 붓 초승달 (영웅·보스 휘두르기)
 FxImpact,18,Fx 칸: 먹 튀김 (맞은 자리)
@@ -173,7 +172,6 @@ BubbleHeadShare,0.85,말풍선 꼬리 끝: 유닛 발에서 그림 크기의 이
 PerkIconScale,0.72,중간·주문 별 효과 그림 크기 (바탕 원 지름 배율)
 PerkIconDim,0.45,아직 못 찍는 별 효과 그림 밝기
 UnitCell,128,Units.png 칸 크기
-BigUnitCell,256,BigUnits.png 칸 크기 (보스·영웅)
 FxCell,128,Fx.png 칸 크기
 BuildingCell,256,Buildings.png 칸 크기
 UiCell,128,UI.png 칸 크기
@@ -233,6 +231,11 @@ ShadowMinZoom,0.45,이보다 멀리 보면 그림자 생략
 ShadowAlpha,0.45,그림자 진하기
 ShadowWidth,0.7,그림자 너비 (그림 크기 비율)
 ShadowHeight,0.28,그림자 높이
+BigShadowWidth,0.5,"큰 유닛(AI 원화) 그림자 너비 (그림 크기 비율, 몸통 폭에 맞게)"
+BigShadowAlpha,0.75,큰 유닛 그림자 진하기 (발이 땅에 붙어 보이게)
+ArtTintR,0.95,큰 유닛 원화에 곱하는 땅 빛 R (쨍한 원화를 땅 톤에 맞춤)
+ArtTintG,0.92,땅 빛 G
+ArtTintB,0.85,땅 빛 B
 ProjectileSize,30,화살 그림 크기
 ArrowArcPerDistance,0.25,화살 포물선 높이 (거리 비율)
 ArrowArcMax,90,화살 포물선 최대 높이

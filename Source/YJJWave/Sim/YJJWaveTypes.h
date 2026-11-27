@@ -179,6 +179,8 @@ struct FYJJUnitDef
 	bool bCamp = false;         // 적 진지 (다 부수면 승리)
 	int32 RaiseUnit = INDEX_NONE; // 강령술사: 시체를 이 유닛으로 일으킨다
 	int32 BigRow = INDEX_NONE;
+	float BigCell = 0.f;        // 큰 유닛 그림 칸 크기 (Big_이름.png)
+	int32 BigSub = 1;           // 큰 유닛 중간 프레임 수
 	/** 진급: 적을 PromoteKills 마리 잡으면 PromoteTo 가 된다 (졸병 → 베테랑 → 장군 → 영웅) */
 	int32 PromoteTo = INDEX_NONE;
 	int32 PromoteKills = 0;

@@ -47,6 +47,10 @@ struct FYJJUnitRow : public FTableRowBase
 	UPROPERTY() int32 Hero = 0;
 	UPROPERTY() FString RaiseUnit;
 	UPROPERTY() int32 BigRow = -1;
+	/** 큰 유닛 그림(Big_이름.png) 칸 크기: 최대 확대에서 화면 크기에 맞춘다 */
+	UPROPERTY() float BigCell = 0.f;
+	/** 큰 유닛 논리 칸 하나의 중간 프레임 수 */
+	UPROPERTY() int32 BigSub = 1;
 	UPROPERTY() FString PromoteTo;
 	UPROPERTY() int32 PromoteKills = 0;
 	UPROPERTY() float Bones = 0.f;

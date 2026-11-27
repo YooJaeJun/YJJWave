@@ -93,7 +93,6 @@ void AYJJWaveHUD::BeginPlay()
 void AYJJWaveHUD::LoadArt()
 {
 	UnitTexture = FYJJTextureLoader::Load(TEXT("Units.png"), true);
-	BigUnitTexture = FYJJTextureLoader::Load(TEXT("BigUnits.png"), true);
 	FxTexture = FYJJTextureLoader::Load(TEXT("Fx.png"), true);
 	BuildingTexture = FYJJTextureLoader::Load(TEXT("Buildings.png"), true);
 	UiTexture = FYJJTextureLoader::Load(TEXT("UI.png"), true);
@@ -101,7 +100,23 @@ void AYJJWaveHUD::LoadArt()
 	GroundTexture = GroundFor(0);
 	WorldMapTexture = FYJJTextureLoader::Load(WorldMapFile, false);
 	UnitAtlas.Init(UnitTexture, UI().UnitCell);
-	BigAtlas.Init(BigUnitTexture, UI().BigUnitCell, FMath::RoundToInt(UI().BigFrameMul), FMath::RoundToInt(UI().BigLogicalCols));
+	// 큰 유닛(보스·영웅·진지): 유닛마다 Big_이름.png, 칸 크기는 최대 확대에서 화면 크기에 맞춘 Units.csv BigCell
+	BigUnitTextures.Reset();
+	BigAtlases.Reset();
+	for (const FYJJUnitDef& Def : YJJData::Units())
+	{
+		if (Def.BigRow == INDEX_NONE)
+		{
+			continue;
+		}
+		if (BigAtlases.Num() <= Def.BigRow)
+		{
+			BigAtlases.SetNum(Def.BigRow + 1);
+			BigUnitTextures.SetNum(Def.BigRow + 1);
+		}
+		BigUnitTextures[Def.BigRow] = FYJJTextureLoader::Load(FString::Printf(TEXT("Big_%s.png"), *Def.Id.ToString()), true);
+		BigAtlases[Def.BigRow].Init(BigUnitTextures[Def.BigRow], Def.BigCell, Def.BigSub, FMath::RoundToInt(UI().BigLogicalCols));
+	}
 	FxAtlas.Init(FxTexture, UI().FxCell);
 	BuildingAtlas.Init(BuildingTexture, UI().BuildingCell);
 	UiAtlas.Init(UiTexture, UI().UiCell);
@@ -441,7 +456,7 @@ void AYJJWaveHUD::TakeDeaths()
 			Stamp.Size = Def.DrawSize;
 			Stamp.Cell = RowFor(Def) * AtlasFor(Def).Columns + FMath::RoundToInt(UI().AnimCorpse);
 			Stamp.bUnits = true;
-			Stamp.bBig = &AtlasFor(Def) == &BigAtlas;
+			Stamp.BigRow = BigAtlasFor(Def) ? Def.BigRow : INDEX_NONE;
 			Stamp.bFlip = Death.bFaceLeft;
 			Stamp.Color = FLinearColor::White;
 			AddBlood(Death.Pos, Def.DrawSize);
@@ -513,7 +528,7 @@ void AYJJWaveHUD::UpdateDying(float Dt)
 		Stamp.Size = Def.DrawSize;
 		Stamp.Cell = RowFor(Def) * AtlasFor(Def).Columns + FMath::RoundToInt(UI().AnimCorpse);
 		Stamp.bUnits = true;
-		Stamp.bBig = &AtlasFor(Def) == &BigAtlas;
+		Stamp.BigRow = BigAtlasFor(Def) ? Def.BigRow : INDEX_NONE;
 		Stamp.bFlip = Body.bFaceLeft;
 		Stamp.Color = FLinearColor(UI().CorpseShade, UI().CorpseShade, UI().CorpseShade, 1.f);
 		Dying.RemoveAtSwap(Index, EAllowShrinking::No);
@@ -535,11 +550,11 @@ void AYJJWaveHUD::BakeStamps()
 	{
 		const float Scale = Size.X / Current->FieldWidth;
 		// 피(Fx)를 먼저, 시체(Units·BigUnits)를 위에
-		for (int32 Pass = 0; Pass < BakePasses; ++Pass)
+		for (int32 Pass = 0; Pass < BakeFirstBigPass + BigAtlases.Num(); ++Pass)
 		{
 			const bool bUnits = Pass > 0;
-			const bool bBig = Pass == BakePasses - 1;
-			const FYJJAtlas& Atlas = !bUnits ? FxAtlas : (bBig ? BigAtlas : UnitAtlas);
+			const int32 BigRow = Pass >= BakeFirstBigPass ? Pass - BakeFirstBigPass : INDEX_NONE;
+			const FYJJAtlas& Atlas = !bUnits ? FxAtlas : (BigRow != INDEX_NONE ? BigAtlases[BigRow] : UnitAtlas);
 			if (!Atlas.Texture)
 			{
 				continue;
@@ -547,7 +562,7 @@ void AYJJWaveHUD::BakeStamps()
 			const FYJJQuadBatch Batch = BeginBatch(TargetCanvas->Canvas, Atlas.Texture, Stamps.Num());
 			for (const FYJJStamp& Stamp : Stamps)
 			{
-				if (Stamp.bUnits != bUnits || (bUnits && Stamp.bBig != bBig))
+				if (Stamp.bUnits != bUnits || (bUnits && Stamp.BigRow != BigRow))
 				{
 					continue;
 				}

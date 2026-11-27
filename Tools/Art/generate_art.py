@@ -21,13 +21,12 @@ import rig   # AI 원화 유닛 애니메이션 (영웅·베테랑·해골왕)
 
 SS = 4                       # 크게 그린 뒤 줄인다
 INK = (46, 28, 22, 255)      # 먹선
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "..", "Content", "YJJWave", "Art")
+# 인자: .png 이름은 그것만 다시 만들기, 그 밖의 것은 저장 폴더
+_OUT_ARGS = [a for a in sys.argv[1:] if not a.lower().endswith(".png")]
+OUT = _OUT_ARGS[0] if _OUT_ARGS else os.path.join(os.path.dirname(__file__), "..", "..", "Content", "YJJWave", "Art")
 
 UNIT_CELL = 128
 UNIT_COLS = 32
-BIG_CELL = 256          # 보스·영웅처럼 크게 그려지는 유닛 (Units.csv BigRow)
-BIG_ROWS = 4
-BIG_UNITS = ["BoneKing", "Hero"]   # BigUnits.png 줄 순서 = Units.csv BigRow
 UNIT_ROWS = 18
 PROJECTILE_ROW = 17
 FOOT = 0.92
@@ -132,11 +131,9 @@ UNITS.append(dict(name="General", body="#5E636E", head="#FFFFFF", hat="lidhelm",
                   build="cauldron", cape="#8E2A22", extras=("longbeard", "epaulets")))
 UNITS.append(dict(name="GruntHero", body="#FFFFFF", head="#FFFFFF", hat="flamecrown", weapon="potflail", scale=1.0, faces=HOTBLOOD_FACES,
                   build="muscle", cape="#F2C230", extras=("halo",)))
-BIG_UNITS += ["General", "GruntHero"]
 # 14~15: 적 진지 (AI 원화: 뼈 천막 = 일반, 해골 망루 = 큰 진지). 움직이지 않고, 부서지면 납작한 잔해
 UNITS.append(dict(name="BoneTent", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
 UNITS.append(dict(name="BoneTower", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
-BIG_UNITS += ["BoneTent", "BoneTower"]
 
 
 # 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다). kind는 표정 고르기에 쓴다 (UNITS faces)
@@ -612,8 +609,15 @@ ART_UNITS = {
     "BoneTent": dict(file="CampTent.png", flip=False, building=True),
     "BoneTower": dict(file="CampTower.png", flip=False, building=True),
 }
-RUBBLE_HEIGHT = 0.35     # 무너진 진지: 높이를 이만큼으로 납작하게
-RUBBLE_TINT = (150, 140, 135)   # 잔해 색 (곱하기)
+RUBBLE_PIECES = (5, 5)   # 무너진 진지: 원화를 가로 × 세로 몇 조각으로 쪼개나
+RUBBLE_JITTER = 0.35     # 조각 경계 흔들림 (칸 비율)
+RUBBLE_MIN_PIECE = 0.004 # 이보다 작은 조각은 버린다 (원화 넓이 비율)
+RUBBLE_TILT = 35         # 조각 기울기 (도, ±)
+RUBBLE_SPREAD = 1.6      # 가운데에서 바깥으로 퍼지는 배율
+RUBBLE_SCATTER = 0.22    # 조각마다 좌우로 흩어지는 정도 (원화 긴 변 비율)
+RUBBLE_SINK = 0.55       # 떨어진 조각이 아래 무더기에 파묻히는 정도 (조각 높이 비율)
+RUBBLE_MAX_H = 0.38      # 무더기 최대 높이 (원화 높이 비율)
+RUBBLE_TINT = (175, 165, 158)   # 잔해 색 (곱하기, 조금 어둡게)
 ART_FILL = 0.84          # 칸 높이 중 그림이 차지하는 비율 (발은 FOOT)
 ART_LEAN = 0.8           # 자세 lean 1당 기울기 (도)
 ART_SWING = 6.0          # 공격 swing 1당 앞으로 숙이는 각도 (도)
@@ -672,17 +676,65 @@ def draw_art_unit(u, pose, dead=False, out=UNIT_CELL, face=None):
 
 
 
+def rubble(u, out):
+    """무너진 진지: 원화를 조각내 아래 조각부터 바닥에 떨어뜨려 쌓는다 (기울고 흩어진 무더기)"""
+    whole = draw_art_unit(u, IDLE_POSES[0], out=out)
+    box = whole.getbbox()
+    src = whole.crop(box)
+    w, h = src.size
+    rnd = random.Random(u["name"])
+    cols, rows = RUBBLE_PIECES
+
+    def jitter(i, n, size):
+        return size * i / n + (rnd.uniform(-RUBBLE_JITTER, RUBBLE_JITTER) * size / n if 0 < i < n else 0)
+
+    grid = [[(jitter(c, cols, w), jitter(r, rows, h)) for c in range(cols + 1)] for r in range(rows + 1)]
+    pieces = []
+    for r in range(rows):
+        for c in range(cols):
+            mask = Image.new("L", src.size, 0)
+            ImageDraw.Draw(mask).polygon([grid[r][c], grid[r][c + 1], grid[r + 1][c + 1], grid[r + 1][c]], fill=255)
+            piece = Image.new("RGBA", src.size, (0, 0, 0, 0))
+            piece.paste(src, (0, 0), mask)
+            bb = piece.getbbox()
+            if bb and (bb[2] - bb[0]) * (bb[3] - bb[1]) > w * h * RUBBLE_MIN_PIECE:
+                pieces.append((bb, piece.crop(bb)))
+    cell = Image.new("RGBA", (out, out), (0, 0, 0, 0))
+    ground = int(out * FOOT)
+    top = [ground] * out          # 칸마다 지금 무더기 위끝 (y)
+    center = box[0] + w / 2
+    for bb, chunk in sorted(pieces, key=lambda p: -p[0][3]):   # 아래 조각부터
+        # 세로로 긴 조각은 옆으로 눕힌다 (무너진 느낌), 그리고 조금씩 기울인다
+        angle = rnd.uniform(-RUBBLE_TILT, RUBBLE_TILT) + (rnd.choice((-90, 90)) if chunk.size[1] > chunk.size[0] else 0)
+        rot = chunk.rotate(angle, expand=True, resample=Image.BICUBIC)
+        rw, rh = rot.size
+        piece_x = box[0] + (bb[0] + bb[2]) / 2
+        # 높은 진지(망루)도 옆으로 넓게 무너지게: 흩어지는 폭은 원화 긴 변 기준
+        x0 = int(center + (piece_x - center) * RUBBLE_SPREAD + rnd.uniform(-1, 1) * max(w, h) * RUBBLE_SCATTER - rw / 2)
+        x0 = min(max(x0, 0), out - rw)
+        alpha = rot.getchannel("A").load()
+        lows, highs = {}, {}
+        for i in range(rw):
+            ys = [y for y in range(rh) if alpha[i, y] > 40]
+            if ys:
+                lows[i], highs[i] = ys[-1], ys[0]
+        if not lows:
+            continue
+        # 떨어져서 처음 닿는 자리 + 조금 파묻힘
+        y0 = min(top[x0 + i] - low for i, low in lows.items()) + int(rh * RUBBLE_SINK)
+        # 무더기는 원화 높이의 RUBBLE_MAX_H 를 넘지 않는다 (넘치면 더 파묻는다)
+        y0 = max(y0, int(ground - h * RUBBLE_MAX_H) - min(highs.values()))
+        y0 = min(y0, ground - max(lows.values()))
+        cell.alpha_composite(rot, (x0, y0))
+        for i, high in highs.items():
+            top[x0 + i] = min(top[x0 + i], y0 + high)
+    return ImageChops.multiply(cell, Image.new("RGBA", cell.size, RUBBLE_TINT + (255,)))
+
+
 def corpse(u, out=UNIT_CELL):
-    """시체: 쓰러진 모습 (눈 X) + 바닥에 붙게 아래로. 진지는 납작한 잔해"""
+    """시체: 쓰러진 모습 (눈 X) + 바닥에 붙게 아래로. 진지는 무너진 무더기"""
     if ART_UNITS.get(u["name"], {}).get("building"):
-        whole = draw_art_unit(u, IDLE_POSES[0], out=out)
-        box = whole.getbbox()
-        part = whole.crop(box)
-        flat = part.resize((part.size[0], max(1, int(part.size[1] * RUBBLE_HEIGHT))), Image.LANCZOS)
-        flat = ImageChops.multiply(flat, Image.new("RGBA", flat.size, RUBBLE_TINT + (255,)))
-        rubble = Image.new("RGBA", (out, out), (0, 0, 0, 0))
-        rubble.paste(flat, (box[0], box[3] - flat.size[1]), flat)
-        return rubble
+        return rubble(u, out)
     img = draw_unit(u, IDLE_POSES[0], dead=True, out=out)
     img = img.rotate(90, resample=Image.BICUBIC, expand=False)
     lying = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -742,28 +794,37 @@ def old_pose(name, phase):
     return lerp_pose(keys[i], keys[j], x - int(x))
 
 
-def big_atlas():
-    """보스·영웅: 256px, 논리 칸마다 BIG_SUB개 중간 프레임 (걷기 32 · 공격 24 · 숨쉬기 16 · 맞음 8).
-    자세는 동작 칸 사이를 섞는다 (AI 원화 유닛은 기울기·들썩임만). 칸 번호 = (줄 × 24 + 논리 칸) × 4 + 중간"""
-    per_row = BIG_LOGICAL * BIG_SUB
-    rows = (len(BIG_UNITS) * per_row + UNIT_COLS - 1) // UNIT_COLS
-    atlas = Image.new("RGBA", (BIG_CELL * UNIT_COLS, BIG_CELL * rows), (0, 0, 0, 0))
-    for row, name in enumerate(BIG_UNITS):
-        u = next(x for x in UNITS if x["name"] == name)
-        for frame in range(BIG_LOGICAL):
-            action, first, count = action_of(frame)
-            if action is None:
-                continue
-            for sub in range(BIG_SUB):
-                phase = (frame - first + sub / BIG_SUB) / count
-                if name in rig.RIGS:
-                    img = rig.frame(name, action, phase, BIG_CELL)
-                elif action == "corpse":
-                    img = corpse(u, BIG_CELL)
-                else:
-                    img = draw_unit(u, old_pose(action, phase), out=BIG_CELL)
-                index = (row * BIG_LOGICAL + frame) * BIG_SUB + sub
-                atlas.alpha_composite(img, ((index % UNIT_COLS) * BIG_CELL, (index // UNIT_COLS) * BIG_CELL))
+BIG_SHEET_COLS = 12  # 큰 유닛 그림 한 줄 칸 수 (칸은 논리 칸 순서 × 중간 프레임으로 줄줄이)
+
+
+def big_specs():
+    """Units.csv 의 큰 유닛: 이름 → (칸 크기, 중간 프레임 수). 칸은 최대 확대에서 화면 크기에 맞춘다"""
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Content", "YJJWave", "Data", "Units.csv")
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        return {r["Name"]: (int(float(r["BigCell"])), int(r["BigSub"])) for r in csv.DictReader(f) if int(r["BigRow"]) >= 0}
+
+
+def big_atlas(name):
+    """큰 유닛 하나 (Big_이름.png): 논리 칸마다 중간 프레임. 칸 번호 = 논리 칸 × 중간 수 + 중간"""
+    cell, sub_count = big_specs()[name]
+    total = BIG_LOGICAL * sub_count
+    atlas = Image.new("RGBA", (cell * BIG_SHEET_COLS, cell * ((total + BIG_SHEET_COLS - 1) // BIG_SHEET_COLS)), (0, 0, 0, 0))
+    u = next(x for x in UNITS if x["name"] == name)
+    for frame in range(BIG_LOGICAL):
+        action, first, count = action_of(frame)
+        if action is None:
+            continue
+        for sub in range(sub_count):
+            phase = (frame - first + sub / sub_count) / count
+            if name in rig.RIGS:
+                img = rig.frame(name, action, phase, cell)
+            elif action == "corpse":
+                img = corpse(u, cell)
+            else:
+                img = draw_unit(u, old_pose(action, phase), out=cell)
+            index = frame * sub_count + sub
+            atlas.alpha_composite(img, ((index % BIG_SHEET_COLS) * cell, (index // BIG_SHEET_COLS) * cell))
     return atlas
 
 
@@ -1466,9 +1527,13 @@ def ground(P=GROUND_FOREST):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    jobs = [("Props.png", props_atlas), ("Units.png", units_atlas), ("BigUnits.png", big_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
+    jobs = [("Props.png", props_atlas), ("Units.png", units_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
             ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", lambda: __import__("world_map").world_map())]
+    jobs += [("Big_%s.png" % name, (lambda n: lambda: big_atlas(n))(name)) for name in big_specs()]
+    only = [a for a in sys.argv[1:] if a.lower().endswith(".png")]   # 파일 이름을 주면 그것만 다시 만든다
     for name, make in jobs:
+        if only and name not in only:
+            continue
         make().save(os.path.join(OUT, name))
         print("wrote", name)
 

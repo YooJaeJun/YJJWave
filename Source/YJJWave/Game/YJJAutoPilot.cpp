@@ -190,6 +190,27 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 		Think(Battle);
 	}
 
+	if (!bBench && SpeedCheck == 0 && Battle.Level >= SpeedCheckWave)
+	{
+		const float Before = Mode->GetSpeed();
+		Mode->CycleSpeed();
+		SpeedCheck = 1;
+		SpeedCheckReal = 0.f;
+		SpeedCheckStart = Battle.Time;
+		UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] 배속 토글: x%.1f → x%.1f"), Before, Mode->GetSpeed());
+		Mode->TakeShot(FString::Printf(TEXT("%sSpeed"), ShotPrefix));
+	}
+	else if (SpeedCheck == 1 && Mode->IsRunning())
+	{
+		SpeedCheckReal += RealDeltaSeconds;
+		if (SpeedCheckReal >= SpeedCheckSeconds)
+		{
+			UE_LOG(LogYJJWave, Display, TEXT("[AutoPilot] 배속 확인: 실제 %.1f초에 게임 %.1f초 흐름 (x%.2f), 토글 되돌림"), SpeedCheckReal, Battle.Time - SpeedCheckStart, (Battle.Time - SpeedCheckStart) / SpeedCheckReal);
+			Mode->CycleSpeed();
+			SpeedCheck = 2;
+		}
+	}
+
 	if (Battle.Level != LastLevel)
 	{
 		LastLevel = Battle.Level;
