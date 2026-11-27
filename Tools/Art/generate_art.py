@@ -1282,6 +1282,12 @@ def fx_atlas():
     rows = max(FX_ANIM_ROWS.values()) + 1
     atlas = Image.new("RGBA", (FX_CELL * 8, FX_CELL * rows), (0, 0, 0, 0))
     atlas.alpha_composite(big, (0, 0))
+    # Gemini 이펙트 그림 (불꽃·불덩이·폭발·김·빛기둥·그을음)
+    fx_icons = gemini_icons("FxIcons")
+    for index, cell in GEMINI_FX_CELLS.items():
+        cx, cy = (cell % 8) * FX_CELL, (cell // 8) * FX_CELL
+        atlas.paste(Image.new("RGBA", (FX_CELL, FX_CELL), (0, 0, 0, 0)), (cx, cy))
+        atlas.alpha_composite(_place(fx_icons[index], FX_CELL, GEMINI_FX_FIT, GEMINI_FX_FIT, (1 + GEMINI_FX_FIT) / 2), (cx, cy))
     ladle_cell = 16   # UILayout FxLadle: 국자 내려치기
     lx, ly = (ladle_cell % 8) * FX_CELL, (ladle_cell // 8) * FX_CELL
     atlas.paste(Image.new("RGBA", (FX_CELL, FX_CELL), (0, 0, 0, 0)), (lx, ly))
@@ -1860,9 +1866,14 @@ GEMINI_ICON_SHEETS = {
     "UIIconsB": (5, 2),   # 쌀, 고춧가루, 사골, 마늘, 후추, 선지, 인삼, 금가루, 청양고추, 대파
     "Barracks": (4, 1),   # 졸병 막사, 궁수 초소, 방패 막사, 망치 막사
     "Fort": (4, 1),       # 성벽 조각, 성문 탑, 빈 건설 터, 큰 국자
+    "PerkIcons": (4, 4),  # 특성 별 효과 16종 (UI 16, 18~32)
+    "FxIcons": (3, 2),    # 불꽃, 불덩이, 폭발 구름, 김, 빛기둥, 그을음
 }
 GEMINI_UI_CELLS = {("UIIconsA", 0): 35, ("UIIconsA", 3): 4, ("UIIconsA", 4): 5, ("UIIconsA", 5): 33}
 GEMINI_UI_CELLS.update({("UIIconsB", k): 36 + k for k in range(10)})
+GEMINI_UI_CELLS.update({("PerkIcons", k): (16 if k == 0 else 17 + k) for k in range(16)})
+GEMINI_FX_CELLS = {0: 11, 1: 8, 2: 9, 3: 14, 4: 15, 5: 5}   # FxIcons 순서 → Fx.png 칸 (UILayout FxFlame·FxMeteor·FxBlast·FxSteam·FxPromote·FxScorch)
+GEMINI_FX_FIT = 0.9
 GEMINI_STAR_CELLS = {("UIIconsA", 6): 6, ("UIIconsA", 7): 7}   # 별: 게임이 색을 곱하므로 흰 별로 바꾼다
 GEMINI_POT = ("UIIconsA", 1)       # Buildings.png 6 = 솥과 장작불
 GEMINI_LID = ("UIIconsA", 2)       # Buildings.png 7 = 뚜껑
