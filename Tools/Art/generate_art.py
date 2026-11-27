@@ -1277,6 +1277,10 @@ def fx_atlas():
     rows = max(FX_ANIM_ROWS.values()) + 1
     atlas = Image.new("RGBA", (FX_CELL * 8, FX_CELL * rows), (0, 0, 0, 0))
     atlas.alpha_composite(big, (0, 0))
+    ladle_cell = 16   # UILayout FxLadle: 국자 내려치기
+    lx, ly = (ladle_cell % 8) * FX_CELL, (ladle_cell // 8) * FX_CELL
+    atlas.paste(Image.new("RGBA", (FX_CELL, FX_CELL), (0, 0, 0, 0)), (lx, ly))
+    atlas.alpha_composite(_place(gemini_icons("Fort")[3], FX_CELL, 0.95, 0.95, 0.97), (lx, ly))
     for name, make in (("dust", fx_dust_frame), ("impact", fx_impact_frame), ("slash", fx_slash_frame)):
         for f in range(FX_ANIM_FRAMES):
             atlas.alpha_composite(make(f), (f * FX_CELL, FX_ANIM_ROWS[name] * FX_CELL))
@@ -1467,6 +1471,36 @@ def gemini_pot():
     return pot, lid
 
 
+BUILDING_FIT = 0.86         # Gemini 병영 그림 너비·높이 상한 (칸 비율)
+BUILDING_BASE = 0.9         # 병영 바닥 자리 (칸 높이 비율, UILayout PlotAnchor)
+BUILDING_TIER_STAR = 0.17   # 강화 단계 별 크기 (칸 비율)
+FORT_FIT = 0.9              # 성벽·성문·빈 터 그림 상한 (칸 비율)
+FORT_BASE = 0.92            # 성벽·성문 바닥 (UILayout WallAnchor)
+PLOT_FIT = 0.78             # 빈 터 너비 (칸 비율)
+
+
+def _place(img, C, fit_w, fit_h, base):
+    """그림을 칸에 맞춰 줄이고 가운데 아래(base)에 발을 붙인다"""
+    s = min(C * fit_w / img.size[0], C * fit_h / img.size[1])
+    img = img.resize((max(1, round(img.size[0] * s)), max(1, round(img.size[1] * s))), Image.LANCZOS)
+    cell = Image.new("RGBA", (C, C), (0, 0, 0, 0))
+    cell.alpha_composite(img, ((C - img.size[0]) // 2, round(C * base) - img.size[1]))
+    return cell
+
+
+def _tier_stars(cell, tier, C):
+    """강화 단계: 지붕 위에 금별 tier 개 (UI 아이콘 결의 금별)"""
+    star = gemini_icons("UIIconsA")[6]
+    sz = round(C * BUILDING_TIER_STAR)
+    star = star.resize((sz, round(sz * star.size[1] / star.size[0])), Image.LANCZOS)
+    box = cell.getbbox()
+    y = max(0, box[1] - sz // 3)
+    total = tier * sz * 0.8
+    for k in range(tier):
+        cell.alpha_composite(star, (round(C / 2 - total / 2 + k * sz * 0.8), y))
+    return cell
+
+
 def buildings_atlas():
     """줄 = 강화 단계 (병영 0~3 칸). 0줄: 4 빈 칸, 5 성벽 탑(옛), 6 냄비, 7 뚜껑 / 1줄: 4 성벽 조각, 5 성문 탑 (UILayout.csv Wall*·Gate*)"""
     C = 256
@@ -1474,13 +1508,19 @@ def buildings_atlas():
     pot, lid = gemini_pot()
     atlas.alpha_composite(pot, (6 * C, 0))
     atlas.alpha_composite(lid, (7 * C, 0))
-    for k in range(6):
-        atlas.alpha_composite(building(k), (k * C, 0))
-    for tier in range(1, 4):
-        for k in range(4):
-            atlas.alpha_composite(building(k, tier), (k * C, tier * C))
-    atlas.alpha_composite(wall_segment(), (4 * C, C))
-    atlas.alpha_composite(gate_tower(), (5 * C, C))
+    # Gemini 그림 (승인 화풍): 병영 4종 × 강화 단계(금별), 빈 건설 터, 성벽 조각, 성문 탑
+    barracks = gemini_icons("Barracks")
+    fort = gemini_icons("Fort")
+    for k in range(4):
+        base = _place(barracks[k], C, BUILDING_FIT, BUILDING_FIT, BUILDING_BASE)
+        for tier in range(4):
+            cell = base.copy()
+            if tier:
+                cell = _tier_stars(cell, tier, C)
+            atlas.alpha_composite(cell, (k * C, tier * C))
+    atlas.alpha_composite(_place(fort[2], C, PLOT_FIT, FORT_FIT, BUILDING_BASE), (4 * C, 0))
+    atlas.alpha_composite(_place(fort[0], C, FORT_FIT, FORT_FIT, FORT_BASE), (4 * C, C))
+    atlas.alpha_composite(_place(fort[1], C, FORT_FIT, FORT_FIT, FORT_BASE), (5 * C, C))
     return atlas
 
 
@@ -1811,6 +1851,8 @@ def ui_kit_icons():
 GEMINI_ICON_SHEETS = {
     "UIIconsA": (4, 2),   # 국자, 솥+장작불, 솥뚜껑, 유성, 뿔나팔, 뼈, 별, 큰 별
     "UIIconsB": (5, 2),   # 쌀, 고춧가루, 사골, 마늘, 후추, 선지, 인삼, 금가루, 청양고추, 대파
+    "Barracks": (4, 1),   # 졸병 막사, 궁수 초소, 방패 막사, 망치 막사
+    "Fort": (4, 1),       # 성벽 조각, 성문 탑, 빈 건설 터, 큰 국자
 }
 GEMINI_UI_CELLS = {("UIIconsA", 0): 35, ("UIIconsA", 3): 4, ("UIIconsA", 4): 5, ("UIIconsA", 5): 33}
 GEMINI_UI_CELLS.update({("UIIconsB", k): 36 + k for k in range(10)})
