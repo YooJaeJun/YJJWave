@@ -242,6 +242,10 @@ struct FYJJUILayout
 	UPROPERTY() float BigLogicalCols = 0.f;   // BigUnits.png: 유닛 한 줄의 논리 칸 수 (generate_art BIG_LOGICAL)
 	UPROPERTY() float FxSlash = 0.f;   // Fx 칸: 붓 초승달 (영웅·보스 휘두르기)
 	UPROPERTY() float FxImpact = 0.f;   // Fx 칸: 먹 튀김 (맞은 자리)
+	UPROPERTY() float FxAnimFrames = 0.f;   // 움직이는 효과 프레임 수 (먼지·타격·휘두르기)
+	UPROPERTY() float FxDustFirst = 0.f;   // Fx 칸: 먼지 구름 첫 프레임
+	UPROPERTY() float FxImpactFirst = 0.f;   // Fx 칸: 타격 터짐 첫 프레임
+	UPROPERTY() float FxSlashFirst = 0.f;   // Fx 칸: 붓 휘두르기 첫 프레임 (오른쪽으로 쓴다)
 	UPROPERTY() float SlashScale = 0.f;   // 초승달 크기 (휘두르기 반경 배율)
 	UPROPERTY() float SlashStartScale = 0.f;   // 초승달이 펼쳐지기 시작하는 크기
 	UPROPERTY() float SlashLift = 0.f;   // 초승달 높이 (반경 배율, 몸통께)

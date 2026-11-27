@@ -932,7 +932,8 @@ def units_atlas():
 # ------------------------------------------------------------------------------------------------
 # 이펙트
 
-def fx_atlas():
+def _fx_atlas_base():
+    """예전 128px 칸 효과들 (fx_atlas 가 2배로 키워 위쪽 3줄에 둔다)"""
     C = 128
     atlas = Image.new("RGBA", (C * 8, C * 3), (0, 0, 0, 0))
     rnd = random.Random(7)
@@ -1100,6 +1101,179 @@ def fx_atlas():
 
 # ------------------------------------------------------------------------------------------------
 # 건물
+
+# 움직이는 효과 (사용자 승인 시안): 먼지 구름 · 타격 터짐 · 붓 휘두르기, 각 FX_ANIM_FRAMES 프레임. 굵은 먹선 + 2톤
+FX_CELL = 256                 # Fx.png 칸 (UILayout FxCell)
+FX_ANIM_FRAMES = 6            # UILayout FxAnimFrames
+FX_ANIM_ROWS = {"dust": 3, "impact": 4, "slash": 5}   # 줄 (칸 번호 = 줄 × 8 + 프레임, UILayout FxDustFirst·FxImpactFirst·FxSlashFirst)
+FX_INK = (34, 26, 24, 255)
+FX_SS = 3
+
+
+def _fx_ease_out(t):
+    return 1 - (1 - t) ** 3
+
+
+def _fx_canvas():
+    return Image.new("RGBA", (FX_CELL * FX_SS, FX_CELL * FX_SS), (0, 0, 0, 0))
+
+
+def _fx_done(img, alpha=1.0):
+    img = img.resize((FX_CELL, FX_CELL), Image.LANCZOS)
+    if alpha < 1.0:
+        img.putalpha(img.getchannel("A").point(lambda v: int(v * max(alpha, 0.0))))
+    return img
+
+
+def _fx_circ(d, x, y, r, fill):
+    s = FX_SS
+    d.ellipse([(x - r) * s, (y - r) * s, (x + r) * s, (y + r) * s], fill=fill)
+
+
+def fx_dust_frame(f):
+    """먼지: 작게 피어올라 부풀고 흙 알갱이가 튄 뒤 옅어진다 (발 자리 = 칸 아래쪽)"""
+    C, N = FX_CELL, FX_ANIM_FRAMES
+    t = f / (N - 1)
+    rnd = random.Random(11)
+    img = _fx_canvas()
+    d = ImageDraw.Draw(img)
+    cx, cy = C / 2, C * 0.62
+    blobs = [(rnd.uniform(math.pi * 0.9, math.pi * 2.1), rnd.uniform(10, 34), rnd.uniform(16, 26), rnd.uniform(0.7, 1.3)) for _ in range(8)]
+    grow = _fx_ease_out(min(t * 1.6, 1.0))
+    fade = max(0.0, (t - 0.55) / 0.45)
+    pts = []
+    for a, dist, r0, sp in blobs:
+        spread = dist * (0.4 + 1.5 * grow) * sp
+        pts.append((cx + math.cos(a) * spread * 1.3, cy + math.sin(a) * spread * 0.8 - 26 * grow, r0 * (0.45 + 0.8 * grow) * (1 - 0.55 * fade)))
+    lw = 4.5 * (1 - 0.6 * fade)
+    for x, y, r in pts:
+        _fx_circ(d, x, y, r + lw, FX_INK)
+    for x, y, r in pts:
+        _fx_circ(d, x, y, r, (196, 170, 132, 255))
+    for x, y, r in pts:
+        _fx_circ(d, x - r * 0.18, y - r * 0.22, r * 0.78, (240, 226, 200, 255))
+    for x, y, r in pts:
+        _fx_circ(d, x - r * 0.38, y - r * 0.42, r * 0.22, (255, 250, 238, 255))
+    if t < 0.75:
+        for k in range(7):
+            a = math.pi * (1.05 + 0.9 * k / 6)
+            dist = 30 + 120 * _fx_ease_out(t)
+            x, y = cx + math.cos(a) * dist, cy + math.sin(a) * dist * 0.7 + 90 * t * t
+            r = 6 * (1 - t)
+            _fx_circ(d, x, y, r + 2.5, FX_INK)
+            _fx_circ(d, x, y, r, (122, 92, 64, 255))
+    return _fx_done(img, 1 - fade * 0.85)
+
+
+def _fx_star(cx, cy, n, r_out, r_in, rot, jitter, seed):
+    rnd = random.Random(seed)
+    pts = []
+    for i in range(n * 2):
+        a = rot + i * math.pi / n
+        r = (r_out if i % 2 == 0 else r_in) * (1 + rnd.uniform(-jitter, jitter))
+        pts.append(((cx + math.cos(a) * r) * FX_SS, (cy + math.sin(a) * r) * FX_SS))
+    return pts
+
+
+def fx_impact_frame(f):
+    """타격: 번쩍 → 주황·노랑 먹선 별 → 조각과 먹방울이 퍼지며 사라진다"""
+    C, N, s = FX_CELL, FX_ANIM_FRAMES, FX_SS
+    img = _fx_canvas()
+    d = ImageDraw.Draw(img)
+    cx = cy = C / 2
+    if f == 0:
+        for k in range(10):
+            a = k * math.tau / 10
+            p0 = ((cx + math.cos(a) * 34) * s, (cy + math.sin(a) * 34) * s)
+            p1 = ((cx + math.cos(a) * 62) * s, (cy + math.sin(a) * 62) * s)
+            d.line([p0, p1], fill=FX_INK, width=9 * s)
+            d.line([p0, p1], fill=(255, 244, 190, 255), width=4 * s)
+        _fx_circ(d, cx, cy, 34, FX_INK)
+        _fx_circ(d, cx, cy, 29, (255, 255, 255, 255))
+        return _fx_done(img)
+    if f <= 2:
+        k = [0.8, 1.0][f - 1]
+        rot = 0.15 * f
+        d.polygon(_fx_star(cx, cy, 11, 108 * k, 52 * k, rot, 0.18, 5), fill=FX_INK)
+        d.polygon(_fx_star(cx, cy, 11, 100 * k, 46 * k, rot, 0.18, 5), fill=(255, 140, 40, 255))
+        d.polygon(_fx_star(cx, cy, 9, 72 * k, 36 * k, rot + 0.3, 0.2, 6), fill=(255, 220, 70, 255))
+        _fx_circ(d, cx, cy, 26 * k, (255, 255, 236, 255))
+        for j in range(14):
+            a = j * math.tau / 14 + 0.1
+            d.line([((cx + math.cos(a) * 112 * k) * s, (cy + math.sin(a) * 112 * k) * s), ((cx + math.cos(a) * 126 * k) * s, (cy + math.sin(a) * 126 * k) * s)], fill=FX_INK, width=4 * s)
+        return _fx_done(img)
+    u = (f - 3) / max(N - 4, 1)
+    k = 0.7 * (1 - u * 0.7)
+    if f == 3:
+        d.polygon(_fx_star(cx, cy, 11, 90 * k, 46 * k, 0.5, 0.25, 7), fill=FX_INK)
+        d.polygon(_fx_star(cx, cy, 11, 82 * k, 40 * k, 0.5, 0.25, 7), fill=(255, 200, 70, 255))
+    rnd = random.Random(9)
+    for j in range(12):
+        a = j * math.tau / 12 + rnd.uniform(-0.2, 0.2)
+        dist = 70 + 60 * _fx_ease_out(u)
+        x, y = cx + math.cos(a) * dist, cy + math.sin(a) * dist
+        sz = (16 - 8 * u) * rnd.uniform(0.7, 1.2)
+        tri = [(x + math.cos(a) * sz * 1.6, y + math.sin(a) * sz * 1.6), (x + math.cos(a + 2.3) * sz, y + math.sin(a + 2.3) * sz), (x + math.cos(a - 2.3) * sz, y + math.sin(a - 2.3) * sz)]
+        d.polygon([(px * s, py * s) for px, py in tri], fill=FX_INK)
+        inner = [(x + (px - x) * 0.6, y + (py - y) * 0.6) for px, py in tri]
+        d.polygon([(px * s, py * s) for px, py in inner], fill=(255, 196, 60, 255) if j % 2 else (255, 255, 230, 255))
+    for j in range(9):
+        a = j * math.tau / 9 + 0.35
+        dist = 78 + 70 * _fx_ease_out(u)
+        _fx_circ(d, cx + math.cos(a) * dist, cy + math.sin(a) * dist + 20 * u, 7 * (1 - u * 0.6), FX_INK)
+    return _fx_done(img, 1 - max(0, u - 0.3) * 1.2)
+
+
+def fx_slash_frame(f):
+    """붓 휘두르기: 오른쪽으로 쓸고 가는 초승달 (왼쪽은 게임이 뒤집는다), 꼬리부터 사라진다"""
+    C, N, s = FX_CELL, FX_ANIM_FRAMES, FX_SS
+    t = f / (N - 1)
+    img = _fx_canvas()
+    d = ImageDraw.Draw(img)
+    cx = cy = C / 2
+    R = 96
+    sweep = math.radians(20 + 170 * _fx_ease_out(min(t * 1.4, 1)))
+    start = math.radians(-120)
+    tail = max(0.0, t - 0.45) / 0.55
+    a0, a1 = start + sweep * tail, start + sweep
+    steps = 40
+
+    def band(width, out_k, in_k):
+        outer, inner = [], []
+        for i in range(steps + 1):
+            u = i / steps
+            a = a0 + (a1 - a0) * u
+            w = width * math.sin(math.pi * min(u * 1.1, 1)) ** 0.7 * (1 - 0.6 * tail)
+            outer.append(((cx + math.cos(a) * (R + w * out_k)) * s, (cy + math.sin(a) * (R + w * out_k)) * s))
+            inner.append(((cx + math.cos(a) * (R - w * in_k)) * s, (cy + math.sin(a) * (R - w * in_k)) * s))
+        return outer + inner[::-1]
+
+    d.polygon(band(34, 0.5, 0.5), fill=FX_INK)
+    d.polygon(band(22, 0.35, 0.45), fill=(255, 250, 235, 255))
+    rnd = random.Random(3)
+    for _ in range(5):
+        off = rnd.uniform(-10, 10)
+        pts = [((cx + math.cos(a0 + (a1 - a0) * i / steps) * (R + off)) * s, (cy + math.sin(a0 + (a1 - a0) * i / steps) * (R + off)) * s) for i in range(steps + 1)]
+        d.line(pts[int(steps * 0.25):], fill=(200, 190, 170, 255), width=2 * s)
+    if t > 0.2:
+        for j in range(4):
+            a = a1 + 0.12 + j * 0.08
+            dist = R + rnd.uniform(-12, 16) + 30 * t
+            _fx_circ(d, cx + math.cos(a) * dist, cy + math.sin(a) * dist, 5 - j, FX_INK)
+    return _fx_done(img, 1 - max(0, t - 0.7) / 0.3 * 0.9)
+
+
+def fx_atlas():
+    """Fx.png: 256px 칸 8열. 위 3줄 = 예전 효과(128px 그림을 2배), 아래 3줄 = 움직이는 효과 프레임"""
+    base = _fx_atlas_base()
+    big = base.resize((base.width * 2, base.height * 2), Image.LANCZOS)
+    rows = max(FX_ANIM_ROWS.values()) + 1
+    atlas = Image.new("RGBA", (FX_CELL * 8, FX_CELL * rows), (0, 0, 0, 0))
+    atlas.alpha_composite(big, (0, 0))
+    for name, make in (("dust", fx_dust_frame), ("impact", fx_impact_frame), ("slash", fx_slash_frame)):
+        for f in range(FX_ANIM_FRAMES):
+            atlas.alpha_composite(make(f), (f * FX_CELL, FX_ANIM_ROWS[name] * FX_CELL))
+    return atlas
 
 def building(kind, tier=0):
     """병영 그림. tier 0~3 = 강화 Lv1~4: 돌 기단·깃발 → 옆 망루·문장 → 금 지붕 장식·왕관"""
@@ -1633,11 +1807,12 @@ GROUND_GRAVEYARD = dict(grass="#4A5640", patches=["#435038", "#525E46", "#3E4934
                         specks=["#5E524C", "#776A63", "#665A54"], blade="#2F3A28", camp="#5E5248", camp_specks=["#544840", "#6A5D52", "#5A4E46"], graves=True)
 
 
-GROUND_BASE = (2048, 740)    # 바닥 무늬를 짠 기준 크기 (무늬 크기·개수는 이 크기 기준)
-GROUND_SCALE = 2             # Ground.png = 기준 × 이 배 (최대 확대에서도 또렷하게, 렌더 타깃 GroundTargetWidth 와 같게)
-OUTER_TEXEL = 0.6            # 전장 바깥 배경: 월드 1 당 픽셀
-OUTER_BUSHES = 260           # 전장 바깥 덤불·바위 수
-OUTER_VIGNETTE = 0.45        # 바깥 끝으로 갈수록 어두워지는 정도
+GROUND_BASE = (2048, 740)    # 바닥 무늬를 짠 기준 크기 (전장 하나, 무늬 크기·밀도는 이 기준)
+GROUND_FIELD_PX = 4096       # Ground.png 너비 (= 렌더 타깃 GroundTargetWidth, 최대 확대에서도 또렷하게)
+OUTER_SCALE = 0.5            # Ground_Outer.png = 전장+둘레 한 장을 이 배율로 줄인 것
+OUTER_BUSHES = 260           # 둘레 덤불·바위 수
+OUTER_VIGNETTE = 0.45        # 둘레 바깥 끝으로 갈수록 어두워지는 정도
+_ground_cache = {}
 
 
 def _table_values(file, names):
@@ -1649,137 +1824,121 @@ def _table_values(file, names):
     return [float(rows[n]) for n in names]
 
 
-def _path_band(xp, rnd, H):
-    """기준 픽셀 x 에서 흙길 위·아래 (기준 픽셀)"""
-    top = H * 0.3 + math.sin(xp * 0.006) * 24 + rnd.uniform(-6, 6)
-    bot = H * 0.72 + math.sin(xp * 0.005 + 1.3) * 26 + rnd.uniform(-6, 6)
-    return top, bot
-
-
-def ground(P=GROUND_FOREST):
-    """전장 바닥 (피·시체는 게임이 그 위에 굽는다). 기준 2048×740 무늬를 GROUND_SCALE 배로 그린다"""
+def _ground_whole(P):
+    """전장 + 둘레를 한 장으로 (무늬가 끊기지 않게). 반환: 그림, 전장 자리 (x0, y0, x1, y1)"""
+    key = P["grass"]
+    if key in _ground_cache:
+        return _ground_cache[key]
+    FW, FH = _table_values("Tuning.csv", ["FieldWidth", "FieldHeight"])
+    MX, MY = _table_values("UILayout.csv", ["ViewMarginX", "ViewMarginY"])
     BW, BH = GROUND_BASE
-    k = GROUND_SCALE
-    W, H = BW * k, BH * k
+    t = GROUND_FIELD_PX / FW              # 월드 1 당 픽셀
+    k = GROUND_FIELD_PX / BW              # 기준 무늬 대비 배율
+    W, H = round((FW + MX * 2) * t), round((FH + MY * 2) * t)
+    field = (round(MX * t), round(MY * t), round(MX * t) + GROUND_FIELD_PX, round(MY * t) + round(FH * t))
+    density = (W * H) / (BW * BH * k * k)   # 기준 넓이 대비 몇 배 넓은가
     rnd = random.Random(3)
     img = Image.new("RGBA", (W, H), rgba(P["grass"]))
     d = ImageDraw.Draw(img)
-    # 풀 얼룩
-    for _ in range(900 * k * k):
+    for _ in range(int(900 * density)):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
         r = rnd.uniform(10, 46) * k
-        c = rnd.choice(P["patches"])
-        d.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=rgba(c))
-    # 가운데 흙길
+        d.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=rgba(rnd.choice(P["patches"])))
+    # 가운데 흙길: 전장 기준 식 그대로 좌우 둘레까지 잇는다
     band = Image.new("L", (W, H), 0)
     bd = ImageDraw.Draw(band)
-    for x in range(0, BW, 8):
-        top, bot = _path_band(x, rnd, BH)
-        bd.rectangle([x * k, top * k, (x + 8) * k, bot * k], fill=255)
+    step = 8 * k
+    px = 0.0
+    while px < W:
+        world_x = px / t - MX
+        xb = world_x * BW / FW
+        top = BH * 0.3 + math.sin(xb * 0.006) * 24 + rnd.uniform(-6, 6)
+        bot = BH * 0.72 + math.sin(xb * 0.005 + 1.3) * 26 + rnd.uniform(-6, 6)
+        bd.rectangle([px, (top * FH / BH + MY) * t, px + step, (bot * FH / BH + MY) * t], fill=255)
+        px += step
     band = band.filter(ImageFilter.GaussianBlur(10 * k))
     dirt = Image.new("RGBA", (W, H), rgba(P["dirt"]))
     dd = ImageDraw.Draw(dirt)
-    for _ in range(1400 * k * k):
+    for _ in range(int(1400 * density)):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
         r = rnd.uniform(3, 14) * k
         dd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["specks"])))
     img = Image.composite(dirt, img, band)
     d = ImageDraw.Draw(img)
-    # 풀 포기
-    for _ in range(1600 * k * k):
-        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        if band.getpixel((int(x), int(y))) > 80:
+    bp = band.load()
+    for _ in range(int(1600 * density)):
+        x, y = rnd.uniform(0, W - 1), rnd.uniform(0, H - 1)
+        if bp[int(x), int(y)] > 80:
             continue
         for j in range(3):
-            d.line([x + j * 3 * k, y, x + j * 3 * k + rnd.uniform(-3, 3) * k, y - rnd.uniform(6, 12) * k], fill=rgba(P["blade"]), width=2 * k)
-    # 진지 (성벽 왼쪽): 다져진 흙
-    camp = int(W * 520 / 3600)
-    d.rectangle([0, 0, camp, H], fill=rgba(P["camp"]))
-    for _ in range(500 * k * k):
-        x, y = rnd.uniform(0, camp), rnd.uniform(0, H)
+            d.line([x + j * 3 * k, y, x + j * 3 * k + rnd.uniform(-3, 3) * k, y - rnd.uniform(6, 12) * k], fill=rgba(P["blade"]), width=round(2 * k))
+    # 진지 (성벽 왼쪽): 다져진 흙, 전장 위아래 높이만큼 왼쪽 끝까지
+    camp_x = field[0] + round(520 * t)
+    cy0, cy1 = field[1], field[3]
+    d.rectangle([0, cy0, camp_x, cy1], fill=rgba(P["camp"]))
+    for _ in range(int(500 * density * (camp_x * (cy1 - cy0)) / (W * H))):
+        x, y = rnd.uniform(0, camp_x), rnd.uniform(cy0, cy1)
         r = rnd.uniform(4, 16) * k
         d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["camp_specks"])))
     if P["graves"]:
         gp = Pen(W, H, lw=2.2 * k)
-        for _ in range(70 * k):
-            x, y = rnd.uniform(camp + 40 * k, W - 20 * k), rnd.uniform(20 * k, H - 20 * k)
-            if band.getpixel((int(x), int(y))) > 40:
+        for _ in range(int(70 * k * density / 2)):
+            x, y = rnd.uniform(camp_x + 40 * k, W - 20 * k), rnd.uniform(20 * k, H - 20 * k)
+            if bp[int(x), int(y)] > 40:
                 continue
-            if rnd.random() < 0.6:   # 둥근 비석
+            if rnd.random() < 0.6:
                 gp.rect(x - 9 * k, y - 22 * k, x + 9 * k, y, rgba("#8E8A86"), radius=8 * k)
                 gp.stick(x - 4 * k, y - 12 * k, x + 4 * k, y - 12 * k, 1.4 * k)
-            else:                    # 나무 십자가
+            else:
                 gp.stick(x, y - 26 * k, x, y, 3 * k, rgba("#6E5A44"))
                 gp.stick(x - 8 * k, y - 18 * k, x + 8 * k, y - 18 * k, 3 * k, rgba("#6E5A44"))
         img.alpha_composite(gp.done(W, H))
-    return img
+    _ground_cache[key] = (img, field)
+    return _ground_cache[key]
+
+
+def ground(P=GROUND_FOREST):
+    """전장 바닥 (피·시체는 게임이 그 위에 굽는다) = 전장+둘레 한 장에서 전장 자리만 잘라 낸 것"""
+    img, field = _ground_whole(P)
+    return img.crop(field)
 
 
 def ground_outer(P=GROUND_FOREST):
-    """전장 바깥 배경 (멀리 볼 때 보이는 둘레): 풀밭·흙길이 이어지고, 덤불·바위가 있고, 끝으로 갈수록 어둡다.
-    크기 = (전장 + 둘레 여백 × 2) × OUTER_TEXEL. 가운데 전장 자리는 Ground.png 가 덮는다"""
-    FW, FH = _table_values("Tuning.csv", ["FieldWidth", "FieldHeight"])
-    MX, MY = _table_values("UILayout.csv", ["ViewMarginX", "ViewMarginY"])
-    s = OUTER_TEXEL
-    W, H = int((FW + MX * 2) * s), int((FH + MY * 2) * s)
+    """전장 바깥 둘레 배경 (멀리 볼 때): 전장+둘레 한 장을 줄이고, 둘레에만 덤불·바위와 어둠.
+    가운데 전장 자리는 Ground.png 가 덮는다 (같은 그림이라 이음매가 없다)"""
+    whole, field = _ground_whole(P)
+    s = OUTER_SCALE
+    W, H = round(whole.width * s), round(whole.height * s)
+    img = whole.resize((W, H), Image.LANCZOS)
+    f = [round(v * s) for v in field]
+    MX, MY = f[0], f[1]
     rnd = random.Random(5)
-    img = Image.new("RGBA", (W, H), rgba(P["grass"]))
-    d = ImageDraw.Draw(img)
-    for _ in range(int(W * H / 900)):
-        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        r = rnd.uniform(10, 40) * s * 1.6
-        d.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=rgba(rnd.choice(P["patches"])))
-    # 흙길: 전장 안 길과 같은 식으로 좌우로 이어진다 (기준 픽셀 ↔ 월드)
-    BW, BH = GROUND_BASE
-    band = Image.new("L", (W, H), 0)
-    bd = ImageDraw.Draw(band)
-    step = 8
-    for px in range(0, W, step):
-        world_x = px / s - MX
-        top, bot = _path_band(world_x * BW / FW, rnd, BH)
-        y0 = (top * FH / BH + MY) * s
-        y1 = (bot * FH / BH + MY) * s
-        bd.rectangle([px, y0, px + step, y1], fill=255)
-    band = band.filter(ImageFilter.GaussianBlur(10))
-    dirt = Image.new("RGBA", (W, H), rgba(P["dirt"]))
-    dd = ImageDraw.Draw(dirt)
-    for _ in range(int(W * H / 500)):
-        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        r = rnd.uniform(3, 12) * s * 1.6
-        dd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["specks"])))
-    img = Image.composite(dirt, img, band)
-    # 둘레 덤불·바위 (전장 밖에만)
     pen = Pen(W, H, lw=2.6)
-    field = (MX * s, MY * s, (MX + FW) * s, (MY + FH) * s)
     for _ in range(OUTER_BUSHES):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        if field[0] - 30 < x < field[2] + 30 and field[1] - 30 < y < field[3] + 30:
+        if f[0] - 30 < x < f[2] + 30 and f[1] - 30 < y < f[3] + 30:
             continue
-        if band.getpixel((int(x), int(y))) > 60:
+        cr, cg, _, _ = img.getpixel((int(min(x, W - 1)), int(min(y, H - 1))))
+        if cr > cg:   # 흙길·진지 흙 위에는 안 둔다
             continue
         r = rnd.uniform(14, 34)
         if rnd.random() < 0.7:
-            dark = rgba(P["blade"])
             for j in range(3):
-                pen.ellipse(x + (j - 1) * r * 0.7, y - (j % 2) * r * 0.4, r * 0.75, r * 0.65, dark if j != 1 else rgba(P["patches"][0]))
+                pen.ellipse(x + (j - 1) * r * 0.7, y - (j % 2) * r * 0.4, r * 0.75, r * 0.65, rgba(P["blade"]) if j != 1 else rgba(P["patches"][0]))
         else:
             pen.ellipse(x, y, r * 0.8, r * 0.55, rgba("#8E8A86"))
     img.alpha_composite(pen.done(W, H))
-    # 끝으로 갈수록 어둡게 (전장으로 눈이 가게)
-    shade = Image.new("L", (W, H), 0)
+    # 전장에서 멀어질수록 어둡게 (작게 계산해 키운다)
+    q = 8
+    shade = Image.new("L", (W // q + 1, H // q + 1), 0)
     sp = shade.load()
-    for y in range(0, H, 4):
-        for x in range(0, W, 4):
-            dx = max(field[0] - x, x - field[2], 0) / max(MX * s, 1)
-            dy = max(field[1] - y, y - field[3], 0) / max(MY * s, 1)
-            v = int(255 * OUTER_VIGNETTE * min(1.0, math.hypot(dx, dy)))
-            for yy in range(y, min(y + 4, H)):
-                for xx in range(x, min(x + 4, W)):
-                    sp[xx, yy] = v
-    shade = shade.filter(ImageFilter.GaussianBlur(20))
-    black = Image.new("RGBA", (W, H), (20, 16, 12, 255))
-    img = Image.composite(black, img, shade)
-    return img
+    for y in range(shade.height):
+        for x in range(shade.width):
+            dx = max(f[0] - x * q, x * q - f[2], 0) / max(MX, 1)
+            dy = max(f[1] - y * q, y * q - f[3], 0) / max(MY, 1)
+            sp[x, y] = int(255 * OUTER_VIGNETTE * min(1.0, math.hypot(dx, dy)))
+    shade = shade.resize((W, H), Image.BILINEAR).filter(ImageFilter.GaussianBlur(12))
+    return Image.composite(Image.new("RGBA", (W, H), (20, 16, 12, 255)), img, shade)
 
 
 WORLD_MAP_SIZE = (1920, 1080)

@@ -229,6 +229,8 @@ private:
 	void DrawDying();
 	void DrawProjectiles();
 	void DrawEffects();
+	/** 움직이는 효과: 첫 칸 + 진행도(0~1)에 맞는 프레임 칸 */
+	int32 FxFrame(float First, float T) const;
 	/** 조준 중인 스킬: 범위 고리 */
 	void DrawSpellAim();
 	// 왕국의 마지막 냄비 (솥 → 국물 면·거품·김 → 뚜껑 → 글자)

@@ -589,6 +589,12 @@ void AYJJWaveHUD::DrawProjectiles()
 	}
 }
 
+int32 AYJJWaveHUD::FxFrame(float First, float T) const
+{
+	const int32 Frames = FMath::Max(FMath::RoundToInt(UI().FxAnimFrames), 1);
+	return FMath::RoundToInt(First) + FMath::Clamp(FMath::FloorToInt(T * Frames), 0, Frames - 1);
+}
+
 void AYJJWaveHUD::DrawEffects()
 {
 	const FYJJBattle* Current = Battle();
@@ -635,7 +641,7 @@ void AYJJWaveHUD::DrawEffects()
 		case EYJJEffectKind::Raise:
 		{
 			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);
-			AddQuad(Batch, Ground - FVector2f(Size * Half, Size * UI().PlotAnchor), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxDust)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::PerkKeystone, 1.f - T), false);
+			AddQuad(Batch, Ground - FVector2f(Size * Half, Size * UI().PlotAnchor), FVector2f(Size), FxAtlas.UV(FxFrame(UI().FxDustFirst, T)), FxAtlas.CellUV, YJJUI::PerkKeystone, false);
 			break;
 		}
 		case EYJJEffectKind::Burn:
@@ -674,13 +680,11 @@ void AYJJWaveHUD::DrawEffects()
 		case EYJJEffectKind::Slash:
 		{
 			// 붓으로 휙 그은 초승달이 휘두른 쪽으로 펼쳐지고, 맞은 자리에 먹 튀김이 터진다
-			const float Open = FMath::Sqrt(T);
-			const float Size = Effect.Radius * UI().SlashScale * Zoom * FMath::Lerp(UI().SlashStartScale, 1.f, Open);
+			const float Size = Effect.Radius * UI().SlashScale * Zoom;
 			const FVector2f Center = Ground - FVector2f(0.f, Effect.Radius * UI().SlashLift * Zoom);
-			const float Angle = Effect.Power < 0.f ? UE_PI : 0.f;
-			AddQuadRotated(Batch, Center, FVector2f(Size), Angle + (Open - Half) * UI().SlashSweep * Effect.Power, FxAtlas.UV(FMath::RoundToInt(UI().FxSlash)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T * T), false);
-			const float Burst = Effect.Radius * UI().ImpactScale * Zoom * FMath::Lerp(UI().SlashStartScale, 1.f, Open);
-			AddQuadRotated(Batch, Center, FVector2f(Burst), T * UI().ImpactSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
+			AddQuadRotated(Batch, Center, FVector2f(Size), 0.f, FxAtlas.UV(FxFrame(UI().FxSlashFirst, T)), FxAtlas.CellUV, FLinearColor::White, Effect.Power < 0.f);
+			const float Burst = Effect.Radius * UI().ImpactScale * Zoom;
+			AddQuadRotated(Batch, Center, FVector2f(Burst), 0.f, FxAtlas.UV(FxFrame(UI().FxImpactFirst, T)), FxAtlas.CellUV, FLinearColor::White, false);
 			break;
 		}
 		case EYJJEffectKind::SkillWarn:
@@ -699,7 +703,7 @@ void AYJJWaveHUD::DrawEffects()
 			const float Open = FMath::Sqrt(T);
 			const float Size = Effect.Radius * 2.f * Zoom * FMath::Lerp(UI().SkillBlastStart, UI().SkillBlastEnd, Open);
 			AddQuad(Batch, Ground - FVector2f(Size * Half), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(Color, 1.f - T), false);
-			AddQuadRotated(Batch, Ground, FVector2f(Size * UI().SkillBlastImpact), T * UI().ImpactSpin, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T), false);
+			AddQuadRotated(Batch, Ground, FVector2f(Size * UI().SkillBlastImpact), 0.f, FxAtlas.UV(FxFrame(UI().FxImpactFirst, T)), FxAtlas.CellUV, FLinearColor::White, false);
 			break;
 		}
 		case EYJJEffectKind::Spark:
@@ -707,13 +711,13 @@ void AYJJWaveHUD::DrawEffects()
 			// 난전 불꽃: 자리마다 다른 각도로 툭 터졌다 사라진다
 			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().SparkStartScale, 1.f, FMath::Sqrt(T));
 			const float Angle = FMath::Frac((Effect.Pos.X + Effect.Pos.Y) * SparkAngleSeed) * FullTurn;
-			AddQuadRotated(Batch, Ground - FVector2f(0.f, Effect.Radius * UI().SparkLift * Zoom), FVector2f(Size), Angle, FxAtlas.UV(FMath::RoundToInt(UI().FxImpact)), FxAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, 1.f - T * T), false);
+			AddQuadRotated(Batch, Ground - FVector2f(0.f, Effect.Radius * UI().SparkLift * Zoom), FVector2f(Size), Angle, FxAtlas.UV(FxFrame(UI().FxImpactFirst, T)), FxAtlas.CellUV, FLinearColor::White, false);
 			break;
 		}
 		case EYJJEffectKind::Build:
 		{
 			const float Size = Effect.Radius * Zoom * FMath::Lerp(UI().DustStartScale, UI().DustEndScale, T);
-			AddQuad(Batch, Ground - FVector2f(Size * Half, Size * UI().PlotAnchor), FVector2f(Size), FxAtlas.UV(FMath::RoundToInt(UI().FxDust)), FxAtlas.CellUV, FLinearColor(1.f, 1.f, 1.f, 1.f - T), false);
+			AddQuad(Batch, Ground - FVector2f(Size * Half, Size * UI().PlotAnchor), FVector2f(Size), FxAtlas.UV(FxFrame(UI().FxDustFirst, T)), FxAtlas.CellUV, FLinearColor::White, false);
 			break;
 		}
 		}
