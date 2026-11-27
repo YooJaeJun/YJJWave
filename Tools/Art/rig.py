@@ -66,6 +66,31 @@ RIGS = {
         windup=-200, strike=-40,
     ),
 }
+# 졸병 변형 (grunt_variants.py: 졸병 원화에 장비만 바꿔 그림): 졸병 리그를 옮겨 쓴다
+GRUNT_VARIANT_PAD = 140   # grunt_variants.PAD
+GRUNT_VARIANTS = {        # 이름: (잘린 위치 x, y, 가로 배율)  ← grunt_variants.py 실행 때 찍히는 값
+    "Archer": (145, 25, 1.0),
+    "Shield": (140, 140, 1.0),
+    "Brute": (58, 74, 1.14),
+}
+# 위로 솟은 깃털·뿔과 커진 망치 머리까지 덮게 넓힌 투구·무기 다각형 (졸병 원화 좌표)
+GRUNT_VARIANT_CROWN = [(140, 60), (180, -140), (520, -140), (505, 95), (500, 145), (400, 160), (300, 200), (215, 262), (165, 268), (140, 200)]
+GRUNT_VARIANT_SWORD = [(-80, -80), (140, -80), (150, 120), (170, 245), (205, 275), (238, 345), (212, 365), (150, 345), (118, 300), (95, 250), (-80, 130)]
+
+
+def _grunt_variant(bx, by, sx):
+    base = RIGS["Grunt"]
+    move = lambda p: ((p[0] + GRUNT_VARIANT_PAD) * sx - bx, p[1] + GRUNT_VARIANT_PAD - by)
+    parts = {}
+    for part, spec in base["parts"].items():
+        poly = {"crown": GRUNT_VARIANT_CROWN, "sword": GRUNT_VARIANT_SWORD}.get(part, spec["poly"])
+        parts[part] = dict(spec, poly=[move(p) for p in poly], pivot=move(spec["pivot"]))
+    return dict(base, feet=move(base["feet"]), parts=parts)
+
+
+for _name, (_bx, _by, _sx) in GRUNT_VARIANTS.items():
+    RIGS[_name] = _grunt_variant(_bx, _by, _sx)
+
 FILL = 0.84        # 칸 높이 중 그림 비율 (generate_art.ART_FILL과 같게)
 FOOT = 0.92        # 칸에서 발 높이 (generate_art.FOOT)
 PAD = 160          # 휘어 나간 칼·망토가 잘리지 않게 둘레에 두는 여백 (원화 픽셀)

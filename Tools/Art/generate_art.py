@@ -608,6 +608,10 @@ ART_UNITS = {
     "Veteran": dict(file="Veteran1.png", flip=False),
     "Grunt": dict(file="Grunt.png", flip=False, shadow=True),
     "Skeleton": dict(file="Skeleton.png", flip=True, shadow=True, holes=0.55),
+    # 졸병 변형 (grunt_variants.py 로 만든 원화)
+    "Archer": dict(file="Archer.png", flip=False, shadow=True),
+    "Shield": dict(file="Shield.png", flip=False, shadow=True),
+    "Brute": dict(file="Brute.png", flip=False, shadow=True),
     "BoneTent": dict(file="CampTent.png", flip=False, building=True),
     "BoneTower": dict(file="CampTower.png", flip=False, building=True),
 }
@@ -1516,7 +1520,8 @@ UI_KIT_FRAME = dict(tl=(0, 48), tr=(855, 48), bl=(0, 675), br=(855, 675), top=(1
 UI_KIT_ICON_TOP = 795      # 아이콘 줄이 시작하는 높이
 UI_KIT_ICONS = {2: 0, 3: 1, 4: 2, 5: 3, 6: 34}   # 시안 아이콘 순서 (0·1 나무 단추) → UI.png 칸 (금화·영혼·칼·해골·냄비)
 UI_PANEL_FILL = {13: "#4A3424", 14: "#2E211A", 15: "#5A3A26"}   # 패널·어두운 패널·카드: 양피지 대신 나무판 (밝은 글자가 읽히게)
-UI_GRUNT_ICON = 9          # 졸병 막사 아이콘: 졸병 원화 윗몸
+UI_BARRACKS_ICONS = {9: "Grunt", 10: "Archer", 11: "Shield", 12: "Brute"}   # 병영 아이콘 칸: 그 병사 원화 윗몸
+UI_BARRACKS_ICON_TOP = 0.72   # 원화 위에서 이만큼만 (윗몸)
 UI_ICON_FILL = 0.88        # 아이콘이 칸에서 차지하는 비율
 
 
@@ -1612,8 +1617,9 @@ def ui_atlas():
     icons = ui_kit_icons()
     for index, cell in UI_KIT_ICONS.items():
         put(cell, _fit_icon(icons[index], C))
-    grunt = art_source("Grunt")
-    put(UI_GRUNT_ICON, _fit_icon(grunt.crop((0, 0, grunt.size[0], int(grunt.size[1] * 0.72))), C))
+    for cell, name in UI_BARRACKS_ICONS.items():
+        art = art_source(name)
+        put(cell, _fit_icon(art.crop((0, 0, art.size[0], int(art.size[1] * UI_BARRACKS_ICON_TOP))), C))
     return atlas
 
 
