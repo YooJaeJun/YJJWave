@@ -295,6 +295,8 @@ private:
 	void DrawHeroSelect();
 	/** 싹쓸이 글자 (스킬 한 번에 많이 쓰러뜨렸을 때) */
 	void DrawSkillTexts();
+	/** 맞는 순간 찌그러짐·날아갈 때 떠오름을 넣은 유닛 사각형 (가운데, 반너비, 반높이) */
+	FVector4f UnitRect(const FYJJHordeView& Horde, int32 Slot, float Size, const FVector2f& Feet) const;
 	/** 처치한 적 자리에서 금화가 튀어 오른다 */
 	void DrawCoinPops();
 	void UpdateCoinPops(float Dt);

@@ -664,6 +664,11 @@ void FYJJHorde::Hit(int32 Victim, float Amount, const FVector2f& From, int32 Att
 	{
 		return;
 	}
+	// 영웅·보스의 큰 타격은 피해 숫자로 (수만 마리 난전 타격은 안 띄운다)
+	if (BigHits.Num() < MaxBigHits && (Attacker == HeroSlot || YJJData::Unit(Type[Attacker]).bBoss))
+	{
+		BigHits.Add(FVector4f(Pos[Victim].X, Pos[Victim].Y, Amount, static_cast<float>(Team[Attacker])));
+	}
 	// 마지막 한 방이면 처치 수 (진급)
 	if (bWasStanding && HP[Victim] <= 0.f && Team[Attacker] != Team[Victim])
 	{

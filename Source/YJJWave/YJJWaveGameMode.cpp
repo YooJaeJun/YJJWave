@@ -314,6 +314,7 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 	{
 		const FYJJTuning& T = YJJData::Tune();
 		Accumulator += DeltaSeconds * GetSpeed() * Battle.TimeScale();
+		Battle.TickRealTime(DeltaSeconds);
 		int32 Steps = 0;
 		while (Accumulator >= T.SimStep && Steps < T.MaxStepsPerFrame)
 		{

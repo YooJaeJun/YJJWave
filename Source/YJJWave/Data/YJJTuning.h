@@ -123,6 +123,11 @@ struct FYJJTuning
 	UPROPERTY() float SparkTime = 0.f;   // 근접 타격 불꽃 시간
 	UPROPERTY() float SparkSize = 0.f;   // 근접 타격 불꽃 크기 (월드)
 	UPROPERTY() int32 MaxSparksPerStep = 0;   // 한 걸음에 불꽃 이만큼까지
+	// ---- 타격감 (게임 주스): 흔들림·반짝임은 큰 스킬·보스에만, 나머지는 몸으로 보여 준다 ----
+	UPROPERTY() float HitStopTime = 0.f;   // 큰 스킬이 맞는 순간 멈칫 (실제 초)
+	UPROPERTY() float HitStopScale = 0.f;   // 멈칫하는 동안 게임 시간 배율
+	UPROPERTY() int32 MaxDamageNumbersPerStep = 0;   // 한 걸음에 띄우는 피해 숫자 수 (영웅·보스 타격만)
+	UPROPERTY() float DamageNumberTime = 0.f;   // 피해 숫자가 떠 있는 시간
 	UPROPERTY() float ClashGap = 0.f;   // 두 전선이 이 거리 안이면 맞붙었다 (먼지)
 	UPROPERTY() float ClashPuffInterval = 0.f;   // 맞붙은 전선 먼지 간격
 	UPROPERTY() float ClashPuffSize = 0.f;   // 맞붙은 전선 먼지 크기
@@ -241,6 +246,13 @@ struct FYJJUILayout
 	UPROPERTY() float SkillTextRise = 0.f;   // 싹쓸이 글자가 떠오르는 높이 (화면)
 	UPROPERTY() float SkillTextPop = 0.f;   // 싹쓸이 글자 처음 커지는 정도
 	UPROPERTY() float SkillTextLift = 0.f;   // 싹쓸이 글자 시작 높이 (스킬 반경 배율)
+	UPROPERTY() float HitSquash = 0.f;   // 맞는 순간 몸이 납작해지는 정도 (가로로 퍼지고 세로로 눌림)
+	UPROPERTY() float KnockLiftScale = 0.f;   // 밀려 날아갈 때 떠오르는 높이 = 밀린 속력 × 이 값 (월드)
+	UPROPERTY() float KnockLiftMax = 0.f;   // 날아갈 때 최대 높이 (월드)
+	UPROPERTY() float DamageNumberSize = 0.f;   // 피해 숫자 크기
+	UPROPERTY() float DamageNumberRise = 0.f;   // 피해 숫자가 떠오르는 높이 (화면)
+	UPROPERTY() float DamageNumberPop = 0.f;   // 피해 숫자가 처음 커지는 정도
+	UPROPERTY() float DamageNumberLift = 0.f;   // 피해 숫자 시작 높이 (맞은 유닛 그림 크기 배율)
 	UPROPERTY() float RockAspect = 0.f;   // Props.png 바위 무더기 칸 가로/세로
 	UPROPERTY() float RockRowOverlap = 0.f;   // 바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)
 	UPROPERTY() float RockWidthPad = 0.f;   // 바위 그림을 타원 너비보다 이만큼 넓게

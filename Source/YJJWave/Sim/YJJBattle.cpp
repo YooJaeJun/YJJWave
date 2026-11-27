@@ -406,6 +406,14 @@ void FYJJBattle::PostStep(float Dt)
 	}
 	Horde.HitSparks.Reset();
 	Horde.MaxSparks = T.MaxSparksPerStep;
+	// 영웅·보스 타격 피해 숫자
+	for (const FVector4f& BigHit : Horde.BigHits)
+	{
+		FYJJEffect& Number = AddEffect(EYJJEffectKind::DamageNumber, FVector2f(BigHit.X, BigHit.Y), T.DamageNumberTime, 0.f, BigHit.Z);
+		Number.Side = BigHit.W == static_cast<float>(EYJJTeam::Player) ? 1.f : -1.f;
+	}
+	Horde.BigHits.Reset();
+	Horde.MaxBigHits = T.MaxDamageNumbersPerStep;
 	// 두 전선이 맞붙은 자리에 먼지가 피어오른다 (전투 중 느낌)
 	ClashTimer -= Dt;
 	const float ClashPlayer = Horde.FrontX(EYJJTeam::Player);
@@ -484,6 +492,8 @@ void FYJJBattle::HandleSkillEvents()
 		}
 		AddEffect(EYJJEffectKind::SkillBlast, Event.Pos, T.SkillBlastTime, Skill.Radius).Side = Side;
 		Sounds.Add(SoundSmack);
+		// 큰 스킬이 맞는 순간 아주 잠깐 멈칫
+		HitStopLeft = T.HitStopTime;
 		if (Skill.SummonUnit != INDEX_NONE && Event.Team == EYJJTeam::Player)
 		{
 			SummonAround(Skill, Event.Pos);
@@ -583,7 +593,8 @@ float FYJJBattle::ChargeReady() const
 
 float FYJJBattle::TimeScale() const
 {
-	return SlowMoLeft > 0.f ? YJJData::Tune().BossSlowMo : 1.f;
+	const FYJJTuning& T = YJJData::Tune();
+	return HitStopLeft > 0.f ? T.HitStopScale : (SlowMoLeft > 0.f ? T.BossSlowMo : 1.f);
 }
 
 void FYJJBattle::Finish(bool bWon)

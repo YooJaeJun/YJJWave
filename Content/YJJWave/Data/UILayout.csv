@@ -52,6 +52,13 @@ SkillTextSize,34,싹쓸이 글자 크기
 SkillTextRise,70,싹쓸이 글자가 떠오르는 높이 (화면)
 SkillTextPop,0.6,싹쓸이 글자 처음 커지는 정도
 SkillTextLift,0.6,싹쓸이 글자 시작 높이 (스킬 반경 배율)
+HitSquash,0.22,맞는 순간 몸이 납작해지는 정도 (가로로 퍼지고 세로로 눌림)
+KnockLiftScale,0.06,밀려 날아갈 때 떠오르는 높이 = 밀린 속력 × 이 값 (월드)
+KnockLiftMax,46,날아갈 때 최대 높이 (월드)
+DamageNumberSize,24,피해 숫자 크기
+DamageNumberRise,56,피해 숫자가 떠오르는 높이 (화면)
+DamageNumberPop,0.8,피해 숫자가 처음 커지는 정도
+DamageNumberLift,0.7,피해 숫자 시작 높이 (맞은 유닛 그림 크기 배율)
 RockAspect,4,Props.png 바위 무더기 칸 가로/세로
 RockRowOverlap,0.5,"바위 줄 사이 (그림 높이 비율, 작을수록 촘촘)"
 RockWidthPad,1.2,바위 그림을 타원 너비보다 이만큼 넓게

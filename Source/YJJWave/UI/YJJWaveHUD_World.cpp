@@ -225,6 +225,22 @@ void AYJJWaveHUD::DrawCombo()
 
 void AYJJWaveHUD::DrawSkillTexts()
 {
+	// 영웅·보스 타격 피해 숫자: 툭 커졌다가 떠오르며 사라진다 (아군 타격 금색, 적 타격 빨강)
+	{
+		const FYJJUILayout& L = UI();
+		for (const FYJJEffect& Effect : Battle()->Effects)
+		{
+			if (Effect.Kind != EYJJEffectKind::DamageNumber)
+			{
+				continue;
+			}
+			const float T = FMath::Clamp(Effect.Age / FMath::Max(Effect.Life, KINDA_SMALL_NUMBER), 0.f, 1.f);
+			const FVector2f At = WorldToVirtual(Effect.Pos - FVector2f(0.f, YJJData::Tune().SparkSize * L.DamageNumberLift)) - FVector2f(0.f, L.DamageNumberRise * FMath::Sqrt(T));
+			const float Pop = FMath::Square(1.f - FMath::Min(T * 3.f, 1.f));
+			const FLinearColor Color = Effect.Side < 0.f ? YJJUI::Bad : YJJUI::Highlight;
+			DrawLabel(FString::FromInt(FMath::RoundToInt(Effect.Power)), At.X, At.Y, L.DamageNumberSize * (1.f + Pop * L.DamageNumberPop), YJJUI::WithAlpha(Color, 1.f - T * T), Half);
+		}
+	}
 	// 스킬 한 번에 많이 쓰러뜨리면 그 자리에서 글자가 툭 커졌다가 떠오르며 사라진다
 	const FYJJUILayout& L = UI();
 	for (const FYJJEffect& Effect : Battle()->Effects)
@@ -464,7 +480,7 @@ void AYJJWaveHUD::DrawSmallUnits(int32 Begin, int32 End)
 			const FVector2f UV0 = UnitAtlas.UV(Frame, Def.AtlasRow);
 			const bool bFlip = Horde.FaceLeft[Slot] != 0;
 			FYJJSpriteInstance& Sprite = Sprites[Index - Begin];
-			Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half, Size * Half, Size * Half);
+			Sprite.Rect = UnitRect(Horde, Slot, Size, Feet);
 			Sprite.UV = bFlip
 				? FVector4f(UV0.X + UnitAtlas.CellUV.X, UV0.Y, -UnitAtlas.CellUV.X, UnitAtlas.CellUV.Y)
 				: FVector4f(UV0.X, UV0.Y, UnitAtlas.CellUV.X, UnitAtlas.CellUV.Y);
@@ -486,12 +502,25 @@ void AYJJWaveHUD::DrawBigUnit(int32 Slot)
 	const FVector2f UV0 = BigAtlas.UV(Frame, 0, FMath::Min(FMath::FloorToInt(Sub * BigAtlas.FrameMul), BigAtlas.FrameMul - 1));
 	const bool bFlip = Horde.FaceLeft[Slot] != 0;
 	FYJJSpriteInstance& Sprite = FYJJSpriteRenderItem::Add(Canvas->Canvas, BigAtlas.Texture->GetResource(), 1)[0];
-	Sprite.Rect = FVector4f(Feet.X, Feet.Y - Size * L.FootAnchor + Size * Half, Size * Half, Size * Half);
+	Sprite.Rect = UnitRect(Horde, Slot, Size, Feet);
 	Sprite.UV = bFlip
 		? FVector4f(UV0.X + BigAtlas.CellUV.X, UV0.Y, -BigAtlas.CellUV.X, BigAtlas.CellUV.Y)
 		: FVector4f(UV0.X, UV0.Y, BigAtlas.CellUV.X, BigAtlas.CellUV.Y);
 	// AI 원화는 쨍해서 땅 위에 붙여 놓은 듯 뜬다 → 땅 빛(조금 어둡고 따뜻하게)을 곱한다
 	Sprite.Color = Horde.Flash[Slot] > 0.f ? YJJUI::HitTint : FLinearColor(L.ArtTintR, L.ArtTintG, L.ArtTintB, 1.f);
+}
+
+FVector4f AYJJWaveHUD::UnitRect(const FYJJHordeView& Horde, int32 Slot, float Size, const FVector2f& Feet) const
+{
+	// 맞는 순간: 가로로 퍼지고 세로로 눌렸다가 돌아온다 (발은 땅에 붙인 채)
+	const FYJJUILayout& L = UI();
+	const float Hit = Horde.Flash[Slot] > 0.f ? Horde.Flash[Slot] / FMath::Max(YJJData::Tune().HitFlashTime, KINDA_SMALL_NUMBER) : 0.f;
+	const float SquashX = 1.f + L.HitSquash * Hit;
+	const float SquashY = 1.f - L.HitSquash * Hit;
+	// 세게 밀려 날아가면 땅에서 떠오른다 (그림자는 땅에 남는다)
+	const float Lift = FMath::Min(Horde.Knock[Slot] * L.KnockLiftScale, L.KnockLiftMax) * Zoom;
+	const float Height = Size * SquashY;
+	return FVector4f(Feet.X, Feet.Y - Height * L.FootAnchor + Height * Half - Lift, Size * Half * SquashX, Height * Half);
 }
 
 int32 AYJJWaveHUD::PickFrame(const FYJJHordeView& Horde, int32 Slot, float* OutSub) const

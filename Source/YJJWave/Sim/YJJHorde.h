@@ -303,6 +303,9 @@ public:
 	/** 이번 걸음의 근접 타격 자리 (난전 불꽃, MaxSparks까지. 전투가 가져가고 비운다) */
 	TArray<FVector2f> HitSparks;
 	int32 MaxSparks = 0;
+	/** 이번 걸음의 영웅·보스 타격 (x, y, 피해, 때린 편: 0 아군 1 적). MaxBigHits 까지. 전투가 가져가고 비운다 */
+	TArray<FVector4f> BigHits;
+	int32 MaxBigHits = 0;
 	/** 이번 걸음의 영웅·보스 휘두르기 (전투가 가져가고 비운다) */
 	TArray<FYJJSlash> Slashes;
 	/** 이번 틱 최후의 저항·부활이 일어난 자리 (FYJJBattle이 연출로 바꾸고 비운다) */

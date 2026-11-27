@@ -33,6 +33,7 @@ enum class EYJJEffectKind : uint8
 	SkillWarn,    // 큰 스킬 예고: 쓸어 버릴 원 (Life = 기 모으는 시간)
 	SkillBlast,   // 큰 스킬 쾅 고리
 	SkillText,    // 싹쓸이 글자 (Power = 쓰러뜨린 수)
+	DamageNumber, // 영웅·보스 타격 피해 숫자 (Power = 피해, Side 1 아군이 때림 -1 적이 때림)
 };
 
 /** 화면 연출 + 늦게 터지는 스킬 (MeteorFall·SmackFall 끝, Burn 동안의 피해) */
@@ -221,6 +222,8 @@ public:
 	float HeroRespawnLeft = 0.f;
 	/** 보스가 쓰러질 때 잠깐 느리게 (게임 모드가 배속에 곱한다) */
 	float TimeScale() const;
+	/** 실제 시간으로 흐르는 연출 (멈칫). 게임 모드가 프레임마다 */
+	void TickRealTime(float RealDeltaSeconds) { HitStopLeft = FMath::Max(HitStopLeft - RealDeltaSeconds, 0.f); }
 	float FieldWidth = 0.f;
 	float FieldHeight = 0.f;
 	float CampEdgeX = 0.f;
@@ -312,6 +315,8 @@ private:
 	int32 LastPotStage = INDEX_NONE;
 	float EndTimer = 0.f;
 	float SlowMoLeft = 0.f;
+	/** 큰 스킬이 맞은 순간 멈칫 (실제 시간으로 줄어든다) */
+	float HitStopLeft = 0.f;
 
 	// 강령술: 쓰러진 자리 (오래된 것부터 덮어쓴다)
 	TArray<FVector2f> Corpses;

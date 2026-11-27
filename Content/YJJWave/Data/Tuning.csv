@@ -98,6 +98,10 @@ SkillSummonPuff,70,소환 스킬: 튀어나오는 자리 먼지 크기
 SparkTime,0.22,근접 타격 불꽃 시간
 SparkSize,34,근접 타격 불꽃 크기 (월드)
 MaxSparksPerStep,24,한 걸음에 불꽃 이만큼까지
+HitStopTime,0.06,큰 스킬이 맞는 순간 멈칫 (실제 초)
+HitStopScale,0.05,멈칫하는 동안 게임 시간 배율
+MaxDamageNumbersPerStep,4,한 걸음에 띄우는 피해 숫자 수 (영웅·보스 타격만)
+DamageNumberTime,0.75,피해 숫자가 떠 있는 시간
 ClashGap,180,두 전선이 이 거리 안이면 맞붙었다 (먼지)
 ClashPuffInterval,0.18,맞붙은 전선 먼지 간격
 ClashPuffSize,110,맞붙은 전선 먼지 크기

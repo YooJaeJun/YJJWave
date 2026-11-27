@@ -1872,7 +1872,7 @@ GEMINI_ICON_SHEETS = {
 GEMINI_UI_CELLS = {("UIIconsA", 0): 35, ("UIIconsA", 3): 4, ("UIIconsA", 4): 5, ("UIIconsA", 5): 33}
 GEMINI_UI_CELLS.update({("UIIconsB", k): 36 + k for k in range(10)})
 GEMINI_UI_CELLS.update({("PerkIcons", k): (16 if k == 0 else 17 + k) for k in range(16)})
-GEMINI_FX_CELLS = {0: 11, 1: 8, 2: 9, 3: 14, 4: 15, 5: 5}   # FxIcons 순서 → Fx.png 칸 (UILayout FxFlame·FxMeteor·FxBlast·FxSteam·FxPromote·FxScorch)
+GEMINI_FX_CELLS = {0: 11, 1: 8, 2: 9, 3: 14, 4: 15}   # FxIcons 순서 → Fx.png 칸 (UILayout FxFlame·FxMeteor·FxBlast·FxSteam·FxPromote). 5 그을음은 바닥에 구워져 너무 진해서 예전 옅은 그림을 쓴다
 GEMINI_FX_FIT = 0.9
 GEMINI_STAR_CELLS = {("UIIconsA", 6): 6, ("UIIconsA", 7): 7}   # 별: 게임이 색을 곱하므로 흰 별로 바꾼다
 GEMINI_POT = ("UIIconsA", 1)       # Buildings.png 6 = 솥과 장작불
