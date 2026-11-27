@@ -935,6 +935,7 @@ void FYJJHorde::UpdateProjectiles(float Dt)
 void FYJJHorde::CollectDead()
 {
 	Front[0] = Front[1] = -1.f;
+	TroopFront = -1.f;
 	for (int32 Slot = 0; Slot < HighWaterMark; ++Slot)
 	{
 		if (!Alive[Slot])
@@ -946,6 +947,10 @@ void FYJJHorde::CollectDead()
 		{
 			float& F = Front[TeamIndex(MyTeam)];
 			F = F < 0.f ? Pos[Slot].X : (MyTeam == EYJJTeam::Player ? FMath::Max(F, Pos[Slot].X) : FMath::Min(F, Pos[Slot].X));
+			if (MyTeam == EYJJTeam::Player && Slot != HeroSlot && Pos[Slot].X > Config.WallX)
+			{
+				TroopFront = FMath::Max(TroopFront, Pos[Slot].X);
+			}
 			continue;
 		}
 		// 부활: 처음 쓰러질 때 한 번 다시 일어난다

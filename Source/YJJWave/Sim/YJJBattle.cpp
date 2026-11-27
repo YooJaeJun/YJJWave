@@ -176,6 +176,10 @@ void FYJJBattle::PreStep(float Dt)
 	if (Horde.Hero() != INDEX_NONE)
 	{
 		Horde.Heal(Horde.Hero(), (T.HeroRegen + HeroRegenBonus) * Dt);
+		// 영웅 자리: 졸병 앞줄보다 조금 앞 (성벽 앞 자리 ~ 반대편 끝 사이)
+		const float Troops = Horde.TroopFrontX();
+		const float HomeX = FMath::Clamp(Troops < 0.f ? T.HeroHomeX : Troops + T.HeroLeadAhead, T.HeroHomeX, FieldWidth - T.HeroHomeX);
+		Horde.SetHeroHome(FVector2f(HomeX, FieldHeight * Half));
 	}
 	TickPlots(Dt);
 	TickEnemies(Dt);

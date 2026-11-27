@@ -189,6 +189,8 @@ public:
 	/** 영웅(중심): 자리 Home 에서 Leash 안의 적만 쫓고, 적은 상대가 없으면 영웅을 향해 온다 */
 	void SetHero(int32 Slot, const FVector2f& Home, float Leash, float Arrive);
 	int32 Hero() const { return HeroSlot; }
+	/** 영웅 자리를 옮긴다 (졸병 앞줄을 따라 라인을 이끈다) */
+	void SetHeroHome(const FVector2f& Home) { HeroHome = Home; }
 	void Heal(int32 Slot, float Amount);
 	void SetMaxHP(int32 Slot, float NewMax);
 
@@ -222,6 +224,8 @@ public:
 	FVector2f FieldSize() const { return Field; }
 	/** 아군 가장 앞(오른쪽) x, 적 가장 앞(왼쪽) x. 그 편이 없으면 -1 */
 	float FrontX(EYJJTeam InTeam) const { return Front[static_cast<int32>(InTeam)]; }
+	/** 영웅을 뺀 아군 가장 앞 x. 없으면 -1 */
+	float TroopFrontX() const { return TroopFront; }
 	float LastStepMs() const { return StepMs; }
 	float LastReorderMs() const { return ReorderMs; }
 	float LastPhaseMs(EYJJHordePhase Phase) const { return PhaseMs[static_cast<int32>(Phase)]; }
@@ -323,6 +327,7 @@ private:
 	int32 HeroSlot = INDEX_NONE;
 	int32 TeamCount[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	float Front[static_cast<int32>(EYJJTeam::Count)] = { -1.f, -1.f };
+	float TroopFront = -1.f;
 	FVector2f Field = FVector2f::ZeroVector;
 	FVector2f HeroHome = FVector2f::ZeroVector;
 	float HeroLeash = 0.f;

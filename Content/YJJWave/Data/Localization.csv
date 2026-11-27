@@ -121,7 +121,7 @@ Special.RallyHeal,돌격 함성 때 아군 전체 최대 체력의 {1}% 회복,W
 Special.Thorns,{0}(이)가 근접으로 맞은 피해의 {1}%를 되돌려줌,{0} reflect {1}% melee damage,
 Special.Lifesteal,{0}(이)가 준 피해의 {1}%만큼 회복,{0} heal {1}% of damage dealt,
 Unit.Necro,강령술사,Necromancer,시체를 해골로 일으킨다
-UI.FrontBonus,전선 보너스 x{0},Front bonus x{0},금화·영혼 배율
+UI.FrontBonus,전선 +{0}%,Front +{0}%,아군 전선 띠 위 (금화·영혼 보너스)
 UI.CardTitle,양념 고르기 (1 · 2 · 3),Pick a seasoning (1 · 2 · 3),웨이브가 바뀔 때
 UI.Milestone,아군 {0} 돌파!,{0} troops!,물량 배너
 UI.Massacre,학살! {0}마리,Massacre! {0},1초에 많이 잡으면

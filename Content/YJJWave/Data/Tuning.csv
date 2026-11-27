@@ -12,6 +12,7 @@ CampEdgeX,520,진지 오른쪽 끝 x (유성은 이보다 오른쪽에만)
 HeroHomeX,640,영웅이 지키는 자리 x (세로는 가운데)
 HeroLeash,380,영웅이 자리에서 이만큼까지만 쫓아간다
 HeroArrive,16,영웅이 자리로 돌아왔다고 보는 거리
+HeroLeadAhead,140,영웅 자리 = 졸병 앞줄에서 이만큼 앞 (라인을 이끈다)
 HeroRegen,12,영웅 초당 체력 회복
 StartGold,200,시작 금화
 PassiveGold,4,초당 기본 금화

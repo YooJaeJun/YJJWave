@@ -221,7 +221,7 @@ void AYJJWaveHUD::TryHeroCharge()
 void AYJJWaveHUD::DrawChargeButton()
 {
 	const FYJJBattle* Current = Battle();
-	if (Current->bGameOver || bTreeOpen)
+	if (Current->bGameOver || bTreeOpen || !Current->HasHero())
 	{
 		return;
 	}

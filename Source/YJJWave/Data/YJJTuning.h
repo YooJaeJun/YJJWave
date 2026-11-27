@@ -28,6 +28,7 @@ struct FYJJTuning
 	UPROPERTY() float HeroHomeX = 0.f;   // 영웅이 지키는 자리 x (세로는 가운데)
 	UPROPERTY() float HeroLeash = 0.f;   // 영웅이 자리에서 이만큼까지만 쫓아간다
 	UPROPERTY() float HeroArrive = 0.f;   // 영웅이 자리로 돌아왔다고 보는 거리
+	UPROPERTY() float HeroLeadAhead = 0.f;   // 영웅 자리 = 졸병 앞줄에서 이만큼 앞 (라인을 이끈다)
 	UPROPERTY() float HeroRegen = 0.f;   // 영웅 초당 체력 회복
 	UPROPERTY() int32 StartGold = 0;   // 시작 금화
 	UPROPERTY() float PassiveGold = 0.f;   // 초당 기본 금화

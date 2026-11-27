@@ -32,7 +32,7 @@ ChargeButtonW,240,영웅 돌격 버튼 너비 (전장 아래 가운데)
 FrontStripW,22,땅 위 전선 띠 너비
 FrontStripAlpha,0.2,전선 띠 진하기
 FrontStripPulse,0.35,전선 띠 깜빡임 세기
-FrontLabelY,12,전선 띠 위 보너스 글자 높이 (전장 위끝에서)
+FrontLabelY,140,전선 띠 위 보너스 글자 높이 (전장 위끝에서)
 ChargeButtonH,64,영웅 돌격 버튼 높이
 ChargeButtonMargin,24,화면 아래와 돌격 버튼 사이
 ChargeDefaultReach,500,마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
@@ -318,7 +318,7 @@ UnitBarLift,0.95,머리 위 체력 게이지: 발에서 그림 크기의 이 비
 UnitBarWidth,0.55,머리 위 체력 게이지 너비 (그림 크기 비율)
 UnitBarMinW,70,머리 위 체력 게이지 최소 너비 (화면)
 UnitBarH,9,머리 위 체력 게이지 두께
-UnitBarNameGap,2,보스 이름과 게이지 사이
+UnitBarNameGap,12,보스 이름과 게이지 사이
 CardH,136,카드 높이
 CardGap,10,카드 간격
 CardIcon,72,카드 아이콘 크기
