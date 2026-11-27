@@ -1957,6 +1957,13 @@ GROUND_BASE = (2048, 740)    # 바닥 무늬를 짠 기준 크기 (전장 하나
 GROUND_FIELD_PX = 4096       # Ground.png 너비 (= 렌더 타깃 GroundTargetWidth, 최대 확대에서도 또렷하게)
 OUTER_SCALE = 0.5            # Ground_Outer.png = 전장+둘레 한 장을 이 배율로 줄인 것
 OUTER_BUSHES = 260           # 둘레 덤불·바위 수
+GROUND_SOFT = 6              # 풀 무늬를 번지게 하는 폭 (기준 픽셀)
+GROUND_RIM = 6               # 흙길 가장자리 어두운 띠 폭 (기준 픽셀)
+GROUND_RIM_COLOR = (62, 48, 30, 255)
+GROUND_RIM_ALPHA = 0.55
+GROUND_INK = (40, 32, 26, 255)   # 먹선 색
+GROUND_INKED_TUFTS = 0.12   # 먹선 두른 풀 포기 비율
+GROUND_PEBBLES = 140         # 흙길 조약돌 수 (기준 넓이당)
 OUTER_VIGNETTE = 0.45        # 둘레 바깥 끝으로 갈수록 어두워지는 정도
 _ground_cache = {}
 
@@ -1990,6 +1997,9 @@ def _ground_whole(P):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
         r = rnd.uniform(10, 46) * k
         d.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=rgba(rnd.choice(P["patches"])))
+    # 동그라미 무늬를 붓 칠처럼 번지게 (AI 원화 결의 부드러운 바탕)
+    img = img.filter(ImageFilter.GaussianBlur(GROUND_SOFT * k))
+    d = ImageDraw.Draw(img)
     # 가운데 흙길: 전장 기준 식 그대로 좌우 둘레까지 잇는다
     band = Image.new("L", (W, H), 0)
     bd = ImageDraw.Draw(band)
@@ -2009,15 +2019,33 @@ def _ground_whole(P):
         x, y = rnd.uniform(0, W), rnd.uniform(0, H)
         r = rnd.uniform(3, 14) * k
         dd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba(rnd.choice(P["specks"])))
+    dirt = dirt.filter(ImageFilter.GaussianBlur(GROUND_SOFT * k * 0.5))
     img = Image.composite(dirt, img, band)
+    # 흙길 가장자리: 풀이 흙에 닿는 곳을 조금 어둡게 (먹선 결)
+    rim = ImageChops.subtract(band.filter(ImageFilter.MaxFilter(2 * round(GROUND_RIM * k) + 1)), band).filter(ImageFilter.GaussianBlur(GROUND_RIM * k * 0.5))
+    img = Image.composite(Image.new("RGBA", (W, H), GROUND_RIM_COLOR), img, rim.point(lambda v: int(v * GROUND_RIM_ALPHA)))
     d = ImageDraw.Draw(img)
     bp = band.load()
+    # 풀 포기: 먹선 두른 작은 풀 (몇 개만, 나머지는 옅은 선)
     for _ in range(int(1600 * density)):
         x, y = rnd.uniform(0, W - 1), rnd.uniform(0, H - 1)
         if bp[int(x), int(y)] > 80:
             continue
+        inked = rnd.random() < GROUND_INKED_TUFTS
         for j in range(3):
-            d.line([x + j * 3 * k, y, x + j * 3 * k + rnd.uniform(-3, 3) * k, y - rnd.uniform(6, 12) * k], fill=rgba(P["blade"]), width=round(2 * k))
+            tip = (x + j * 3 * k + rnd.uniform(-3, 3) * k, y - rnd.uniform(6, 12) * k * (1.6 if inked else 1.0))
+            if inked:
+                d.line([x + j * 3 * k, y, tip[0], tip[1]], fill=GROUND_INK, width=round(4 * k))
+            d.line([x + j * 3 * k, y, tip[0], tip[1]], fill=rgba(P["blade"]) if not inked else rgba(P["patches"][-1]), width=round(2 * k))
+    # 흙길 위 돌멩이: 먹선 두른 회색 조약돌
+    for _ in range(int(GROUND_PEBBLES * density)):
+        x, y = rnd.uniform(0, W - 1), rnd.uniform(0, H - 1)
+        if bp[int(x), int(y)] < 200:
+            continue
+        r = rnd.uniform(3, 7) * k
+        d.ellipse([x - r - k, y - r * 0.7 - k, x + r + k, y + r * 0.7 + k], fill=GROUND_INK)
+        d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba("#A79C8E"))
+        d.ellipse([x - r * 0.5, y - r * 0.6, x + r * 0.1, y - r * 0.1], fill=rgba("#C9C0B3"))
     # 진지 (성벽 왼쪽): 다져진 흙, 전장 위아래 높이만큼 왼쪽 끝까지
     camp_x = field[0] + round(520 * t)
     cy0, cy1 = field[1], field[3]
