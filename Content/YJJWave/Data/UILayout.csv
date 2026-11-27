@@ -318,7 +318,7 @@ UnitBarLift,0.95,머리 위 체력 게이지: 발에서 그림 크기의 이 비
 UnitBarWidth,0.55,머리 위 체력 게이지 너비 (그림 크기 비율)
 UnitBarMinW,70,머리 위 체력 게이지 최소 너비 (화면)
 UnitBarH,9,머리 위 체력 게이지 두께
-UnitBarNameGap,12,보스 이름과 게이지 사이
+UnitBarNameGap,20,보스 이름과 게이지 사이
 CardH,136,카드 높이
 CardGap,10,카드 간격
 CardIcon,72,카드 아이콘 크기

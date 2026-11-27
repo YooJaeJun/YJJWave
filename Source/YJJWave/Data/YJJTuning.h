@@ -55,6 +55,7 @@ struct FYJJTuning
 	UPROPERTY() int32 MaxNeighbors = 0;   // 밀어내기 검사 최대 이웃 수
 	UPROPERTY() float SeparationStiffness = 0.f;   // 겹친 만큼 밀어내는 비율 (틱마다)
 	UPROPERTY() float MaxPushPerTick = 0.f;   // 한 틱에 밀려나는 최대 거리
+	UPROPERTY() float CrowdSlide = 0.f;   // 앞이 막히면 막힌 쪽으로 가려는 속도를 이 비율만큼 빼서 옆으로 비켜 간다 (0이면 그냥 파고듦)
 	UPROPERTY() float UnitAcceleration = 0.f;   // 원하는 속도로 붙는 빠르기 (/초)
 	UPROPERTY() float ImpulseDamping = 0.f;   // 밀쳐진 속도가 줄어드는 빠르기 (/초)
 	UPROPERTY() float LateralDrift = 0.f;   // 행군할 때 위아래로 흔들리는 정도 (속도 비율)

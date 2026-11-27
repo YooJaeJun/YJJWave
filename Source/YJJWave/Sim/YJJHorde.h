@@ -148,6 +148,7 @@ struct FYJJHordeConfig
 	int32 MaxNeighbors = 0;
 	float SeparationStiffness = 0.f;
 	float MaxPushPerTick = 0.f;
+	float CrowdSlide = 0.f;
 	float Acceleration = 0.f;
 	float ImpulseDamping = 0.f;
 	float LateralDrift = 0.f;

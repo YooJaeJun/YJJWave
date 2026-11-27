@@ -29,6 +29,7 @@ void FYJJHorde::Reset(const FVector2f& FieldSize, int32 InCapacity)
 	Config.MaxNeighbors = T.MaxNeighbors;
 	Config.SeparationStiffness = T.SeparationStiffness;
 	Config.MaxPushPerTick = T.MaxPushPerTick;
+	Config.CrowdSlide = T.CrowdSlide;
 	Config.Acceleration = T.UnitAcceleration;
 	Config.ImpulseDamping = T.ImpulseDamping;
 	Config.LateralDrift = T.LateralDrift;
@@ -570,6 +571,18 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 		FaceLeft[Slot] = MarchDir < 0.f ? 1 : 0;
 	}
 
+	// 앞이 막히면(밀려나는 쪽과 가려는 쪽이 맞서면) 파고드는 몫을 빼서 옆으로 비켜 간다 → 포개지지 않고 가로로 줄이 선다
+	const FVector2f Sep = Separation(Slot);
+	const float SepSize = Sep.Size();
+	if (SepSize > NearZero && !(Slot == HeroSlot && ChargeLeft > 0.f))
+	{
+		const FVector2f Away = Sep / SepSize;
+		const float Into = FVector2f::DotProduct(Desired, Away);
+		if (Into < 0.f)
+		{
+			Desired -= Away * (Into * Config.CrowdSlide);
+		}
+	}
 	const float Blend = FMath::Min(Config.Acceleration * Dt, 1.f);
 	FVector2f NewVel = Vel[Slot] + (Desired - Vel[Slot]) * Blend;
 	Vel[Slot] = NewVel;
@@ -579,7 +592,7 @@ void FYJJHorde::ThinkAndMove(int32 Slot, float Dt)
 	const float Stride = FMath::Clamp(Def.DrawSize * Config.WalkStrideScale, Config.WalkStrideMin, Config.WalkStrideMax);
 	WalkPhase[Slot] += NewVel.Size() * Dt / FMath::Max(Stride, NearZero);
 
-	FVector2f Next = P + (NewVel + Kick) * Dt + Separation(Slot);
+	FVector2f Next = P + (NewVel + Kick) * Dt + Sep;
 	if (Def.bCamp)
 	{
 		// 진지는 밀려나지 않는다
