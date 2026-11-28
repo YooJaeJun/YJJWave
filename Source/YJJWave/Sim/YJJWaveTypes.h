@@ -209,6 +209,16 @@ struct FYJJHeroDef
 	TArray<int32> Skills;
 };
 
+/** Skills.csv Kind 열: 영웅 AI 가 언제 쓸지 고르는 기준 */
+enum class EYJJSkillKind : uint8
+{
+	Area,     // 둘레에 적이 몰리면
+	Front,    // 앞에 적이 몰리거나 보스·진지가 닿으면 (근거리 큰 한 방)
+	Ranged,   // 멀리 앞에 적이 몰리면
+	Summon,   // 둘레에서 수가 밀리면
+	Count
+};
+
 /** Skills.csv Trigger 열: 언제 쓰나 */
 enum class EYJJSkillTrigger : uint8
 {
@@ -234,7 +244,8 @@ struct FYJJSkillDef
 	float Reach = 0.f;        // 쓰는 원 가운데를 바라보는 쪽으로 반경 × 이만큼 민다 (0 = 제자리 회오리)
 	float DamageScale = 0.f;  // 한 번 피해 = 공격력 × 이 값
 	float Knockback = 0.f;
-	int32 AutoCount = 0;      // Auto: 원 안 상대가 이만큼 이상이면 쓴다 (Manual 은 봇 기준)
+	int32 AutoCount = 0;      // Auto·영웅 AI: 판단 기준 수
+	EYJJSkillKind Kind = EYJJSkillKind::Area;
 	int32 SummonUnit = INDEX_NONE;   // 쓸 때 둘레에 불러내는 유닛
 	int32 SummonCount = 0;
 };

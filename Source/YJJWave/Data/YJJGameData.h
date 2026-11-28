@@ -25,6 +25,8 @@ class YJJWAVE_API FYJJGameDatabase
 {
 public:
 	static FYJJGameDatabase& Get();
+	/** Skills.csv Kind 열 이름 (EYJJSkillKind 순서) */
+	inline static const TCHAR* SkillKindNames[] = { TEXT("Area"), TEXT("Front"), TEXT("Ranged"), TEXT("Summon") };
 
 	void Reload();
 
@@ -119,6 +121,8 @@ namespace YJJData
 	YJJWAVE_API TConstArrayView<FYJJSkillDef> Skills();
 	YJJWAVE_API const FYJJSkillDef& Skill(int32 Index);
 	YJJWAVE_API TConstArrayView<FYJJHeroDef> Heroes();
+	/** Skills.csv Kind 열·Localization SkillKind.<이름>·SkillWhen.<이름> */
+	YJJWAVE_API const TCHAR* SkillKindKey(EYJJSkillKind Kind);
 	/** Heroes.csv 에서 Id 인 영웅 번호 (없으면 0) */
 	YJJWAVE_API int32 HeroIndex(const FName& Id);
 	/** Dialogues.csv Trigger 열 이름 */

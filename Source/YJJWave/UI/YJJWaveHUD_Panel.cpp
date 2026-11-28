@@ -147,15 +147,6 @@ void AYJJWaveHUD::DrawSidePanel()
 
 		Y += H + L.CardGap;
 
-		// 특성 성좌: 가로 막대. 찍을 수 있으면 반짝, 열려 있으면 닫기
-		const float TH = L.TreeBarH;
-		const bool bCanPerk = Current->Souls >= Current->PerkCost();
-		const float Glow = bCanPerk && !bTreeOpen ? Half + Half * FMath::Sin(GetWorld()->GetRealTimeSeconds() * L.GlowSpeed) : 0.f;
-		DrawPanel(X, Y, W, TH, bTreeOpen ? YJJUI::Highlight : FMath::Lerp(YJJUI::PanelTint, YJJUI::Soul, Glow), FMath::RoundToInt(L.UiCard));
-		DrawIcon(FMath::RoundToInt(L.UiStar), X + Pad, Y + (TH - L.TreeBarIcon) * Half, L.TreeBarIcon);
-		DrawLabelCentered(YJJLoc::Get(bTreeOpen ? TEXT("UI.TreeClose") : TEXT("UI.Tree")), X + W * Half, Y + TH * Half, L.MidText, YJJUI::Paper, W - Pad * 2.f - L.TreeBarIcon * 2.f);
-		AddButton(bTreeOpen ? EButton::TreeClose : EButton::Tree, 0, X, Y, W, TH);
-		Y += TH + L.SectionGap;
 	}
 
 	// ---- 냄비 + 넣은 양념 ----

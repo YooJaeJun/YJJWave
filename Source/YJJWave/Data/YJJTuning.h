@@ -109,7 +109,9 @@ struct FYJJTuning
 	UPROPERTY() float HeroChargeKnockback = 0.f;   // 날려 보내는 힘
 	UPROPERTY() float HeroChargeHitInterval = 0.f;   // 내달리는 동안 이 간격마다 친다
 	UPROPERTY() float ChokeMergeDist = 0.f;   // 길목 바위 오른쪽 끝이 이만큼 안이면 한 줄로 친다 (길목 돌파 알림)
-	UPROPERTY() float BotChargeRange = 0.f;   // 봇: 적 앞줄이 영웅에서 이 거리 안이면 돌격
+	UPROPERTY() float HeroChargeRange = 0.f;   // 영웅 AI: 적 앞줄이 영웅에서 이 거리 안이면 돌격
+	UPROPERTY() float HeroSummonSense = 0.f;   // 영웅 AI 소환 판단: 스킬 반경 × 이 배 안의 적·아군 수를 견준다
+	UPROPERTY() int32 HeroSlot2Stage = 0;   // 영웅 2번 자리가 열리는 스테이지 (이 스테이지를 깨면)
 	// ---- 큰 범위 스킬 (Skills.csv): 영웅은 R, 보스·진급 영웅은 저절로 ----
 	UPROPERTY() float SkillWarnMinTime = 0.f;   // 스킬 예고 원을 적어도 이만큼 보여 준다
 	UPROPERTY() float SkillBlastTime = 0.f;   // 스킬 쾅 고리 연출 시간
@@ -226,17 +228,23 @@ struct FYJJUILayout
 	UPROPERTY() float ChargeDefaultReach = 0.f;   // 마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
 	UPROPERTY() float HeroBarMargin = 0.f;   // 영웅 칸: 화면 아래와 사이 (전장 아래 가운데)
 	UPROPERTY() float HeroBarPortrait = 0.f;   // 영웅 칸: 얼굴 크기
-	UPROPERTY() float HeroBarSlot = 0.f;   // 영웅 칸: 스킬 칸 크기 (돌격 E + Z·X·C)
-	UPROPERTY() float HeroBarSlotGap = 0.f;   // 영웅 칸: 스킬 칸 사이
 	UPROPERTY() float HeroBarHPW = 0.f;   // 영웅 칸: 이름·체력 막대 너비
-	UPROPERTY() float HeroBarIcon = 0.f;   // 영웅 칸: 스킬 그림 크기 (칸 비율)
 	UPROPERTY() float HeroSelectCardW = 0.f;   // 영웅 고르기 카드 너비
 	UPROPERTY() float HeroSelectCardH = 0.f;   // 영웅 고르기 카드 높이
 	UPROPERTY() float HeroSelectGap = 0.f;   // 영웅 고르기 카드 사이
 	UPROPERTY() float HeroSelectPortrait = 0.f;   // 영웅 고르기 얼굴 크기
 	UPROPERTY() float HeroSelectY = 0.f;   // 영웅 고르기 카드 위끝
-	UPROPERTY() float HeroGoW = 0.f;   // 출전 버튼 너비
-	UPROPERTY() float HeroGoH = 0.f;   // 출전 버튼 높이
+	UPROPERTY() float HeroSlotW = 0.f;   // 영웅 편성: 자리 칸 너비
+	UPROPERTY() float HeroLineupCardH = 0.f;   // 영웅 편성 카드 높이
+	UPROPERTY() float MapPanelTitleY = 0.f;   // 월드맵 창 (영웅·스킬) 제목 y
+	UPROPERTY() float HeroSlotH = 0.f;   // 영웅 편성: 자리 칸 높이
+	UPROPERTY() float HeroSlotY = 0.f;   // 영웅 편성: 자리 칸 위끝
+	UPROPERTY() float MapButtonW = 0.f;   // 월드맵 아래 버튼 (영웅·스킬·특성) 너비
+	UPROPERTY() float MapButtonH = 0.f;   // 월드맵 아래 버튼 높이
+	UPROPERTY() float MapButtonGap = 0.f;   // 월드맵 아래 버튼 사이
+	UPROPERTY() float MapButtonMargin = 0.f;   // 월드맵 아래 버튼과 화면 아래 사이
+	UPROPERTY() float UnitInfoW = 0.f;   // 전장 아래 가운데 유닛 정보 칸 너비
+	UPROPERTY() float UnitPickRadius = 0.f;   // 유닛 고르기: 클릭 자리에서 이 거리 안 (월드)
 	UPROPERTY() float SkillWarnAlpha = 0.f;   // 스킬 예고: 바깥 원 진하기
 	UPROPERTY() float SkillWarnFillAlpha = 0.f;   // 스킬 예고: 차오르는 안쪽 원 처음 진하기 (다 차면 1)
 	UPROPERTY() float SkillBlastStart = 0.f;   // 스킬 쾅 고리 처음 크기 (반경 배율)
@@ -619,8 +627,6 @@ struct FYJJUILayout
 	UPROPERTY() float OptionsCloseW = 0.f;   // 닫기 버튼 너비
 	UPROPERTY() float OptionsVolumeStep = 0.f;   // 볼륨 버튼 한 번에 바뀌는 양
 	UPROPERTY() float OptionsOpenH = 0.f;   // 좌측 패널 옵션 버튼 높이
-	UPROPERTY() float TreeBarH = 0.f;   // 좌측 패널 특성 막대 높이
-	UPROPERTY() float TreeBarIcon = 0.f;   // 특성 막대 별 그림 크기
 	// ---- 특성 성좌 화면 ----
 	UPROPERTY() float TreeTitleY = 0.f;   // 성좌 제목 y
 	UPROPERTY() float TreeCenterY = 0.f;   // 성좌 중심 y

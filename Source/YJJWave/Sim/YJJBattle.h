@@ -111,17 +111,13 @@ public:
 	bool HasHero() const { return Horde.Hero() != INDEX_NONE; }
 	/** 이번 판 영웅 (Heroes.csv) */
 	const FYJJHeroDef& HeroDef() const { return YJJData::Heroes()[HeroIndex]; }
-	/** 영웅 액티브 스킬 Index 번 (Z·X·C = 0·1·2): 준비되면 다음 걸음 사이에 쓴다 */
-	bool HeroSkill(int32 Index);
-	/** 그 스킬 준비 (0 ~ 1, 없거나 영웅이 없으면 음수). 걸음이 끝날 때 적어 둔 값 */
+	/** 영웅 스킬 준비 (0 ~ 1, 없거나 영웅이 없으면 음수). 영웅 AI 가 알아서 쓴다. 걸음이 끝날 때 적어 둔 값 */
 	float HeroSkillReady(int32 Index) const { return HeroSkillReadyNow.IsValidIndex(Index) ? HeroSkillReadyNow[Index] : -1.f; }
 	/** 그 스킬 정의 (없으면 nullptr) */
 	const FYJJSkillDef* HeroSkillDef(int32 Index) const;
 	int32 NumHeroSkills() const { return HeroDef().Skills.Num(); }
 	/** 카드를 고르는 중 (전장 조작을 막는다) */
 	bool IsChoosing() const { return bCardPending; }
-	/** 봇: 지금 쓰면 둘레 적이 AutoCount 이상 걸린다 */
-	bool HeroSkillWorthIt(int32 Index) const;
 	float HeroHP() const;
 	float HeroMaxHP() const;
 	FVector2f HeroPos() const { return Horde.Hero() != INDEX_NONE ? Horde.Pos[Horde.Hero()] : FVector2f::ZeroVector; }
@@ -297,8 +293,10 @@ private:
 	bool bChargeQueued = false;
 	FVector2f ChargeTarget = FVector2f::ZeroVector;
 	// 영웅 큰 스킬
-	/** 다음 걸음 사이에 쓸 영웅 스킬 (INDEX_NONE 없음) */
-	int32 QueuedSkill = INDEX_NONE;
+	/** 영웅 AI: 적 수·강함을 보고 스킬·돌격을 고른다 (걸음 사이, 게임 스레드) */
+	void TickHeroAI();
+	/** 그 스킬을 지금 쓰면 좋은가 (Kind 별 판단) */
+	bool HeroSkillFits(const FYJJSkillDef& Skill, float Dir) const;
 	int32 HeroIndex = 0;
 	void SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center);
 	TArray<float> HeroSkillReadyNow;

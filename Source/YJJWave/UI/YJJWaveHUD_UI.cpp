@@ -478,7 +478,10 @@ void AYJJWaveHUD::DrawDebugLine()
 
 FVector2f AYJJWaveHUD::PerkToVirtual(const FVector2f& PerkPos) const
 {
-	return FVector2f(WorldCenterVirtualX(), UI().TreeCenterY) + PerkPos * UI().TreeScale;
+	// 월드맵(아웃게임)에선 화면 가운데, 전장에선 전장 가운데
+	const AYJJWaveGameMode* Mode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	const bool bMap = Mode && Mode->GetScreen() != EYJJScreen::Battle;
+	return FVector2f(bMap ? VirtualW * Half : WorldCenterVirtualX(), UI().TreeCenterY) + PerkPos * UI().TreeScale;
 }
 
 int32 AYJJWaveHUD::PerkAt(const FVector2f& Virtual) const
@@ -542,7 +545,9 @@ void AYJJWaveHUD::DrawTree()
 {
 	const FYJJBattle* Current = Battle();
 	const TConstArrayView<FYJJPerkDef> Perks = YJJData::Perks();
-	DrawBox(UI().SidePanelW, 0.f, VirtualW - UI().SidePanelW, VirtualHeight, YJJUI::TreeBack);
+	const AYJJWaveGameMode* TreeMode = GetWorld()->GetAuthGameMode<AYJJWaveGameMode>();
+	const float TreeLeft = TreeMode && TreeMode->GetScreen() != EYJJScreen::Battle ? 0.f : UI().SidePanelW;
+	DrawBox(TreeLeft, 0.f, VirtualW - TreeLeft, VirtualHeight, YJJUI::TreeBack);
 
 	// 선
 	for (int32 Perk = 0; Perk < Perks.Num(); ++Perk)
@@ -732,25 +737,18 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::Charge:
 			TryHeroCharge();
 			break;
-		case EButton::HeroSkill:
-			TryHeroSkill(Button->Index);
-			break;
 		case EButton::HeroPick:
 			if (YJJData::Heroes().IsValidIndex(Button->Index))
 			{
 				Mode->SetHero(YJJData::Heroes()[Button->Index].Id);
 			}
 			break;
-		case EButton::HeroGo:
-			if (HeroSelectStage != INDEX_NONE)
-			{
-				const int32 Stage = HeroSelectStage;
-				HeroSelectStage = INDEX_NONE;
-				Mode->StartStage(Stage);
-			}
+		case EButton::MapPanel:
+			// 같은 버튼을 다시 누르면 닫는다
+			OpenMapPanel(MapPanel == static_cast<EYJJMapPanel>(Button->Index) ? EYJJMapPanel::None : static_cast<EYJJMapPanel>(Button->Index));
 			break;
-		case EButton::HeroBack:
-			HeroSelectStage = INDEX_NONE;
+		case EButton::MapClose:
+			OpenMapPanel(EYJJMapPanel::None);
 			break;
 		case EButton::TitleStart:
 			Mode->GoToWorldMap();
@@ -764,8 +762,7 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::WorldStage:
 			if (Mode->IsStageOpen(Button->Index))
 			{
-				// 출전 영웅부터 고른다
-				HeroSelectStage = Button->Index;
+				Mode->StartStage(Button->Index);
 			}
 			break;
 		case EButton::WorldBack:
@@ -774,6 +771,16 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 		case EButton::ResultMap:
 			Mode->GoToWorldMap();
 			break;
+		}
+		return;
+	}
+	if (Mode->GetScreen() == EYJJScreen::WorldMap && bTreeOpen)
+	{
+		// 월드맵 특성 창: 별을 눌러 찍는다 (아웃게임에서만)
+		const int32 Perk = PerkAt(ToVirtual(Mouse));
+		if (Perk != INDEX_NONE && Current->Allocate(Perk))
+		{
+			Mode->SaveProgress();
 		}
 		return;
 	}
@@ -872,6 +879,28 @@ void AYJJWaveHUD::ClickWorld()
 	}
 	const int32 Plot = PlotAt(World);
 	BuyPopupFor = INDEX_NONE;
+	// 유닛 고르기: 아군을 누르면 고르기만, 적을 누르면 고르고 국자도 내려친다
+	const FYJJHordeView& Units = View();
+	int32 Nearest = INDEX_NONE;
+	float NearestSq = FMath::Square(UI().UnitPickRadius);
+	for (int32 Slot = 0; Slot < Units.HighWater; ++Slot)
+	{
+		const float DistSq = FVector2f::DistSquared(Units.Pos[Slot], World);
+		if (Units.Alive[Slot] && DistSq < NearestSq)
+		{
+			NearestSq = DistSq;
+			Nearest = Slot;
+		}
+	}
+	if (Nearest != INDEX_NONE && Plot == INDEX_NONE)
+	{
+		PickedType = Units.Type[Nearest];
+		PickedPos = Units.Pos[Nearest];
+		if (Units.Team[Nearest] == static_cast<uint8>(EYJJTeam::Player))
+		{
+			return;
+		}
+	}
 	if (Plot == INDEX_NONE)
 	{
 		if (World.X > Current->CampEdgeX)
@@ -958,17 +987,9 @@ void AYJJWaveHUD::HandleKey(const FKey& Key)
 	{
 		PressSpell(static_cast<EYJJSpell>(SpellIndex));
 	}
-	else if (Key == EKeys::T || Key == EKeys::Tab)
-	{
-		bTreeOpen = !bTreeOpen;
-	}
 	else if (Key == EKeys::E)
 	{
 		TryHeroCharge();
-	}
-	else if (Key == HeroSkillKeys[0] || Key == HeroSkillKeys[1] || Key == HeroSkillKeys[2])
-	{
-		TryHeroSkill(Key == HeroSkillKeys[0] ? 0 : Key == HeroSkillKeys[1] ? 1 : 2);
 	}
 	else if (Key == EKeys::Q)
 	{

@@ -216,6 +216,8 @@ struct FYJJSkillRow : public FTableRowBase
 	UPROPERTY() float DamageScale = 0.f;
 	UPROPERTY() float Knockback = 0.f;
 	UPROPERTY() int32 AutoCount = 0;
+	/** 영웅 AI 판단 종류: Area(둘레) / Front(앞 근거리) / Ranged(멀리 앞) / Summon(소환) */
+	UPROPERTY() FString Kind;
 	/** 쓸 때 둘레에 불러내는 유닛과 수 (비우면 없음) */
 	UPROPERTY() FString Summon;
 	UPROPERTY() int32 SummonCount = 0;

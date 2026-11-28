@@ -40,17 +40,20 @@ bool FYJJAutoPilot::TickMenus(float RealDeltaSeconds)
 	case 0: Mode->TakeShot(FString::Printf(TEXT("%sTitle"), ShotPrefix)); return false;
 	case 1: Mode->GoToWorldMap(); return false;
 	case 2: Mode->TakeShot(FString::Printf(TEXT("%sWorldMap"), ShotPrefix)); return false;
-	case 3:
+	case 3: case 5: case 7:
+		// 월드맵 창 셋 (영웅·스킬·특성) 을 하나씩 열어 찍는다
 		if (AYJJWaveHUD* HUD = Cast<AYJJWaveHUD>(Mode->GetWorld()->GetFirstPlayerController() ? Mode->GetWorld()->GetFirstPlayerController()->GetHUD() : nullptr))
 		{
-			HUD->OpenHeroSelect(0);
+			HUD->OpenMapPanel(MenuStep == 4 ? EYJJMapPanel::Heroes : MenuStep == 6 ? EYJJMapPanel::Skills : EYJJMapPanel::Perks);
 		}
 		return false;
-	case 4: Mode->TakeShot(FString::Printf(TEXT("%sHeroSelect"), ShotPrefix)); return false;
+	case 4: Mode->TakeShot(FString::Printf(TEXT("%sMapHeroes"), ShotPrefix)); return false;
+	case 6: Mode->TakeShot(FString::Printf(TEXT("%sMapSkills"), ShotPrefix)); return false;
+	case 8: Mode->TakeShot(FString::Printf(TEXT("%sMapPerks"), ShotPrefix)); return false;
 	default:
 		if (AYJJWaveHUD* HUD = Cast<AYJJWaveHUD>(Mode->GetWorld()->GetFirstPlayerController() ? Mode->GetWorld()->GetFirstPlayerController()->GetHUD() : nullptr))
 		{
-			HUD->OpenHeroSelect(INDEX_NONE);
+			HUD->OpenMapPanel(EYJJMapPanel::None);
 		}
 		PickHeroFor(0);
 		return true;
@@ -451,18 +454,6 @@ void FYJJAutoPilot::CastSpells(FYJJBattle& Battle)
 {
 	const FYJJTuning& T = YJJData::Tune();
 	const float EnemyFront = Battle.Horde.FrontX(EYJJTeam::Enemy);
-	if (EnemyFront > 0.f && Battle.HasHero() && Battle.ChargeReady() >= 1.f && FMath::Abs(EnemyFront - Battle.HeroPos().X) < T.BotChargeRange)
-	{
-		Battle.HeroCharge(FVector2f(EnemyFront + T.BotChargeRange, Battle.HeroPos().Y));
-	}
-	// 영웅 스킬 셋: 둘레에 적이 몰리면 준비된 것부터
-	for (int32 Index = 0; Index < Battle.NumHeroSkills(); ++Index)
-	{
-		if (Battle.HeroSkillReady(Index) >= 1.f && Battle.HeroSkillWorthIt(Index) && Battle.HeroSkill(Index))
-		{
-			break;
-		}
-	}
 	if (EnemyFront > 0.f && Battle.CanCast(EYJJSpell::Meteor))
 	{
 		const float Radius = Battle.SpellNow(EYJJSpell::Meteor).Radius;

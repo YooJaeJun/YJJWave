@@ -86,7 +86,9 @@ HeroChargeRadius,120,앞을 쓰는 범위
 HeroChargeKnockback,2600,날려 보내는 힘
 HeroChargeHitInterval,0.1,내달리는 동안 이 간격마다 친다
 ChokeMergeDist,250,길목 바위 오른쪽 끝이 이만큼 안이면 한 줄로 친다 (길목 돌파 알림)
-BotChargeRange,400,봇: 적 앞줄이 영웅에서 이 거리 안이면 돌격
+HeroChargeRange,400,영웅 AI: 적 앞줄이 영웅에서 이 거리 안이면 돌격
+HeroSummonSense,3,영웅 AI 소환 판단: 스킬 반경 × 이 배 안의 적·아군 수를 견준다
+HeroSlot2Stage,3,영웅 2번 자리가 열리는 스테이지 (이 스테이지를 깨면)
 SkillWarnMinTime,0.3,스킬 예고 원을 적어도 이만큼 보여 준다
 SkillBlastTime,0.5,스킬 쾅 고리 연출 시간
 SkillTextTime,1.4,싹쓸이 글자 시간

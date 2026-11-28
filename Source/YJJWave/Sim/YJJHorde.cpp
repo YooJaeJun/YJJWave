@@ -318,6 +318,9 @@ void FYJJHorde::CopyTo(FYJJHordeView& View) const
 	Copy(View.Type, Type);
 	Copy(View.Pos, Pos);
 	Copy(View.Flash, Flash);
+	Copy(View.HP, HP);
+	Copy(View.MaxHP, MaxHP);
+	Copy(View.Damage, Damage);
 	Copy(View.AttackAnim, AttackAnim);
 	Copy(View.WalkPhase, WalkPhase);
 	Copy(View.AttackLen, AttackLen);
@@ -985,6 +988,22 @@ FYJJSkillCaster* FYJJHorde::FindCaster(int32 Slot, int32 Skill)
 const FYJJSkillCaster* FYJJHorde::FindCaster(int32 Slot, int32 Skill) const
 {
 	return Casters.FindByPredicate([this, Slot, Skill](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot && Caster.Skill == Skill && IsValidTarget(Slot, Caster.Gen); });
+}
+
+bool FYJJHorde::AnyStrongNear(const FVector2f& Center, float Radius, EYJJTeam InTeam) const
+{
+	for (const int32 Big : BigUnits)
+	{
+		if (Alive[Big] && Team[Big] == static_cast<uint8>(InTeam) && FVector2f::DistSquared(Center, Pos[Big]) <= Radius * Radius)
+		{
+			const FYJJUnitDef& Def = YJJData::Unit(Type[Big]);
+			if (Def.bBoss || Def.bCamp)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 bool FYJJHorde::IsCasting(int32 Slot) const

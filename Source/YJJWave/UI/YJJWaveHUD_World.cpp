@@ -76,11 +76,16 @@ void AYJJWaveHUD::DrawBlockers()
 		const FVector2f Center(Share.X * Current->FieldWidth, Share.Y * Current->FieldHeight);
 		const FVector2f Radius(Share.Z * Current->FieldWidth, Share.W * Current->FieldHeight);
 		const float RowH = Radius.X * 2.f * L.RockWidthPad / FMath::Max(L.RockAspect, 1.f);
-		const int32 Rows = FMath::Max(1, FMath::CeilToInt(Radius.Y * 2.f / FMath::Max(RowH * L.RockRowOverlap, 1.f)));
+		// 전장 위·아래 끝에 닿은 길목은 둘레 배경 끝까지 이어 쌓는다 (멀리 볼 때 바위가 중간에 끊기지 않게)
+		const float Top = Center.Y - Radius.Y <= 0.f ? -L.ViewMarginY : Center.Y - Radius.Y;
+		const float Bottom = Center.Y + Radius.Y >= Current->FieldHeight ? Current->FieldHeight + L.ViewMarginY : Center.Y + Radius.Y;
+		const int32 Rows = FMath::Max(1, FMath::CeilToInt((Bottom - Top) / FMath::Max(RowH * L.RockRowOverlap, 1.f)));
 		for (int32 Row = 0; Row < Rows; ++Row)
 		{
-			const float Y = Center.Y - Radius.Y + (Row + Half) * Radius.Y * 2.f / Rows;
-			const float Across = FMath::Sqrt(FMath::Max(1.f - FMath::Square((Y - Center.Y) / FMath::Max(Radius.Y, 1.f)), 0.f));
+			const float Y = Top + (Row + Half) * (Bottom - Top) / Rows;
+			// 전장 밖은 전장 끝에서의 너비 그대로
+			const float InsideY = FMath::Clamp(Y, 0.f, Current->FieldHeight);
+			const float Across = FMath::Sqrt(FMath::Max(1.f - FMath::Square((InsideY - Center.Y) / FMath::Max(Radius.Y, 1.f)), 0.f));
 			const float W = FMath::Max(Radius.X * 2.f * L.RockWidthPad * Across, RowH);
 			const float Shift = (Row % 2 == 0 ? 1.f : -1.f) * Radius.X * L.RockJitter;
 			const FVector2f Feet = WorldToScreen(FVector2f(Center.X + Shift, Y + RowH * Half));

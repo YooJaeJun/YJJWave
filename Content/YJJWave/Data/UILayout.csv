@@ -32,17 +32,23 @@ FrontLabelY,140,전선 띠 위 보너스 글자 높이 (전장 위끝에서)
 ChargeDefaultReach,500,마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
 HeroBarMargin,14,영웅 칸: 화면 아래와 사이 (전장 아래 가운데)
 HeroBarPortrait,88,영웅 칸: 얼굴 크기
-HeroBarSlot,84,영웅 칸: 스킬 칸 크기 (돌격 E + Z·X·C)
-HeroBarSlotGap,10,영웅 칸: 스킬 칸 사이
 HeroBarHPW,170,영웅 칸: 이름·체력 막대 너비
-HeroBarIcon,0.62,영웅 칸: 스킬 그림 크기 (칸 비율)
 HeroSelectCardW,380,영웅 고르기 카드 너비
-HeroSelectCardH,520,영웅 고르기 카드 높이
+HeroSelectCardH,470,영웅 고르기 카드 높이
 HeroSelectGap,32,영웅 고르기 카드 사이
 HeroSelectPortrait,190,영웅 고르기 얼굴 크기
-HeroSelectY,210,영웅 고르기 카드 위끝
-HeroGoW,280,출전 버튼 너비
-HeroGoH,72,출전 버튼 높이
+HeroSelectY,380,영웅 고르기 카드 위끝
+HeroSlotW,250,영웅 편성: 자리 칸 너비
+HeroLineupCardH,390,영웅 편성 카드 높이
+MapPanelTitleY,50,월드맵 창 (영웅·스킬) 제목 y
+HeroSlotH,170,영웅 편성: 자리 칸 높이
+HeroSlotY,170,영웅 편성: 자리 칸 위끝
+MapButtonW,200,월드맵 아래 버튼 (영웅·스킬·특성) 너비
+MapButtonH,66,월드맵 아래 버튼 높이
+MapButtonGap,20,월드맵 아래 버튼 사이
+MapButtonMargin,26,월드맵 아래 버튼과 화면 아래 사이
+UnitInfoW,560,전장 아래 가운데 유닛 정보 칸 너비
+UnitPickRadius,46,유닛 고르기: 클릭 자리에서 이 거리 안 (월드)
 SkillWarnAlpha,0.45,스킬 예고: 바깥 원 진하기
 SkillWarnFillAlpha,0.25,스킬 예고: 차오르는 안쪽 원 처음 진하기 (다 차면 1)
 SkillBlastStart,0.4,스킬 쾅 고리 처음 크기 (반경 배율)
@@ -411,8 +417,6 @@ OptionsButtonW,64,옵션 작은 버튼 너비 (- + ◀ ▶)
 OptionsCloseW,240,닫기 버튼 너비
 OptionsVolumeStep,0.1,볼륨 버튼 한 번에 바뀌는 양
 OptionsOpenH,56,좌측 패널 옵션 버튼 높이
-TreeBarH,60,좌측 패널 특성 막대 높이
-TreeBarIcon,40,특성 막대 별 그림 크기
 TreeTitleY,24,성좌 제목 y
 TreeCenterY,570,성좌 중심 y
 TreeScale,0.42,성좌 좌표 → 화면 배율

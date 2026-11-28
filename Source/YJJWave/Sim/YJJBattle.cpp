@@ -46,7 +46,6 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	CardOffer.Reset();
 	// 영웅: 월드맵에서 고른 영웅 (없으면 첫 영웅), 액티브 스킬 셋
 	HeroIndex = YJJData::HeroIndex(Progress.Hero);
-	QueuedSkill = INDEX_NONE;
 	HeroSkillReadyNow.Init(-1.f, HeroDef().Skills.Num());
 	Sounds.Add(SoundCard);
 	CardsTaken.Reset();
@@ -468,16 +467,8 @@ void FYJJBattle::CheckVictory()
 
 void FYJJBattle::HandleSkillEvents()
 {
-	// 영웅 Z·X·C: 걸음 사이에만 무리를 건드린다
-	if (QueuedSkill != INDEX_NONE)
-	{
-		const int32 Hero = Horde.Hero();
-		if (Hero != INDEX_NONE && HeroDef().Skills.IsValidIndex(QueuedSkill))
-		{
-			Horde.CastSkill(Hero, HeroDef().Skills[QueuedSkill], Horde.FaceLeft[Hero] ? -1.f : 1.f);
-		}
-		QueuedSkill = INDEX_NONE;
-	}
+	// 영웅 AI: 걸음 사이에만 무리를 건드린다
+	TickHeroAI();
 	const FYJJTuning& T = YJJData::Tune();
 	for (const FYJJSkillEvent& Event : Horde.SkillEvents)
 	{
@@ -519,14 +510,57 @@ void FYJJBattle::HandleSkillEvents()
 	}
 }
 
-bool FYJJBattle::HeroSkill(int32 Index)
+void FYJJBattle::TickHeroAI()
 {
-	if (bGameOver || QueuedSkill != INDEX_NONE || HeroSkillReady(Index) < 1.f || Horde.Hero() == INDEX_NONE)
+	const int32 Hero = Horde.Hero();
+	if (bGameOver || Hero == INDEX_NONE || Horde.IsCastingSkill(Hero) || Horde.IsCharging())
 	{
-		return false;
+		return;
 	}
-	QueuedSkill = Index;
-	return true;
+	// 바라보는 쪽 = 적 앞줄 쪽
+	const FYJJTuning& T = YJJData::Tune();
+	const float EnemyFront = Horde.FrontX(EYJJTeam::Enemy);
+	const float Dir = EnemyFront >= 0.f && EnemyFront < Horde.Pos[Hero].X ? -1.f : 1.f;
+	// 준비된 스킬 중 지금 상황에 맞는 것: 소환(수가 밀림) → 근거리(강한 적·앞에 몰림) → 범위(둘레에 몰림) → 원거리
+	const EYJJSkillKind Order[] = { EYJJSkillKind::Summon, EYJJSkillKind::Front, EYJJSkillKind::Area, EYJJSkillKind::Ranged };
+	for (const EYJJSkillKind Kind : Order)
+	{
+		for (const int32 Skill : HeroDef().Skills)
+		{
+			const FYJJSkillDef& Def = YJJData::Skill(Skill);
+			if (Def.Kind == Kind && Horde.SkillReady(Hero, Skill) >= 1.f && HeroSkillFits(Def, Dir) && Horde.CastSkill(Hero, Skill, Dir))
+			{
+				return;
+			}
+		}
+	}
+	// 돌격: 적 앞줄이 가까우면 그쪽으로 내달린다
+	if (EnemyFront > 0.f && ChargeCooldown <= 0.f && FMath::Abs(EnemyFront - Horde.Pos[Hero].X) < T.HeroChargeRange)
+	{
+		HeroCharge(FVector2f(EnemyFront + Dir * T.HeroChargeRange, Horde.Pos[Hero].Y));
+	}
+}
+
+bool FYJJBattle::HeroSkillFits(const FYJJSkillDef& Skill, float Dir) const
+{
+	const FVector2f Hero = HeroPos();
+	const FVector2f Ahead = Hero + FVector2f(Dir * Skill.Radius * Skill.Reach, 0.f);
+	switch (Skill.Kind)
+	{
+	case EYJJSkillKind::Summon:
+	{
+		const float Sense = Skill.Radius * YJJData::Tune().HeroSummonSense;
+		const int32 Enemies = Horde.CountNear(Hero, Sense, EYJJTeam::Enemy, MAX_int32);
+		const int32 Allies = Horde.CountNear(Hero, Sense, EYJJTeam::Player, MAX_int32);
+		return Enemies - Allies >= Skill.AutoCount;
+	}
+	case EYJJSkillKind::Front:
+		return Horde.AnyStrongNear(Ahead, Skill.Radius, EYJJTeam::Enemy) || Horde.CountNear(Ahead, Skill.Radius, EYJJTeam::Enemy, Skill.AutoCount) >= Skill.AutoCount;
+	case EYJJSkillKind::Ranged:
+		return Horde.CountNear(Ahead, Skill.Radius, EYJJTeam::Enemy, Skill.AutoCount) >= Skill.AutoCount;
+	default:
+		return Horde.CountNear(Hero, Skill.Radius, EYJJTeam::Enemy, Skill.AutoCount) >= Skill.AutoCount;
+	}
 }
 
 const FYJJSkillDef* FYJJBattle::HeroSkillDef(int32 Index) const
@@ -561,12 +595,6 @@ void FYJJBattle::SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center
 			AddEffect(EYJJEffectKind::Build, Where, T.BuildEffectTime, T.SkillSummonPuff);
 		}
 	}
-}
-
-bool FYJJBattle::HeroSkillWorthIt(int32 Index) const
-{
-	const FYJJSkillDef* Skill = HeroSkillDef(Index);
-	return Skill && HasHero() && Horde.CountNear(HeroPos(), Skill->Radius, EYJJTeam::Enemy, Skill->AutoCount) >= Skill->AutoCount;
 }
 
 bool FYJJBattle::HeroCharge(const FVector2f& Toward)

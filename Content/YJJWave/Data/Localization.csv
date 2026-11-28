@@ -7,10 +7,8 @@ UI.HeroHP,{0} / {1},{0} / {1},영웅 체력
 UI.Speed,▶▶ {0}배속,▶▶ x{0},배속 버튼
 UI.Paused,멈춤,Paused,일시정지
 UI.Owned,x{0},x{0},지은 수
-UI.Tree,특성 (T),Perks (T),특성 성좌 버튼
 UI.TreeTitle,특성 성좌,Constellation,
 UI.TreeNext,다음 별 {0} 영혼 · 찍은 별 {1}개,Next star {0} souls · {1} taken,
-UI.TreeClose,닫기 (T),Close (T),
 UI.Cost,금화 {0},{0} gold,
 UI.PlotBuild,{0} 짓기,Build {0},빈 칸에 마우스
 UI.PlotTitle,{0} Lv{1},{0} Lv{1},
@@ -288,9 +286,33 @@ SkillDesc.CookServe,방패병 {0}명이 줄 서서 튀어나온다.,{0} shieldbe
 SkillDesc.PotLid,앞으로 솥뚜껑을 던져 줄줄이 네 번 친다.,"Throws a pot lid ahead, hitting four times.",
 SkillDesc.PotBomb,한참 불을 붙였다가 냄비 폭탄을 터뜨린다. 가장 세다.,Lights a pot bomb and blows it up. The strongest hit.,
 SkillDesc.PotCall,망치 대장 {0}명을 부른다.,Calls {0} hammer bosses.,
-UI.HeroSelectTitle,출전할 영웅 고르기,Pick your hero,월드맵 영웅 선택
-UI.HeroSelectSub,영웅마다 액티브 스킬 3개 (Z · X · C) 와 돌격 (E),Each hero has 3 skills (Z · X · C) and Charge (E),
-UI.HeroGo,출전!,Go!,
-UI.HeroBack,돌아가기,Back,
+UI.HeroSelectTitle,영웅 편성,Hero Lineup,월드맵 영웅 선택
+UI.HeroSelectSub,아래 카드를 눌러 1번 자리 영웅을 고르자,Pick the hero for slot 1 from the cards below,
 UI.HeroSkillLine,{0} ({1}) · 대기 {2}초,{0} ({1}) · {2}s,영웅 카드 스킬 줄
 UI.ChargeName,돌격,Charge,영웅 칸
+SkillKind.Area,범위,Area,
+SkillKind.Front,근거리,Melee,
+SkillKind.Ranged,원거리,Ranged,
+SkillKind.Summon,소환,Summon,
+SkillWhen.Area,둘레에 적이 {0}마리 넘게 몰리면,When {0}+ enemies crowd around,
+SkillWhen.Front,앞에 적이 {0}마리 넘게 있거나 보스·진지가 닿으면,"When {0}+ enemies ahead, or a boss or camp is in reach",
+SkillWhen.Ranged,멀리 앞에 적이 {0}마리 넘게 있으면,When {0}+ enemies are far ahead,
+SkillWhen.Summon,둘레 적이 아군보다 {0}마리 넘게 많으면,When enemies outnumber allies nearby by {0}+,
+Map.Heroes,영웅,Heroes,월드맵 버튼
+Map.Skills,스킬,Skills,월드맵 버튼
+Map.Perks,특성,Perks,월드맵 버튼
+UI.Close,닫기,Close,
+UI.HeroSlot,{0}번 자리,Slot {0},
+UI.HeroSlotLocked,스테이지 {0} 돌파 시 열림,Opens after stage {0},
+UI.SkillsTitle,{0}의 스킬,{0}'s Skills,
+UI.SkillsSub,영웅이 적 수와 강함을 보고 알아서 씁니다,"The hero uses these on their own, reading enemy numbers and strength",
+UI.SkillCooldownShort,대기 {0}초,{0}s cooldown,
+UI.UnitAtk,공격력 {0},ATK {0},유닛 정보
+UI.UnitHP,{0} / {1},{0} / {1},
+Trait.Melee,근접,Melee,
+Trait.Ranged,원거리,Ranged,
+Trait.Splash,범위 공격,Splash,
+Trait.Boss,보스,Boss,
+Trait.Camp,진지,Camp,
+Trait.Hero,영웅 · 스킬 자동,Hero · auto skills,
+UI.TreeClose,닫기,Close,월드맵 특성 창

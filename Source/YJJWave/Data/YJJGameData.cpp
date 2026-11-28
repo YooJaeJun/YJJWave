@@ -1,4 +1,5 @@
 #include "Data/YJJGameData.h"
+#include "Algo/IndexOf.h"
 #include "Data/YJJDataRows.h"
 #include "Data/YJJLoc.h"
 #include "Engine/DataTable.h"
@@ -322,6 +323,12 @@ void FYJJGameDatabase::LoadSkills()
 		Def.DamageScale = Row.DamageScale;
 		Def.Knockback = Row.Knockback;
 		Def.AutoCount = FMath::Max(Row.AutoCount, 1);
+		const int32 KindIndex = Algo::IndexOf(SkillKindNames, Row.Kind);
+		Def.Kind = KindIndex != INDEX_NONE ? static_cast<EYJJSkillKind>(KindIndex) : EYJJSkillKind::Area;
+		if (KindIndex == INDEX_NONE)
+		{
+			Problem(FString::Printf(TEXT("Skills.csv %s: 모르는 Kind %s"), *Name.ToString(), *Row.Kind));
+		}
 		if (Def.Unit == INDEX_NONE)
 		{
 			return;
@@ -816,6 +823,7 @@ TConstArrayView<FYJJBrothStage> YJJData::Broth() { return FYJJGameDatabase::Get(
 TConstArrayView<FYJJSkillDef> YJJData::Skills() { return FYJJGameDatabase::Get().Skills; }
 const FYJJSkillDef& YJJData::Skill(int32 Index) { return FYJJGameDatabase::Get().Skills[Index]; }
 TConstArrayView<FYJJHeroDef> YJJData::Heroes() { return FYJJGameDatabase::Get().Heroes; }
+const TCHAR* YJJData::SkillKindKey(EYJJSkillKind Kind) { return FYJJGameDatabase::SkillKindNames[FMath::Clamp(static_cast<int32>(Kind), 0, static_cast<int32>(EYJJSkillKind::Count) - 1)]; }
 int32 YJJData::HeroIndex(const FName& Id)
 {
 	const int32 Index = FYJJGameDatabase::Get().Heroes.IndexOfByPredicate([&Id](const FYJJHeroDef& Def) { return Def.Id == Id; });

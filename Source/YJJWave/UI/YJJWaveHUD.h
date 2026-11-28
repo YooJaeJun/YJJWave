@@ -115,6 +115,15 @@ struct FYJJButton
  * 유닛은 아틀라스 한 장으로 캔버스 배치에 사각형을 직접 넣어 드로우 콜 하나로 그린다.
  * UI 좌표는 1920x1080 가상 화면, 전장은 카메라(가운데·확대)로 월드 → 화면.
  */
+/** 월드맵 아래 버튼으로 여는 창 */
+enum class EYJJMapPanel : uint8
+{
+	Heroes,
+	Skills,
+	Perks,
+	None,
+};
+
 UCLASS()
 class YJJWAVE_API AYJJWaveHUD : public AHUD
 {
@@ -166,7 +175,7 @@ public:
 	int32 LastVisibleUnits() const { return Sorted.Num(); }
 	void SetTreeOpen(bool bOpen) { bTreeOpen = bOpen; }
 	/** 월드맵 영웅 고르기를 연다 (그 스테이지로 출전, INDEX_NONE 이면 닫기) */
-	void OpenHeroSelect(int32 Stage) { HeroSelectStage = Stage; }
+	void OpenMapPanel(EYJJMapPanel Panel) { MapPanel = Panel; bTreeOpen = Panel == EYJJMapPanel::Perks; }
 	/** 오토파일럿 스크린샷용: 마우스 대신 이 별의 설명창을 띄운다 (INDEX_NONE이면 마우스) */
 	void SetForcedHoverPerk(int32 Perk) { ForcedHoverPerk = Perk; }
 	/** 지금 말풍선이 뜬 지 (없으면 음수, 오토파일럿 스크린샷용) */
@@ -186,8 +195,8 @@ private:
 		NextStage,
 		Card,
 		HeroPick,
-		HeroGo,
-		HeroBack,
+		MapPanel,
+		MapClose,
 		Buy,
 		Option,
 		OpenOptions,
@@ -285,14 +294,15 @@ private:
 	void DrawBlockers();
 	/** 땅 위 전선 띠: 아군 앞줄·적 앞줄 자리, 아군 띠 위에 "전선 +N%" (밀어낸 만큼 금화·영혼) */
 	void DrawFrontLines();
-	/** 전장 아래 가운데 영웅 칸: 얼굴·이름·체력 + 돌격(E)·스킬 셋(Z·X·C) */
-	void DrawHeroBar();
+	/** 전장 아래 가운데: 고른 유닛 정보 (이름·체력·공격력·특성). 아무것도 안 골랐으면 영웅 */
+	void DrawUnitInfo();
+	/** 고른 유닛 슬롯 (보기 사본 기준, 없으면 영웅 → INDEX_NONE) */
+	int32 SelectedSlot() const;
 	void TryHeroCharge();
-	void TryHeroSkill(int32 Index);
-	/** 영웅 칸 스킬에 마우스: 이름·설명·대기 */
-	void DrawHeroBarTooltip();
-	/** 월드맵: 스테이지를 누르면 출전 영웅 고르기 */
-	void DrawHeroSelect();
+	/** 월드맵 아래 버튼 (영웅·스킬·특성) 과 그 창 */
+	void DrawMapButtons();
+	void DrawHeroLineup();
+	void DrawHeroSkills();
 	/** 싹쓸이 글자 (스킬 한 번에 많이 쓰러뜨렸을 때) */
 	void DrawSkillTexts();
 	/** 맞는 순간 찌그러짐·날아갈 때 떠오름을 넣은 유닛 사각형 (가운데, 반너비, 반높이) */
@@ -467,11 +477,13 @@ private:
 	TArray<uint8> TalkUsed;
 	FYJJTalkPlay TalkNow;
 	int32 HoverPlot = INDEX_NONE;
-	/** 영웅 고르기 중인 스테이지 (INDEX_NONE 닫힘) */
-	int32 HeroSelectStage = INDEX_NONE;
-	/** 영웅 칸 스킬 단축키 (Z·X·C, Heroes.csv Skill1~3) */
-	inline static const FKey HeroSkillKeys[] = { EKeys::Z, EKeys::X, EKeys::C };
-	static constexpr int32 HeroBarSlots = 4;   // 돌격 + 스킬 셋
+	/** 월드맵에서 열린 창 */
+	EYJJMapPanel MapPanel = EYJJMapPanel::None;
+	/** 전장에서 고른 유닛: 종류와 마지막 자리 (슬롯은 재배치로 바뀌니 자리로 다시 찾는다), 없으면 영웅 */
+	int32 PickedType = INDEX_NONE;
+	FVector2f PickedPos = FVector2f::ZeroVector;
+	static constexpr int32 HeroSlotCount = 2;
+	static constexpr int32 MapPanelCount = 3;   // 영웅·스킬·특성
 	int32 HoverPerk = INDEX_NONE;
 	int32 ForcedHoverPerk = INDEX_NONE;
 	float FrameMs = 0.f;

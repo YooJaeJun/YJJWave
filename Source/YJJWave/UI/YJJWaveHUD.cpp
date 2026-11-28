@@ -304,10 +304,19 @@ void AYJJWaveHUD::DrawHUD()
 		else
 		{
 			DrawWorldMap();
-			if (HeroSelectStage != INDEX_NONE)
+			if (MapPanel == EYJJMapPanel::Heroes)
 			{
-				DrawHeroSelect();
+				DrawHeroLineup();
 			}
+			else if (MapPanel == EYJJMapPanel::Skills)
+			{
+				DrawHeroSkills();
+			}
+			else if (MapPanel == EYJJMapPanel::Perks)
+			{
+				DrawTree();
+			}
+			DrawMapButtons();
 		}
 		if (bOptionsOpen)
 		{
@@ -322,7 +331,7 @@ void AYJJWaveHUD::DrawHUD()
 	DrawBanners();
 	DrawCombo();
 	DrawSkillTexts();
-	DrawHeroBar();
+	DrawUnitInfo();
 	if (Battle()->bCardPending && !Battle()->bGameOver)
 	{
 		DrawCardPick();
@@ -341,7 +350,6 @@ void AYJJWaveHUD::DrawHUD()
 	{
 		DrawPotTooltip();
 		DrawSpellTooltip();
-		DrawHeroBarTooltip();
 		DrawSeasoningTooltip();
 	}
 	DrawCutscene();

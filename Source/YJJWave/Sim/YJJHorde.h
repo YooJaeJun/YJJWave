@@ -159,6 +159,9 @@ struct FYJJHordeView
 	TArray<float> WalkPhase;
 	TArray<float> AttackLen;   // 이번 공격 동작 길이 (AttackAnim 진행도 = 1 - AttackAnim/AttackLen)
 	TArray<float> Knock;       // 밀쳐진 속력 (크면 휘청 그림)
+	TArray<float> HP;          // 유닛 정보 칸
+	TArray<float> MaxHP;
+	TArray<float> Damage;
 	TArray<FYJJProjectile> Projectiles;
 	int32 Count[static_cast<int32>(EYJJTeam::Count)] = { 0, 0 };
 	float Front[static_cast<int32>(EYJJTeam::Count)] = { -1.f, -1.f };
@@ -251,6 +254,9 @@ public:
 	int32 DamageArea(const FVector2f& Center, float Radius, float Damage, float Knockback, EYJJTeam Victims, int32 Attacker = INDEX_NONE);
 	/** 원 안 Victims 편 수 (Cap 까지만 센다) */
 	int32 CountNear(const FVector2f& Center, float Radius, EYJJTeam Victims, int32 Cap) const;
+	/** 원 안에 그 편 보스·진지가 있나 (영웅 AI: 강한 적) */
+	bool AnyStrongNear(const FVector2f& Center, float Radius, EYJJTeam InTeam) const;
+	bool IsCastingSkill(int32 Slot) const { return IsCasting(Slot); }
 
 	// ---- 큰 범위 스킬 (Skills.csv, 유닛 하나에 하나) ----
 	/** 그 유닛의 그 스킬을 지금 쓴다 (게임 스레드, 걸음 사이에). Dir 1 = 오른쪽, -1 = 왼쪽. 대기 중이거나 다른 스킬을 쓰는 중이면 false */
