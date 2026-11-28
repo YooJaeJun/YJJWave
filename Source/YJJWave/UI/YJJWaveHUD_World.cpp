@@ -102,12 +102,14 @@ void AYJJWaveHUD::DrawWall()
 	const float Gate = YJJData::Tune().GateHalf;
 	const float GateY = Current->FieldHeight * Half;
 	const float Seg = L.WallSegment;
-	const int32 Count = FMath::CeilToInt(Current->FieldHeight / Seg) + 1;
+	// 멀리 볼 때 보이는 위아래 둘레 배경 끝까지 성벽을 잇는다 (성문 가운데에 칸을 맞춰서)
+	const float FirstY = GateY - FMath::CeilToFloat((GateY + L.ViewMarginY) / Seg) * Seg;
+	const int32 Count = FMath::CeilToInt((Current->FieldHeight + L.ViewMarginY * 2.f) / Seg) + 2;
 	const FLinearColor Tint = Current->WallFlash > 0.f ? FMath::Lerp(FLinearColor::White, YJJUI::HitTint, Current->WallFlash / FMath::Max(YJJData::Tune().WallFlashTime, KINDA_SMALL_NUMBER)) : FLinearColor::White;
 	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, Count + 2);
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		const float Y = Index * Seg;
+		const float Y = FirstY + Index * Seg;
 		if (FMath::Abs(Y - GateY) < Gate)
 		{
 			continue;

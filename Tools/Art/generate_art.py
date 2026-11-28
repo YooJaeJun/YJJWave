@@ -1177,63 +1177,22 @@ def fx_dust_frame(f):
     return _fx_done(img, 1 - fade * 0.85)
 
 
-def _fx_star(cx, cy, n, r_out, r_in, rot, jitter, seed):
-    rnd = random.Random(seed)
-    pts = []
-    for i in range(n * 2):
-        a = rot + i * math.pi / n
-        r = (r_out if i % 2 == 0 else r_in) * (1 + rnd.uniform(-jitter, jitter))
-        pts.append(((cx + math.cos(a) * r) * FX_SS, (cy + math.sin(a) * r) * FX_SS))
-    return pts
+FX_BURST_SCALES = (0.35, 0.7, 0.95, 1.05, 1.1, 1.12)   # 터짐 프레임마다 크기 (칸 비율)
+FX_BURST_ALPHAS = (1.0, 1.0, 1.0, 0.8, 0.45, 0.15)    # 프레임마다 진하기
+FX_BURST_FIT = 0.82
 
 
-def fx_impact_frame(f):
-    """타격: 번쩍 → 주황·노랑 먹선 별 → 조각과 먹방울이 퍼지며 사라진다"""
-    C, N, s = FX_CELL, FX_ANIM_FRAMES, FX_SS
-    img = _fx_canvas()
-    d = ImageDraw.Draw(img)
-    cx = cy = C / 2
-    if f == 0:
-        for k in range(10):
-            a = k * math.tau / 10
-            p0 = ((cx + math.cos(a) * 34) * s, (cy + math.sin(a) * 34) * s)
-            p1 = ((cx + math.cos(a) * 62) * s, (cy + math.sin(a) * 62) * s)
-            d.line([p0, p1], fill=FX_INK, width=9 * s)
-            d.line([p0, p1], fill=(255, 244, 190, 255), width=4 * s)
-        _fx_circ(d, cx, cy, 34, FX_INK)
-        _fx_circ(d, cx, cy, 29, (255, 255, 255, 255))
-        return _fx_done(img)
-    if f <= 2:
-        k = [0.8, 1.0][f - 1]
-        rot = 0.15 * f
-        d.polygon(_fx_star(cx, cy, 11, 108 * k, 52 * k, rot, 0.18, 5), fill=FX_INK)
-        d.polygon(_fx_star(cx, cy, 11, 100 * k, 46 * k, rot, 0.18, 5), fill=(255, 140, 40, 255))
-        d.polygon(_fx_star(cx, cy, 9, 72 * k, 36 * k, rot + 0.3, 0.2, 6), fill=(255, 220, 70, 255))
-        _fx_circ(d, cx, cy, 26 * k, (255, 255, 236, 255))
-        for j in range(14):
-            a = j * math.tau / 14 + 0.1
-            d.line([((cx + math.cos(a) * 112 * k) * s, (cy + math.sin(a) * 112 * k) * s), ((cx + math.cos(a) * 126 * k) * s, (cy + math.sin(a) * 126 * k) * s)], fill=FX_INK, width=4 * s)
-        return _fx_done(img)
-    u = (f - 3) / max(N - 4, 1)
-    k = 0.7 * (1 - u * 0.7)
-    if f == 3:
-        d.polygon(_fx_star(cx, cy, 11, 90 * k, 46 * k, 0.5, 0.25, 7), fill=FX_INK)
-        d.polygon(_fx_star(cx, cy, 11, 82 * k, 40 * k, 0.5, 0.25, 7), fill=(255, 200, 70, 255))
-    rnd = random.Random(9)
-    for j in range(12):
-        a = j * math.tau / 12 + rnd.uniform(-0.2, 0.2)
-        dist = 70 + 60 * _fx_ease_out(u)
-        x, y = cx + math.cos(a) * dist, cy + math.sin(a) * dist
-        sz = (16 - 8 * u) * rnd.uniform(0.7, 1.2)
-        tri = [(x + math.cos(a) * sz * 1.6, y + math.sin(a) * sz * 1.6), (x + math.cos(a + 2.3) * sz, y + math.sin(a + 2.3) * sz), (x + math.cos(a - 2.3) * sz, y + math.sin(a - 2.3) * sz)]
-        d.polygon([(px * s, py * s) for px, py in tri], fill=FX_INK)
-        inner = [(x + (px - x) * 0.6, y + (py - y) * 0.6) for px, py in tri]
-        d.polygon([(px * s, py * s) for px, py in inner], fill=(255, 196, 60, 255) if j % 2 else (255, 255, 230, 255))
-    for j in range(9):
-        a = j * math.tau / 9 + 0.35
-        dist = 78 + 70 * _fx_ease_out(u)
-        _fx_circ(d, cx + math.cos(a) * dist, cy + math.sin(a) * dist + 20 * u, 7 * (1 - u * 0.6), FX_INK)
-    return _fx_done(img, 1 - max(0, u - 0.3) * 1.2)
+def fx_burst_frame(f):
+    """타격 터짐 (Gemini 폭발 구름 그림): 작게 번쩍 → 부풀어 오름 → 옅어지며 사라짐"""
+    C = FX_CELL
+    cloud = gemini_icons("FxIcons")[2]
+    s = C * FX_BURST_FIT * FX_BURST_SCALES[f] / max(cloud.size)
+    img = cloud.resize((max(1, round(cloud.size[0] * s)), max(1, round(cloud.size[1] * s))), Image.LANCZOS)
+    if FX_BURST_ALPHAS[f] < 1.0:
+        img.putalpha(img.getchannel("A").point(lambda v: int(v * FX_BURST_ALPHAS[f])))
+    cell = Image.new("RGBA", (C, C), (0, 0, 0, 0))
+    cell.alpha_composite(img, ((C - img.size[0]) // 2, (C - img.size[1]) // 2))
+    return cell
 
 
 def fx_slash_frame(f):
@@ -1292,7 +1251,7 @@ def fx_atlas():
     lx, ly = (ladle_cell % 8) * FX_CELL, (ladle_cell // 8) * FX_CELL
     atlas.paste(Image.new("RGBA", (FX_CELL, FX_CELL), (0, 0, 0, 0)), (lx, ly))
     atlas.alpha_composite(_place(gemini_icons("Fort")[3], FX_CELL, 0.95, 0.95, 0.97), (lx, ly))
-    for name, make in (("dust", fx_dust_frame), ("impact", fx_impact_frame), ("slash", fx_slash_frame)):
+    for name, make in (("dust", fx_dust_frame), ("impact", fx_burst_frame), ("slash", fx_slash_frame)):
         for f in range(FX_ANIM_FRAMES):
             atlas.alpha_composite(make(f), (f * FX_CELL, FX_ANIM_ROWS[name] * FX_CELL))
     return atlas
@@ -1956,7 +1915,6 @@ GROUND_GRAVEYARD = dict(grass="#4A5640", patches=["#435038", "#525E46", "#3E4934
 GROUND_BASE = (2048, 740)    # 바닥 무늬를 짠 기준 크기 (전장 하나, 무늬 크기·밀도는 이 기준)
 GROUND_FIELD_PX = 4096       # Ground.png 너비 (= 렌더 타깃 GroundTargetWidth, 최대 확대에서도 또렷하게)
 OUTER_SCALE = 0.5            # Ground_Outer.png = 전장+둘레 한 장을 이 배율로 줄인 것
-OUTER_BUSHES = 260           # 둘레 덤불·바위 수
 GROUND_SOFT = 6              # 풀 무늬를 번지게 하는 폭 (기준 픽셀)
 GROUND_RIM = 6               # 흙길 가장자리 어두운 띠 폭 (기준 픽셀)
 GROUND_RIM_COLOR = (62, 48, 30, 255)
@@ -2046,9 +2004,9 @@ def _ground_whole(P):
         d.ellipse([x - r - k, y - r * 0.7 - k, x + r + k, y + r * 0.7 + k], fill=GROUND_INK)
         d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba("#A79C8E"))
         d.ellipse([x - r * 0.5, y - r * 0.6, x + r * 0.1, y - r * 0.1], fill=rgba("#C9C0B3"))
-    # 진지 (성벽 왼쪽): 다져진 흙, 전장 위아래 높이만큼 왼쪽 끝까지
+    # 진지 (성벽 왼쪽): 다져진 흙, 둘레 배경 위아래 끝까지 (멀리 볼 때 진지가 잘려 보이지 않게)
     camp_x = field[0] + round(520 * t)
-    cy0, cy1 = field[1], field[3]
+    cy0, cy1 = 0, H
     d.rectangle([0, cy0, camp_x, cy1], fill=rgba(P["camp"]))
     for _ in range(int(500 * density * (camp_x * (cy1 - cy0)) / (W * H))):
         x, y = rnd.uniform(0, camp_x), rnd.uniform(cy0, cy1)
@@ -2078,7 +2036,7 @@ def ground(P=GROUND_FOREST):
 
 
 def ground_outer(P=GROUND_FOREST):
-    """전장 바깥 둘레 배경 (멀리 볼 때): 전장+둘레 한 장을 줄이고, 둘레에만 덤불·바위와 어둠.
+    """전장 바깥 둘레 배경 (멀리 볼 때): 전장+둘레 한 장을 줄이고, 끝으로 갈수록 어둡게.
     가운데 전장 자리는 Ground.png 가 덮는다 (같은 그림이라 이음매가 없다)"""
     whole, field = _ground_whole(P)
     s = OUTER_SCALE
@@ -2086,22 +2044,6 @@ def ground_outer(P=GROUND_FOREST):
     img = whole.resize((W, H), Image.LANCZOS)
     f = [round(v * s) for v in field]
     MX, MY = f[0], f[1]
-    rnd = random.Random(5)
-    pen = Pen(W, H, lw=2.6)
-    for _ in range(OUTER_BUSHES):
-        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        if f[0] - 30 < x < f[2] + 30 and f[1] - 30 < y < f[3] + 30:
-            continue
-        cr, cg, _, _ = img.getpixel((int(min(x, W - 1)), int(min(y, H - 1))))
-        if cr > cg:   # 흙길·진지 흙 위에는 안 둔다
-            continue
-        r = rnd.uniform(14, 34)
-        if rnd.random() < 0.7:
-            for j in range(3):
-                pen.ellipse(x + (j - 1) * r * 0.7, y - (j % 2) * r * 0.4, r * 0.75, r * 0.65, rgba(P["blade"]) if j != 1 else rgba(P["patches"][0]))
-        else:
-            pen.ellipse(x, y, r * 0.8, r * 0.55, rgba("#8E8A86"))
-    img.alpha_composite(pen.done(W, H))
     # 전장에서 멀어질수록 어둡게 (작게 계산해 키운다)
     q = 8
     shade = Image.new("L", (W // q + 1, H // q + 1), 0)
