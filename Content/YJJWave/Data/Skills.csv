@@ -10,3 +10,4 @@ CookServe,HeroCook,Skill.CookServe,SkillDesc.CookServe,11,Manual,24,0,0.4,1,0,17
 PotLid,HeroPot,Skill.PotLid,SkillDesc.PotLid,34,Manual,10,0,0.2,4,0.12,170,1.3,1.5,1800,6,,0,Ranged,투척꾼 Z: 앞으로 뚜껑 원반 네 번
 PotBomb,HeroPot,Skill.PotBomb,SkillDesc.PotBomb,4,Manual,20,0,0.9,1,0,330,1.0,5,5500,12,,0,Front,투척꾼 X: 냄비 폭탄 한 방 (예고 길고 아주 세다)
 PotCall,HeroPot,Skill.PotCall,SkillDesc.PotCall,12,Manual,26,0,0.4,1,0,170,0,0.5,1600,3,Brute,4,Summon,투척꾼 C: 망치 대장 넷을 부른다
+BoarStomp,BoarKing,Skill.BoarStomp,,-1,Auto,13,5,1.2,1,0,320,0.6,4,4200,12,,0,Front,멧돼지 대장: 붉은 원 예고 뒤 앞을 들이받는다

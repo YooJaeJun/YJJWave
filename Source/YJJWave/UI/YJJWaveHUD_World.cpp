@@ -111,6 +111,17 @@ void AYJJWaveHUD::DrawWall()
 	const float FirstY = GateY - FMath::CeilToFloat((GateY + L.ViewMarginY) / Seg) * Seg;
 	const int32 Count = FMath::CeilToInt((Current->FieldHeight + L.ViewMarginY * 2.f) / Seg) + 2;
 	const FLinearColor Tint = Current->WallFlash > 0.f ? FMath::Lerp(FLinearColor::White, YJJUI::HitTint, Current->WallFlash / FMath::Max(YJJData::Tune().WallFlashTime, KINDA_SMALL_NUMBER)) : FLinearColor::White;
+	// 성벽·성문 탑 그림자: 성벽 밑을 따라 길게
+	if (FxAtlas.Texture)
+	{
+		const FYJJQuadBatch Shadows = BeginBatch(Canvas->Canvas, FxAtlas.Texture, Count + 2);
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			const FVector2f Feet = WorldToScreen(FVector2f(Current->CampEdgeX, FirstY + Index * Seg));
+			const float SW = L.WallDrawSize * Zoom * L.BuildingShadowWidth;
+			AddQuad(Shadows, Feet - FVector2f(SW * Half, SW * L.BuildingShadowHeight * Half), FVector2f(SW, SW * L.BuildingShadowHeight), FxAtlas.UV(FMath::RoundToInt(L.FxShadow)), FxAtlas.CellUV, FLinearColor(1.f, 1.f, 1.f, L.BuildingShadowAlpha), false);
+		}
+	}
 	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, Count + 2);
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
@@ -316,6 +327,18 @@ void AYJJWaveHUD::DrawCamp()
 	{
 		return;
 	}
+	// 병영 그림자 (땅에 붙어 보이게)
+	if (FxAtlas.Texture)
+	{
+		const FYJJQuadBatch Shadows = BeginBatch(Canvas->Canvas, FxAtlas.Texture, Current->Plots.Num());
+		for (const FYJJPlot& Plot : Current->Plots)
+		{
+			const FVector2f Feet = WorldToScreen(Plot.Pos);
+			const float SW = UI().PlotDrawSize * Zoom * UI().BuildingShadowWidth;
+			const float SH = SW * UI().BuildingShadowHeight;
+			AddQuad(Shadows, Feet - FVector2f(SW * Half, SH * Half), FVector2f(SW, SH), FxAtlas.UV(FMath::RoundToInt(UI().FxShadow)), FxAtlas.CellUV, FLinearColor(1.f, 1.f, 1.f, UI().BuildingShadowAlpha), false);
+		}
+	}
 	const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, BuildingAtlas.Texture, Current->Plots.Num());
 
 	// 진지 칸과 병영. 병사를 내보낼 때 한 번 들썩인다
@@ -475,7 +498,8 @@ void AYJJWaveHUD::DrawSmallUnits(int32 Begin, int32 End)
 			const float Size = Def.DrawSize * Zoom;
 			const int32 Frame = PickFrame(Horde, Slot);
 			const FVector2f Feet = WorldToScreen(Horde.Pos[Slot]);
-			FLinearColor Color = FLinearColor::White;
+			// AI 원화는 쨍해서 땅 위에 붙여 놓은 듯 뜬다 → 모든 유닛에 땅 빛(조금 어둡고 따뜻하게)을 곱한다
+			FLinearColor Color(L.ArtTintR, L.ArtTintG, L.ArtTintB, 1.f);
 			if (Horde.Flash[Slot] > 0.f)
 			{
 				Color = YJJUI::HitTint;

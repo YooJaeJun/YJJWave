@@ -443,11 +443,40 @@ void AYJJWaveHUD::DrawResultStars(float CenterX, float Y, float Start, int32 Sta
 			StarsSounded = Index + 1;
 			FYJJAudio::Play(this, SoundStar);
 		}
-		// 빈 별 안에서 금별이 커지며 차오른다 (살짝 넘쳤다 제자리)
+		// 오른쪽 위에서 크게 돌며 날아와 빈 별 자리에 쾅 박힌다 → 먹 튀김 + 고리가 퍼진다
 		const float T = FMath::Clamp(Local / FMath::Max(L.ResultStarPopTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
-		const float Grow = T + FMath::Sin(T * UE_PI) * (L.ResultStarPopScale - 1.f);
-		const float Drawn = Size * Grow;
-		DrawIcon(FMath::RoundToInt(L.UiStar), X + (Size - Drawn) * Half, Y + (Size - Drawn) * Half, Drawn, YJJUI::PerkTaken);
+		const float Ease = 1.f - FMath::Square(1.f - T);
+		const FVector2f Home(X + Size * Half, Y + Size * Half);
+		const FVector2f From = Home + FVector2f(Size * L.ResultStarFlySide, -Size * L.ResultStarFlyHeight);
+		const FVector2f At = FMath::Lerp(From, Home, T * T);
+		const float Drawn = Size * FMath::Lerp(L.ResultStarPopScale, 1.f, Ease);
+		const float Spin = (1.f - Ease) * L.ResultStarSpin * 2.f * UE_PI;
+		if (UiAtlas.Texture)
+		{
+			const FYJJQuadBatch StarBatch = BeginBatch(Canvas->Canvas, UiAtlas.Texture, 1);
+			AddQuadRotated(StarBatch, ViewOffset + At * ViewScale, FVector2f(Drawn * ViewScale), Spin, UiAtlas.UV(FMath::RoundToInt(L.UiStar)), UiAtlas.CellUV, YJJUI::PerkTaken, false);
+		}
+		const float Since = Local - L.ResultStarPopTime;
+		if (Since > 0.f && Since < L.ResultStarBurstTime && FxAtlas.Texture)
+		{
+			const float B = Since / L.ResultStarBurstTime;
+			const FYJJQuadBatch Burst = BeginBatch(Canvas->Canvas, FxAtlas.Texture, 2);
+			const float Ring = Size * L.ResultStarBurstScale * FMath::Sqrt(B) * ViewScale;
+			AddQuad(Burst, ViewOffset + Home * ViewScale - FVector2f(Ring * Half), FVector2f(Ring), FxAtlas.UV(FMath::RoundToInt(L.FxRing)), FxAtlas.CellUV, YJJUI::WithAlpha(YJJUI::Highlight, 1.f - B), false);
+			// 작은 금별 조각이 둘레로 튀며 사라진다 (불 구름 대신)
+			if (UiAtlas.Texture)
+			{
+				const FYJJQuadBatch Sparks = BeginBatch(Canvas->Canvas, UiAtlas.Texture, ResultStarSparks);
+				const float Out = Size * L.ResultStarBurstScale * Half * (1.f - FMath::Square(1.f - B));
+				const float Bit = Size * ResultStarSparkSize * (1.f - B);
+				for (int32 Spark = 0; Spark < ResultStarSparks; ++Spark)
+				{
+					const float Angle = Spark * 2.f * UE_PI / ResultStarSparks + Index;
+					const FVector2f At2 = Home + FVector2f(FMath::Cos(Angle), FMath::Sin(Angle)) * Out;
+					AddQuadRotated(Sparks, ViewOffset + At2 * ViewScale, FVector2f(Bit * ViewScale), Angle + B * UE_PI, UiAtlas.UV(FMath::RoundToInt(L.UiStar)), UiAtlas.CellUV, YJJUI::WithAlpha(YJJUI::PerkTaken, 1.f - B), false);
+				}
+			}
+		}
 	}
 }
 
@@ -749,6 +778,16 @@ void AYJJWaveHUD::HandleMouseDown(bool bRight)
 			break;
 		case EButton::MapClose:
 			OpenMapPanel(EYJJMapPanel::None);
+			break;
+		case EButton::BookPick:
+			BookView = Button->Index;
+			break;
+		case EButton::BookEquip:
+			if (MapPanel == EYJJMapPanel::Heroes && YJJData::Heroes().IsValidIndex(BookView))
+			{
+				Mode->SetHero(YJJData::Heroes()[BookView].Id);
+				Mode->SaveProgress();
+			}
 			break;
 		case EButton::TitleStart:
 			Mode->GoToWorldMap();

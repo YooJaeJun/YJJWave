@@ -510,6 +510,20 @@ void FYJJBattle::HandleSkillEvents()
 	}
 }
 
+void FYJJBattle::DebugSpawnAtWall(int32 Unit, int32 Count)
+{
+	if (!YJJData::Units().IsValidIndex(Unit))
+	{
+		return;
+	}
+	const FYJJTuning& T = YJJData::Tune();
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		SpawnEnemyAt(Unit, FVector2f(CampEdgeX + T.CampSpawnScatter + Random.FRandRange(0.f, T.CampSpawnScatter), FieldHeight * Random.FRandRange(0.2f, 0.8f)));
+	}
+	UE_LOG(LogYJJWave, Display, TEXT("[Test] 성벽 앞에 %s %d마리"), *YJJData::Unit(Unit).Id.ToString(), Count);
+}
+
 void FYJJBattle::TickHeroAI()
 {
 	const int32 Hero = Horde.Hero();
@@ -631,7 +645,7 @@ void FYJJBattle::Finish(bool bWon)
 	bVictory = bWon;
 	Sounds.Add(bWon ? SoundVictory : SoundDefeat);
 	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 스테이지 %d %s: 웨이브 %d/%d, 처치 %d, 시간 %.0f초, 영혼 +%.0f"),
-		Stage + 1, bWon ? TEXT("돌파") : TEXT("패배 (영웅 쓰러짐)"), Level, NumWaves(), Kills, Time, SoulsEarned);
+		Stage + 1, bWon ? TEXT("돌파") : TEXT("패배 (성벽 무너짐)"), Level, NumWaves(), Kills, Time, SoulsEarned);
 }
 
 void FYJJBattle::SpawnHero()

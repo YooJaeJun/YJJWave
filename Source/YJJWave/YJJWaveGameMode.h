@@ -116,6 +116,8 @@ private:
 	static TAutoConsoleVariable<float> CVarAutoPlaySpeed;
 	static TAutoConsoleVariable<float> CVarShotInterval;
 	static TAutoConsoleVariable<int32> CVarBench;
+	static TAutoConsoleVariable<int32> CVarTestBreach;
+	bool bBreachSpawned = false;
 	static TAutoConsoleVariable<int32> CVarAsyncSim;
 	static constexpr double MsPerSecond = 1000.0;
 	static constexpr int32 BenchSeedSalt = 7919;

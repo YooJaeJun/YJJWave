@@ -15,7 +15,7 @@ import os
 import random
 import sys
 
-from PIL import ImageChops, Image, ImageDraw, ImageFilter
+from PIL import ImageChops, Image, ImageDraw, ImageEnhance, ImageFilter
 
 import rig   # AI 원화 유닛 애니메이션 (영웅·베테랑·해골왕)
 
@@ -27,8 +27,8 @@ OUT = _OUT_ARGS[0] if _OUT_ARGS else os.path.join(os.path.dirname(__file__), "..
 
 UNIT_CELL = 128
 UNIT_COLS = 32
-UNIT_ROWS = 20
-PROJECTILE_ROW = 19
+UNIT_ROWS = 24
+PROJECTILE_ROW = 23
 FOOT = 0.92
 
 
@@ -137,6 +137,9 @@ UNITS.append(dict(name="BoneTower", body="#FFFFFF", head="#FFFFFF", hat="none", 
 # 16·17: 영웅 둘 (Gemini 원화, 리그로 움직인다)
 UNITS.append(dict(name="HeroCook", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0, faces=HOTBLOOD_FACES))
 UNITS.append(dict(name="HeroPot", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0, faces=HOTBLOOD_FACES))
+# 18~22: 첫 스테이지 동물 (Gemini 원화)
+for _name in ("Boar", "Squirrel", "BeastDen", "BeastTower", "BoarKing"):
+    UNITS.append(dict(name=_name, body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
 
 
 # 한 유닛의 그림 칸 (UILayout.csv Anim* 와 같아야 한다). kind는 표정 고르기에 쓴다 (UNITS faces)
@@ -624,6 +627,11 @@ ART_UNITS = {
     "GruntHero": dict(file="GruntHero.png", flip=False, shadow=True),
     "HeroCook": dict(file="HeroCook.png", flip=False, shadow=True),
     "HeroPot": dict(file="HeroPot.png", flip=False, shadow=True),
+    "Boar": dict(file="Boar.png", flip=True, shadow=True),
+    "Squirrel": dict(file="Squirrel.png", flip=True, shadow=True),
+    "BoarKing": dict(file="Boar.png", flip=True, shadow=True),
+    "BeastDen": dict(file="BeastDen.png", flip=False, building=True),
+    "BeastTower": dict(file="BeastTower.png", flip=False, building=True, clear_all_white=True),
     "BoneTent": dict(file="CampTent.png", flip=False, building=True),
     "BoneTower": dict(file="CampTower.png", flip=False, building=True),
 }
@@ -1489,8 +1497,9 @@ def buildings_atlas():
                 cell = _tier_stars(cell, tier, C)
             atlas.alpha_composite(cell, (k * C, tier * C))
     atlas.alpha_composite(_place(fort[2], C, PLOT_FIT, FORT_FIT, BUILDING_BASE), (4 * C, 0))
-    atlas.alpha_composite(_place(fort[0], C, FORT_FIT, FORT_FIT, FORT_BASE), (4 * C, C))
-    atlas.alpha_composite(_place(fort[1], C, FORT_FIT, FORT_FIT, FORT_BASE), (5 * C, C))
+    stone = gemini_icons("StoneWall")
+    atlas.alpha_composite(_place(stone[0], C, FORT_FIT, FORT_FIT, FORT_BASE), (4 * C, C))
+    atlas.alpha_composite(_place(stone[1], C, FORT_FIT, FORT_FIT, FORT_BASE), (5 * C, C))
     return atlas
 
 
@@ -1827,6 +1836,7 @@ GEMINI_ICON_SHEETS = {
     "Fort": (4, 1),       # 성벽 조각, 성문 탑, 빈 건설 터, 큰 국자
     "PerkIcons": (4, 4),  # 특성 별 효과 16종 (UI 16, 18~32)
     "FxIcons": (3, 2),    # 불꽃, 불덩이, 폭발 구름, 김, 빛기둥, 그을음
+    "StoneWall": (2, 1),  # 돌 성벽 조각, 돌 성문 탑
 }
 GEMINI_UI_CELLS = {("UIIconsA", 0): 35, ("UIIconsA", 3): 4, ("UIIconsA", 4): 5, ("UIIconsA", 5): 33}
 GEMINI_UI_CELLS.update({("UIIconsB", k): 36 + k for k in range(10)})
@@ -1906,14 +1916,14 @@ def ui_atlas():
 # 바닥
 
 GROUND_FOREST = dict(grass="#5E8F3A", patches=["#58873A", "#67993F", "#527F34", "#6CA144"], dirt="#8C6B45",
-                     specks=["#7E6040", "#977552", "#856544"], blade="#3F6B26", camp="#7A5E3C", camp_specks=["#6E5436", "#856845", "#735838"], graves=False)
+                     specks=["#7E6040", "#977552", "#856544"], blade="#3F6B26", camp="#7A5E3C", camp_specks=["#6E5436", "#856845", "#735838"], graves=False, ai="GroundForest.png")
 # 공동묘지: 시든 풀, 잿빛 흙, 풀밭에 비석과 십자가
 GROUND_GRAVEYARD = dict(grass="#4A5640", patches=["#435038", "#525E46", "#3E4934", "#57634A"], dirt="#6B5E58",
-                        specks=["#5E524C", "#776A63", "#665A54"], blade="#2F3A28", camp="#5E5248", camp_specks=["#544840", "#6A5D52", "#5A4E46"], graves=True)
+                        specks=["#5E524C", "#776A63", "#665A54"], blade="#2F3A28", camp="#5E5248", camp_specks=["#544840", "#6A5D52", "#5A4E46"], graves=True, ai="GroundGraveyard.png")
 
 
 GROUND_BASE = (2048, 740)    # 바닥 무늬를 짠 기준 크기 (전장 하나, 무늬 크기·밀도는 이 기준)
-GROUND_FIELD_PX = 4096       # Ground.png 너비 (= 렌더 타깃 GroundTargetWidth, 최대 확대에서도 또렷하게)
+GROUND_FIELD_PX = 6144       # Ground.png 너비 (= 렌더 타깃 GroundTargetWidth, 최대 확대에서도 또렷하게)
 OUTER_SCALE = 0.5            # Ground_Outer.png = 전장+둘레 한 장을 이 배율로 줄인 것
 GROUND_SOFT = 6              # 풀 무늬를 번지게 하는 폭 (기준 픽셀)
 GROUND_RIM = 6               # 흙길 가장자리 어두운 띠 폭 (기준 픽셀)
@@ -1935,7 +1945,111 @@ def _table_values(file, names):
     return [float(rows[n]) for n in names]
 
 
+AI_ROAD_TOP = 0.345      # Gemini 바닥 그림에서 흙길 위끝 (그림 높이 비율)
+AI_ROAD_EDGE = 0.04      # 흙길 가장자리 띠 두께 (그림 높이 비율)
+AI_GROUND_SHRINK = 0.22  # 바닥 원본을 이만큼 작게 (선 굵기를 유닛 먹선만큼)
+AI_GROUND_SATURATION = 0.72   # 바닥 채도 (유닛보다 눈에 덜 띄게)
+AI_GROUND_BRIGHTNESS = 0.86   # 바닥 밝기
+AI_ROAD_BOTTOM = 0.68    # 흙길 아래끝
+FIELD_ROAD_TOP = 0.3     # 전장에서 흙길이 놓일 자리 (전장 높이 비율)
+FIELD_ROAD_BOTTOM = 0.72
+CAMP_INK = 5             # 진지 흙마당 가장자리 먹선 두께 (기준 픽셀)
+
+
+def _ai_ground_whole(P):
+    """Gemini 전장 바닥 (유닛·건물과 같은 먹선 화풍): 흙길을 전장 가운데에 맞춰 키우고,
+    위아래는 풀밭 띠를 뒤집어 가며 잇고, 좌우는 뒤집어 가며 이어 둘레 끝까지 채운다. 진지 흙마당은 흙길 결로 칠하고 먹선을 두른다"""
+    FW, FH = _table_values("Tuning.csv", ["FieldWidth", "FieldHeight"])
+    MX, MY = _table_values("UILayout.csv", ["ViewMarginX", "ViewMarginY"])
+    t = GROUND_FIELD_PX / FW
+    W, H = round((FW + MX * 2) * t), round((FH + MY * 2) * t)
+    field = (round(MX * t), round(MY * t), round(MX * t) + GROUND_FIELD_PX, round(MY * t) + round(FH * t))
+    src = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "AI", "Approved", P["ai"])).convert("RGBA")
+    # 오른쪽 아래 생성기 표시(반짝이)를 옆 풀밭으로 덮는다
+    w0, h0 = src.size
+    patch = src.crop((round(w0 * 0.72), round(h0 * 0.86), round(w0 * 0.86), h0))
+    src.paste(patch, (w0 - patch.size[0], h0 - patch.size[1]))
+    # 원본을 작게 써서 (선이 유닛만큼 가늘게) 흙길 위·아래 가장자리만 원본 그대로 두고 가운데는 흙길 속을 이어 붙인다
+    road_px = (FIELD_ROAD_BOTTOM - FIELD_ROAD_TOP) * FH * t
+    s = road_px / ((AI_ROAD_BOTTOM - AI_ROAD_TOP) * src.size[1]) * AI_GROUND_SHRINK
+    src = src.resize((round(src.size[0] * s), round(src.size[1] * s)), Image.LANCZOS)
+    src = ImageEnhance.Brightness(ImageEnhance.Color(src).enhance(AI_GROUND_SATURATION)).enhance(AI_GROUND_BRIGHTNESS)
+    sw, sh = src.size
+    edge = round(sh * AI_ROAD_EDGE)
+    r0, r1 = round(sh * AI_ROAD_TOP), round(sh * AI_ROAD_BOTTOM)
+    upper = src.crop((0, 0, sw, r0 + edge))                  # 풀밭 + 흙길 위 가장자리
+    lower = src.crop((0, r1 - edge, sw, sh))                 # 흙길 아래 가장자리 + 풀밭
+    inner = src.crop((0, r0 + edge, sw, r1 - edge))          # 흙길 속
+    top_band = src.crop((0, 0, sw, round(r0 * 0.9)))
+    bottom_band = src.crop((0, round(r1 + (sh - r1) * 0.1), sw, sh))
+    road_top = field[1] + FIELD_ROAD_TOP * FH * t
+    road_bottom = field[1] + FIELD_ROAD_BOTTOM * FH * t
+    column = Image.new("RGBA", (sw, H), (0, 0, 0, 0))
+    # 위 풀밭 (뒤집어 가며 위로)
+    y = road_top - r0
+    k = 0
+    while y > 0:
+        band = top_band if k % 2 == 0 else top_band.transpose(Image.FLIP_TOP_BOTTOM)
+        y -= band.size[1]
+        column.alpha_composite(band, (0, max(round(y), 0)), (0, max(-round(y), 0)))
+        k += 1
+    # 아래 풀밭
+    y = road_bottom + (sh - r1)
+    k = 0
+    while y < H:
+        band = bottom_band if k % 2 == 0 else bottom_band.transpose(Image.FLIP_TOP_BOTTOM)
+        column.alpha_composite(band, (0, round(y)))
+        y += band.size[1]
+        k += 1
+    # 흙길 속을 이어 붙이고, 위·아래 가장자리를 덮는다
+    y = road_top + edge
+    k = 0
+    while y < road_bottom - edge:
+        column.alpha_composite(inner if k % 2 == 0 else inner.transpose(Image.FLIP_TOP_BOTTOM), (0, round(y)))
+        y += inner.size[1]
+        k += 1
+    column.alpha_composite(lower, (0, round(road_bottom - edge)))
+    column.alpha_composite(upper, (0, max(round(road_top - r0), 0)), (0, max(-round(road_top - r0), 0)))
+    # 가로: 좌우를 뒤집어 가며 이어 이음매가 안 보이게
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 255))
+    x = 0
+    k = 0
+    while x < W:
+        img.alpha_composite(column if k % 2 == 0 else column.transpose(Image.FLIP_LEFT_RIGHT), (x, 0))
+        x += sw
+        k += 1
+    # 진지 흙마당 (성벽 왼쪽 전부): 흙길 색으로 다지고, 얼룩·먹선 조약돌, 오른쪽 가장자리에 먹선
+    camp_x = field[0] + round(520 * t)
+    road = inner.convert("RGB")
+    base = road.resize((1, 1), Image.LANCZOS).getpixel((0, 0))
+    yard = Image.new("RGBA", (camp_x, H), base + (255,))
+    yd = ImageDraw.Draw(yard)
+    rnd = random.Random(17)
+    k_ink = GROUND_FIELD_PX / GROUND_BASE[0]
+    for _ in range(int(camp_x * H / 4000)):
+        x, y = rnd.uniform(0, camp_x), rnd.uniform(0, H)
+        r = rnd.uniform(8, 30) * k_ink
+        tone = rnd.choice((-14, -8, 8, 12))
+        yd.ellipse([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=tuple(max(0, min(255, c + tone)) for c in base) + (255,))
+    yard = yard.filter(ImageFilter.GaussianBlur(4 * k_ink))
+    yd = ImageDraw.Draw(yard)
+    for _ in range(int(camp_x * H / 60000)):
+        x, y = rnd.uniform(0, camp_x), rnd.uniform(0, H)
+        r = rnd.uniform(3, 7) * k_ink
+        yd.ellipse([x - r - k_ink, y - r * 0.7 - k_ink, x + r + k_ink, y + r * 0.7 + k_ink], fill=GROUND_INK)
+        yd.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rgba("#A79C8E"))
+    img.paste(yard, (0, 0))
+    d = ImageDraw.Draw(img)
+    d.line([(camp_x, 0), (camp_x, H)], fill=GROUND_INK, width=round(CAMP_INK * k_ink))
+    return img, field
+
+
 def _ground_whole(P):
+    if P.get("ai"):
+        key = P["ai"]
+        if key not in _ground_cache:
+            _ground_cache[key] = _ai_ground_whole(P)
+        return _ground_cache[key]
     """전장 + 둘레를 한 장으로 (무늬가 끊기지 않게). 반환: 그림, 전장 자리 (x0, y0, x1, y1)"""
     key = P["grass"]
     if key in _ground_cache:

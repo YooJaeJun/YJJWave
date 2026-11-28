@@ -111,6 +111,7 @@ struct FYJJTuning
 	UPROPERTY() float ChokeMergeDist = 0.f;   // 길목 바위 오른쪽 끝이 이만큼 안이면 한 줄로 친다 (길목 돌파 알림)
 	UPROPERTY() float HeroChargeRange = 0.f;   // 영웅 AI: 적 앞줄이 영웅에서 이 거리 안이면 돌격
 	UPROPERTY() float HeroSummonSense = 0.f;   // 영웅 AI 소환 판단: 스킬 반경 × 이 배 안의 적·아군 수를 견준다
+	UPROPERTY() int32 TestBreachUnit = 0;   // 패배 시험: 성벽 앞에 부르는 유닛 번호 (Units.csv 줄, 8 = 해골 왕)
 	UPROPERTY() int32 HeroSlot2Stage = 0;   // 영웅 2번 자리가 열리는 스테이지 (이 스테이지를 깨면)
 	// ---- 큰 범위 스킬 (Skills.csv): 영웅은 R, 보스·진급 영웅은 저절로 ----
 	UPROPERTY() float SkillWarnMinTime = 0.f;   // 스킬 예고 원을 적어도 이만큼 보여 준다
@@ -239,11 +240,25 @@ struct FYJJUILayout
 	UPROPERTY() float MapPanelTitleY = 0.f;   // 월드맵 창 (영웅·스킬) 제목 y
 	UPROPERTY() float HeroSlotH = 0.f;   // 영웅 편성: 자리 칸 높이
 	UPROPERTY() float HeroSlotY = 0.f;   // 영웅 편성: 자리 칸 위끝
-	UPROPERTY() float MapButtonW = 0.f;   // 월드맵 아래 버튼 (영웅·스킬·특성) 너비
-	UPROPERTY() float MapButtonH = 0.f;   // 월드맵 아래 버튼 높이
-	UPROPERTY() float MapButtonGap = 0.f;   // 월드맵 아래 버튼 사이
-	UPROPERTY() float MapButtonMargin = 0.f;   // 월드맵 아래 버튼과 화면 아래 사이
 	UPROPERTY() float UnitInfoW = 0.f;   // 전장 아래 가운데 유닛 정보 칸 너비
+	UPROPERTY() float MapButtonSize = 0.f;   // 월드맵 우측 하단 아이콘 버튼 크기
+	UPROPERTY() float MapButtonGap = 0.f;   // 월드맵 아이콘 버튼 사이
+	UPROPERTY() float MapButtonMargin = 0.f;   // 월드맵 아이콘 버튼과 화면 가장자리 사이
+	UPROPERTY() float MapButtonIcon = 0.f;   // 아이콘 버튼 그림 크기 (버튼 비율)
+	UPROPERTY() float BookPad = 0.f;   // 전체 화면 창 둘레 여백
+	UPROPERTY() float BookListW = 0.f;   // 전체 화면 창: 왼쪽 목록 너비
+	UPROPERTY() float BookInfoW = 0.f;   // 전체 화면 창: 오른쪽 설명 너비
+	UPROPERTY() float BookTileSize = 0.f;   // 왼쪽 목록 칸 크기
+	UPROPERTY() float BookTileGap = 0.f;   // 왼쪽 목록 칸 사이
+	UPROPERTY() float BookHeroSize = 0.f;   // 가운데 큰 영웅 그림 크기
+	UPROPERTY() float BookSlotSize = 0.f;   // 가운데 아래 장착 칸 크기
+	UPROPERTY() float BookStatBarW = 0.f;   // 능력치 막대 너비
+	UPROPERTY() float BookCloseSize = 0.f;   // 왼쪽 위 닫기 버튼 크기
+	UPROPERTY() float ResultStarFlyHeight = 0.f;   // 결과 별이 날아오는 높이 (별 크기 배율)
+	UPROPERTY() float ResultStarFlySide = 0.f;   // 결과 별이 날아오는 옆 거리 (별 크기 배율)
+	UPROPERTY() float ResultStarSpin = 0.f;   // 결과 별이 날아오며 도는 바퀴 수
+	UPROPERTY() float ResultStarBurstTime = 0.f;   // 별이 박힐 때 터짐 시간
+	UPROPERTY() float ResultStarBurstScale = 0.f;   // 별이 박힐 때 터짐 크기 (별 크기 배율)
 	UPROPERTY() float UnitPickRadius = 0.f;   // 유닛 고르기: 클릭 자리에서 이 거리 안 (월드)
 	UPROPERTY() float SkillWarnAlpha = 0.f;   // 스킬 예고: 바깥 원 진하기
 	UPROPERTY() float SkillWarnFillAlpha = 0.f;   // 스킬 예고: 차오르는 안쪽 원 처음 진하기 (다 차면 1)
@@ -477,6 +492,9 @@ struct FYJJUILayout
 	UPROPERTY() float BigShadowAlpha = 0.f;   // 큰 유닛 그림자 진하기 (발이 땅에 붙어 보이게)
 	UPROPERTY() float ContactShadowScale = 0.f;   // 발밑 접지 그림자 크기 (그림자 너비 비율, 작고 진하게 → 땅에 붙어 보인다)
 	UPROPERTY() float ContactShadowAlpha = 0.f;   // 발밑 접지 그림자 진하기
+	UPROPERTY() float BuildingShadowWidth = 0.f;   // 병영·성문 탑 그림자 너비 (그림 크기 비율)
+	UPROPERTY() float BuildingShadowHeight = 0.f;   // 병영·성문 탑 그림자 높이 (너비 비율)
+	UPROPERTY() float BuildingShadowAlpha = 0.f;   // 건물 그림자 진하기
 	UPROPERTY() float ArtTintR = 0.f;   // 큰 유닛 원화에 곱하는 땅 빛 R (쨍한 원화를 땅 톤에 맞춤)
 	UPROPERTY() float ArtTintG = 0.f;   // 땅 빛 G
 	UPROPERTY() float ArtTintB = 0.f;   // 땅 빛 B

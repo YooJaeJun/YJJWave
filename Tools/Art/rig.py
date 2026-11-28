@@ -152,6 +152,30 @@ RIGS = {
         },
         windup=-35, strike=90,
     ),
+    # 멧돼지: 큰 머리, 몽둥이 든 팔(앞), 꼬리(망토 자리), 두 다리
+    "Boar": dict(
+        feet=(255, 840),
+        parts={
+            "cape": dict(poly=[(0, 595), (125, 595), (130, 700), (0, 700)], pivot=(115, 640), blur=12),
+            "back_leg": dict(poly=[(105, 690), (225, 690), (225, 844), (105, 844)], pivot=(165, 700)),
+            "front_leg": dict(poly=[(285, 690), (410, 690), (410, 844), (285, 844)], pivot=(345, 700)),
+            "crown": dict(poly=[(50, 0), (480, 0), (500, 250), (470, 400), (380, 445), (180, 445), (90, 400), (40, 260)], pivot=(270, 445), blur=24),
+            "sword": dict(poly=[(405, 470), (480, 440), (545, 160), (695, 160), (695, 270), (575, 600), (470, 625), (420, 560)], pivot=(410, 500), blur=8),
+        },
+        windup=-28, strike=70,
+    ),
+    # 미친 다람쥐: 큰 꼬리(망토 자리), 솔방울 든 팔, 머리, 두 다리
+    "Squirrel": dict(
+        feet=(420, 835),
+        parts={
+            "cape": dict(poly=[(0, 0), (330, 0), (300, 250), (245, 450), (300, 700), (0, 700)], pivot=(280, 450), blur=22),
+            "back_leg": dict(poly=[(275, 680), (385, 680), (385, 838), (275, 838)], pivot=(330, 690)),
+            "front_leg": dict(poly=[(445, 680), (595, 680), (595, 838), (445, 838)], pivot=(510, 690)),
+            "crown": dict(poly=[(265, 50), (600, 40), (670, 300), (640, 430), (500, 460), (320, 460), (262, 330)], pivot=(450, 455), blur=24),
+            "sword": dict(poly=[(525, 450), (640, 270), (830, 270), (830, 485), (700, 560), (565, 525)], pivot=(530, 470), blur=8),
+        },
+        windup=-25, strike=55,
+    ),
     # 금발 해골 보스급: 머리(해골·금발·왕관)·망토·대검. 다리는 망토 앞이라 떼지 않고 몸째 들썩인다
     "BoneKing": dict(
         feet=(420, 930),
@@ -184,6 +208,8 @@ def _grunt_variant(bx, by, sx):
         parts[part] = dict(spec, poly=[move(p) for p in poly], pivot=move(spec["pivot"]))
     return dict(base, feet=move(base["feet"]), parts=parts)
 
+
+RIGS["BoarKing"] = RIGS["Boar"]   # 멧돼지 대장 = 멧돼지 원화를 크게
 
 for _name, (_bx, _by, _sx) in GRUNT_VARIANTS.items():
     RIGS[_name] = _grunt_variant(_bx, _by, _sx)

@@ -15,6 +15,7 @@ TAutoConsoleVariable<float> AYJJWaveGameMode::CVarAutoPlayTime(TEXT("yjj.AutoPla
 TAutoConsoleVariable<float> AYJJWaveGameMode::CVarAutoPlaySpeed(TEXT("yjj.AutoPlaySpeed"), 1.f, TEXT("오토파일럿 배속"));
 TAutoConsoleVariable<float> AYJJWaveGameMode::CVarShotInterval(TEXT("yjj.ShotInterval"), 0.f, TEXT("오토파일럿: 실제 시간 몇 초마다 스크린샷 (0이면 끝에만)"));
 TAutoConsoleVariable<int32> AYJJWaveGameMode::CVarAsyncSim(TEXT("yjj.AsyncSim"), 1, TEXT("1이면 유닛 시뮬을 작업 스레드에서 그리기와 겹쳐 돌린다"));
+TAutoConsoleVariable<int32> AYJJWaveGameMode::CVarTestBreach(TEXT("yjj.TestBreach"), 0, TEXT("패배 시험: 판이 시작되면 성벽 앞에 센 적 N마리 (Tuning TestBreachUnit)"));
 TAutoConsoleVariable<int32> AYJJWaveGameMode::CVarBench(TEXT("yjj.Bench"), 0, TEXT("시작하자마자 편마다 N마리를 깔아 맞붙인다"));
 
 AYJJWaveGameMode::AYJJWaveGameMode()
@@ -263,6 +264,12 @@ void AYJJWaveGameMode::Tick(float DeltaSeconds)
 		}
 		FYJJAudio::PlayMusic(this, MusicMenu);
 		return;
+	}
+	if (!bBreachSpawned && CVarTestBreach.GetValueOnGameThread() > 0 && !Battle.IsChoosing() && !CutsceneLine())
+	{
+		bBreachSpawned = true;
+		WaitForSim();
+		Battle.DebugSpawnAtWall(YJJData::Tune().TestBreachUnit, CVarTestBreach.GetValueOnGameThread());
 	}
 	if (!bBenchSpawned && CVarBench.GetValueOnGameThread() > 0)
 	{

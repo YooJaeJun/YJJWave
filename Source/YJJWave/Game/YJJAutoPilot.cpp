@@ -144,7 +144,7 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 			HUD->FocusWorld(bOut ? FVector2f(Battle.FieldWidth * 0.5f, Battle.FieldHeight * 0.5f) : Battle.HeroPos(), bOut ? ZoomOutShot : ZoomInShot);
 			if (ZoomShotHold <= 0.f)
 			{
-				Mode->TakeShot(FString::Printf(TEXT("%s%s"), ShotPrefix, bOut ? TEXT("ZoomOut") : TEXT("ZoomIn")));
+				Mode->TakeShot(FString::Printf(TEXT("%s%s%d"), ShotPrefix, bOut ? TEXT("ZoomOut") : TEXT("ZoomIn"), Battle.Stage + 1));
 				ZoomShotHold = ZoomShotHoldTime;
 			}
 			ZoomShotHold -= RealDeltaSeconds;
@@ -312,6 +312,7 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	if (Battle.bGameOver && Mode->HasNextStage() && ResultWait >= ResultShotDelay + MenuShotWait)
 	{
 		bEndingShot = bResultShot = false;
+		ZoomShotStep = 0;
 		ResultWait = 0.f;
 		PickHeroFor(Battle.Stage + 1);
 		Mode->NextStage();

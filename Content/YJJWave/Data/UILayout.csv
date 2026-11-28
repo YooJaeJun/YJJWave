@@ -43,11 +43,25 @@ HeroLineupCardH,390,영웅 편성 카드 높이
 MapPanelTitleY,50,월드맵 창 (영웅·스킬) 제목 y
 HeroSlotH,170,영웅 편성: 자리 칸 높이
 HeroSlotY,170,영웅 편성: 자리 칸 위끝
-MapButtonW,200,월드맵 아래 버튼 (영웅·스킬·특성) 너비
-MapButtonH,66,월드맵 아래 버튼 높이
-MapButtonGap,20,월드맵 아래 버튼 사이
-MapButtonMargin,26,월드맵 아래 버튼과 화면 아래 사이
 UnitInfoW,560,전장 아래 가운데 유닛 정보 칸 너비
+MapButtonSize,112,월드맵 우측 하단 아이콘 버튼 크기
+MapButtonGap,18,월드맵 아이콘 버튼 사이
+MapButtonMargin,26,월드맵 아이콘 버튼과 화면 가장자리 사이
+MapButtonIcon,0.7,아이콘 버튼 그림 크기 (버튼 비율)
+BookPad,40,전체 화면 창 둘레 여백
+BookListW,420,전체 화면 창: 왼쪽 목록 너비
+BookInfoW,560,전체 화면 창: 오른쪽 설명 너비
+BookTileSize,150,왼쪽 목록 칸 크기
+BookTileGap,16,왼쪽 목록 칸 사이
+BookHeroSize,520,가운데 큰 영웅 그림 크기
+BookSlotSize,120,가운데 아래 장착 칸 크기
+BookStatBarW,220,능력치 막대 너비
+BookCloseSize,80,왼쪽 위 닫기 버튼 크기
+ResultStarFlyHeight,2.4,결과 별이 날아오는 높이 (별 크기 배율)
+ResultStarFlySide,1.6,결과 별이 날아오는 옆 거리 (별 크기 배율)
+ResultStarSpin,1.5,결과 별이 날아오며 도는 바퀴 수
+ResultStarBurstTime,0.45,별이 박힐 때 터짐 시간
+ResultStarBurstScale,2.6,별이 박힐 때 터짐 크기 (별 크기 배율)
 UnitPickRadius,46,유닛 고르기: 클릭 자리에서 이 거리 안 (월드)
 SkillWarnAlpha,0.45,스킬 예고: 바깥 원 진하기
 SkillWarnFillAlpha,0.25,스킬 예고: 차오르는 안쪽 원 처음 진하기 (다 차면 1)
@@ -132,7 +146,7 @@ ResultStarCount,3,별 수
 ResultStarSize,92,결과 별 크기
 ResultStarGap,24,결과 별 사이
 ResultStarDelay,0.45,별이 하나씩 나오는 간격
-ResultStarPopTime,0.25,별이 커졌다 자리 잡는 시간
+ResultStarPopTime,0.5,별이 커졌다 자리 잡는 시간
 ResultStarPopScale,1.8,별이 처음 나올 때 크기 배율
 ResultStarEmptyAlpha,0.45,얻지 못한 별 자리 진하기
 TitleShade,0.35,타이틀 바닥 어둡게
@@ -208,7 +222,7 @@ UnitCell,128,Units.png 칸 크기
 FxCell,256,Fx.png 칸 크기
 BuildingCell,256,Buildings.png 칸 크기
 UiCell,128,UI.png 칸 크기
-ProjectileRow,19,Units.png 투사체 줄
+ProjectileRow,23,Units.png 투사체 줄
 AnimWalkFirst,0,Units.png 걷기 첫 칸
 AnimWalkFrames,8,걷기 칸 수 (그림 크기만큼 걸을 때 한 바퀴)
 AnimAttackFirst,8,공격 첫 칸
@@ -259,18 +273,21 @@ CameraStartX,900,시작 시점 x
 PanSpeed,900,키보드·가장자리 이동 속도 (화면 픽셀/초)
 EdgePan,1,1이면 화면 가장자리에 마우스를 대면 이동
 EdgePanPixels,12,가장자리 폭
-GroundTargetWidth,4096,피·시체가 쌓이는 바닥 렌더 타깃 너비 (높이는 전장 비율)
+GroundTargetWidth,6144,피·시체가 쌓이는 바닥 렌더 타깃 너비 (높이는 전장 비율)
 FootAnchor,0.92,유닛 그림에서 발 위치 (위=0 아래=1)
 CullMargin,120,화면 밖 여유 (월드)
 SortBuckets,512,앞뒤 정렬 버킷 수
 ShadowMinZoom,0.45,이보다 멀리 보면 그림자 생략
-ShadowAlpha,0.45,그림자 진하기
+ShadowAlpha,0.6,그림자 진하기
 ShadowWidth,0.7,그림자 너비 (그림 크기 비율)
 ShadowHeight,0.28,그림자 높이
 BigShadowWidth,0.5,"큰 유닛(AI 원화) 그림자 너비 (그림 크기 비율, 몸통 폭에 맞게)"
 BigShadowAlpha,0.75,큰 유닛 그림자 진하기 (발이 땅에 붙어 보이게)
 ContactShadowScale,0.5,"발밑 접지 그림자 크기 (그림자 너비 비율, 작고 진하게 → 땅에 붙어 보인다)"
-ContactShadowAlpha,0.55,발밑 접지 그림자 진하기
+ContactShadowAlpha,0.75,발밑 접지 그림자 진하기
+BuildingShadowWidth,0.8,병영·성문 탑 그림자 너비 (그림 크기 비율)
+BuildingShadowHeight,0.26,병영·성문 탑 그림자 높이 (너비 비율)
+BuildingShadowAlpha,0.6,건물 그림자 진하기
 ArtTintR,0.95,큰 유닛 원화에 곱하는 땅 빛 R (쨍한 원화를 땅 톤에 맞춤)
 ArtTintG,0.92,땅 빛 G
 ArtTintB,0.85,땅 빛 B

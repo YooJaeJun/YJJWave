@@ -109,6 +109,8 @@ public:
 	/** 돌격 준비 (0 ~ 1, 1이면 쓸 수 있다) */
 	float ChargeReady() const;
 	bool HasHero() const { return Horde.Hero() != INDEX_NONE; }
+	/** 시험용: 성벽 바로 앞에 그 유닛 Count 마리 (yjj.TestBreach) */
+	void DebugSpawnAtWall(int32 Unit, int32 Count);
 	/** 이번 판 영웅 (Heroes.csv) */
 	const FYJJHeroDef& HeroDef() const { return YJJData::Heroes()[HeroIndex]; }
 	/** 영웅 스킬 준비 (0 ~ 1, 없거나 영웅이 없으면 음수). 영웅 AI 가 알아서 쓴다. 걸음이 끝날 때 적어 둔 값 */

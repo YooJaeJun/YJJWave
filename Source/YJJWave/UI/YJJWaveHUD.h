@@ -175,7 +175,7 @@ public:
 	int32 LastVisibleUnits() const { return Sorted.Num(); }
 	void SetTreeOpen(bool bOpen) { bTreeOpen = bOpen; }
 	/** 월드맵 영웅 고르기를 연다 (그 스테이지로 출전, INDEX_NONE 이면 닫기) */
-	void OpenMapPanel(EYJJMapPanel Panel) { MapPanel = Panel; bTreeOpen = Panel == EYJJMapPanel::Perks; }
+	void OpenMapPanel(EYJJMapPanel Panel) { MapPanel = Panel; bTreeOpen = Panel == EYJJMapPanel::Perks; BookView = 0; }
 	/** 오토파일럿 스크린샷용: 마우스 대신 이 별의 설명창을 띄운다 (INDEX_NONE이면 마우스) */
 	void SetForcedHoverPerk(int32 Perk) { ForcedHoverPerk = Perk; }
 	/** 지금 말풍선이 뜬 지 (없으면 음수, 오토파일럿 스크린샷용) */
@@ -197,6 +197,8 @@ private:
 		HeroPick,
 		MapPanel,
 		MapClose,
+		BookPick,
+		BookEquip,
 		Buy,
 		Option,
 		OpenOptions,
@@ -303,6 +305,10 @@ private:
 	void DrawMapButtons();
 	void DrawHeroLineup();
 	void DrawHeroSkills();
+	/** 전체 화면 창 공통: 어두운 바탕 + 왼쪽 위 닫기 */
+	void DrawBookFrame();
+	/** 왼쪽 목록 칸 (얼굴·그림 + 고른 표시) */
+	void DrawBookTile(int32 Index, float X, float Y, int32 Icon, bool bPicked, bool bEquipped);
 	/** 싹쓸이 글자 (스킬 한 번에 많이 쓰러뜨렸을 때) */
 	void DrawSkillTexts();
 	/** 맞는 순간 찌그러짐·날아갈 때 떠오름을 넣은 유닛 사각형 (가운데, 반너비, 반높이) */
@@ -479,6 +485,8 @@ private:
 	int32 HoverPlot = INDEX_NONE;
 	/** 월드맵에서 열린 창 */
 	EYJJMapPanel MapPanel = EYJJMapPanel::None;
+	/** 전체 화면 창에서 보고 있는 칸 (영웅·주문 번호) */
+	int32 BookView = 0;
 	/** 전장에서 고른 유닛: 종류와 마지막 자리 (슬롯은 재배치로 바뀌니 자리로 다시 찾는다), 없으면 영웅 */
 	int32 PickedType = INDEX_NONE;
 	FVector2f PickedPos = FVector2f::ZeroVector;
@@ -520,6 +528,8 @@ private:
 	static constexpr float VirtualHeight = 1080.f;
 	static constexpr float Half = 0.5f;
 	static constexpr float Quarter = 0.25f;
+	static constexpr int32 ResultStarSparks = 8;      // 별이 박힐 때 튀는 작은 별 수
+	static constexpr float ResultStarSparkSize = 0.28f;   // 작은 별 크기 (별 크기 배율)
 	static constexpr float FullTurn = 2.f * UE_PI;
 	static constexpr float Percent = 100.f;
 	static constexpr double MsPerSecond = 1000.0;
