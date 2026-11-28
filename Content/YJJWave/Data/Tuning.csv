@@ -148,6 +148,6 @@ BotBuyGold,500,봇: 금화가 이보다 많으면 병사 x10 즉시 구매
 BotPotStage,1,봇: 냄비가 이 단계(0부터) 이상이면 뚜껑을 연다
 BotSmackSpread,200,봇 국자: 전장 가운데에서 위아래로 이만큼 안
 BotExitDelay,2,끝나고 종료까지 기다리는 실제 시간
-BotScoopShotAt,1.6,봇: 국자가 도는 중 스크린샷을 찍는 때 (초)
+BotScoopShotAt,2.3,봇: 국자가 도는 중 스크린샷을 찍는 때 (초)
 BenchDepth,0.25,벤치마크: 양 끝에서 전장 너비의 이 비율 안에 깐다
 BenchCameraZoom,0.85,벤치마크 카메라 확대 (전장 전체가 보이게 = 그리기 최악)

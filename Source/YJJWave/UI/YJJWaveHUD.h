@@ -383,13 +383,17 @@ private:
 	void PressSpell(EYJJSpell Spell);
 	static bool NeedsAim(EYJJSpell Spell) { return Spell != EYJJSpell::Rally; }
 	void DrawCardPick();
-	/** 국자 하나: 솥에서 올라와 재료가 휙휙 바뀌다 멈추고 카드에 붓는다 */
-	void DrawScoop(int32 Index, float X, float Y);
+	/** 국자 하나 + 솥: 지금 뜨는 재료가 휙휙 바뀌다 멈추고 그 카드 자리로 날아간다 */
+	void DrawScoop(float PotCenterX, const TArray<FVector2f>& CardIcons);
 	/** 다 뜬 카드 한 장 (등급 띠·전설 빛줄기·대박/아깝다) */
 	void DrawScoopCard(int32 Index, float X, float Y, float Since);
 	void UpdateScoop(float DeltaSeconds);
-	/** 국자 Index 가 멈추는 때 (연출 시작부터) */
+	/** 재료 Index 를 뜨기 시작하는 때 / 국자에서 멈추는 때 / 카드에 떨어지는 때 (연출 시작부터, 국자 하나가 차례로) */
+	float ScoopStartTime(int32 Index) const;
 	float ScoopLockTime(int32 Index) const;
+	float ScoopLandTime(int32 Index) const;
+	/** 재료 Index 가 국자에서 도는 시간 */
+	float ScoopSpinDuration(int32 Index) const;
 	/** 김 색: 등급이 무지개면 돈다 */
 	FLinearColor ScoopSteamColor(int32 Grade) const;
 	/** 양념 하나를 냄비에 (카드 고르기) + 배너 */

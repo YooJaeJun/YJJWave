@@ -408,37 +408,38 @@ CardLineGap,4,맛 설명 줄 사이
 SeasoningIcon,34,좌측 패널 넣은 양념 그림 크기
 SeasoningGap,6,넣은 양념 그림 사이
 CardPickGap,30,카드 사이
-CardTitleY,220,카드 고르기 제목 y
-ScoopInterval,0.45,국자가 하나씩 떠오르는 간격 (초)
-ScoopRiseTime,0.5,국자가 솥에서 카드 자리까지 올라오는 시간
-ScoopSpinTime,1.1,첫 국자 재료가 휙휙 바뀌는 시간
-ScoopSpinExtra,0.5,다음 국자일수록 이만큼 더 오래 돈다
-ScoopReelSteps,12,첫 국자에서 재료가 바뀌는 횟수
-ScoopReelStepsExtra,5,다음 국자일수록 더 바뀌는 횟수
+CardTitleY,110,카드 고르기 제목 y
+ScoopDipTime,0.3,국자가 솥에 들어가는 시간 (초)
+ScoopRiseTime,0.5,국자가 솥에서 올라오는 시간
+ScoopSpinTime,0.9,첫 재료가 휙휙 바뀌는 시간 (솥에 들어갈 때부터)
+ScoopSpinExtra,0.5,다음 재료일수록 이만큼 더 오래 돈다
+ScoopTossTime,0.45,멈춘 재료가 카드로 날아가는 시간
+ScoopTossArc,170,재료가 날아가는 포물선 높이
+ScoopReelSteps,12,첫 재료가 바뀌는 횟수
+ScoopReelStepsExtra,5,다음 재료일수록 더 바뀌는 횟수
 ScoopNearMissChance,0.4,흔한 재료일 때 금빛 김이 올랐다가 꺼질 확률 (아깝다)
-ScoopNearMissExtra,0.6,아깝다 국자는 이만큼 더 버틴다
+ScoopNearMissExtra,0.6,아깝다 재료는 이만큼 더 버틴다
 ScoopHintStart,0.35,도는 동안 이 진행부터 김 색이 등급을 흘린다
-ScoopLadleSize,190,국자 크기
-ScoopShade,0.9,국자 뜨기 화면 뒤 어둡게 (전장이 덜 비치게)
+ScoopLadleSize,200,국자 크기
 ScoopBowlX,0.3,국자 그림에서 오목한 곳 가운데 x (칸 비율)
 ScoopBowlY,0.74,국자 그림에서 오목한 곳 가운데 y (칸 비율)
 ScoopItemSize,96,국자에 담긴 재료 크기
 ScoopItemLift,0.3,재료가 오목한 곳보다 이만큼 위 (재료 크기 비율)
 ScoopReelShift,0.7,재료가 바뀔 때 위에서 내려오는 거리 (재료 크기 비율)
-ScoopRiseTilt,0.9,솥에서 막 나올 때 국자 기울기 (라디안)
-ScoopHoldTilt,-0.25,카드 위에서 들고 있는 국자 기울기
-ScoopPourTilt,1.3,멈추면 국자를 이만큼 기울여 카드에 붓는다
+ScoopHoldTilt,-0.25,솥 위에서 들고 있는 국자 기울기 (라디안)
+ScoopTossTilt,0.55,재료를 던질 때 국자를 카드 쪽으로 튕기는 각도
 ScoopWobble,0.08,도는 동안 국자가 덜덜 떨리는 각도
 ScoopWobbleSpeed,38,덜덜 떨리는 빠르기
-ScoopPotSize,320,화면 아래 큰 솥 크기
-ScoopPotBottom,40,솥 아래 끝이 화면 아래에서 이만큼 위
-ScoopPotMouth,0.3,솥 그림에서 아가리 높이 (칸 비율)
-ScoopArcHeight,140,국자가 올라오는 포물선 높이
-ScoopPourTime,0.35,멈춘 뒤 국자를 붓고 사라지는 시간
+ScoopPotSize,300,카드 아래 큰 솥 크기
+ScoopPotBottom,20,솥 아래 끝이 화면 아래에서 이만큼 위
+ScoopHoldLift,70,들고 있을 때 국자 오목한 곳이 솥 아가리보다 이만큼 위
+ScoopDipDepth,60,솥에 들어갔을 때 오목한 곳이 아가리보다 이만큼 아래 (솥에 가린다)
 ScoopLockPop,1.35,카드에 떨어진 재료가 처음 튀는 크기
-ScoopBackAlpha,0.45,아직 안 뜬 카드 뒷면 진하기
+ScoopBackTint,0.42,아직 안 뜬 카드 뒷면 밝기 (불투명)
+ScoopNextTint,0.62,지금 뜨고 있는 자리 카드 뒷면 밝기
+ScoopShade,0.82,국자 뜨기 화면 뒤 어둡게 (전장이 덜 비치게)
 ScoopSteamPuffs,4,국자 위 김 수
-ScoopSteamSize,120,국자 위 김 크기
+ScoopSteamSize,130,국자 위 김 크기
 ScoopSteamRise,110,김이 올라가는 높이
 ScoopSteamSpeed,1.3,김 박자
 ScoopSteamAlpha,0.75,김 진하기
@@ -447,9 +448,9 @@ ScoopRainbowSpeed,0.7,무지개 김이 한 바퀴 도는 횟수 (초당)
 ScoopRaySize,1.7,전설 카드 뒤 빛줄기 크기 (카드 너비 비율)
 ScoopRaySpin,0.6,빛줄기 도는 빠르기 (라디안/초)
 ScoopRayAlpha,0.55,빛줄기 진하기
-ScoopShoutTime,1.2,대박!·아깝다! 글자가 떠 있는 시간
+ScoopShoutTime,1.0,대박!·아깝다! 글자가 떠 있는 시간
 ScoopShoutRise,50,대박!·아깝다! 글자가 올라가는 높이
-ScoopShoutText,44,대박!·아깝다! 글자 크기
+ScoopShoutText,46,대박!·아깝다! 글자 크기
 ScoopBandH,36,카드 위 등급 띠 높이
 ScoopShake,5,전설 카드가 멈출 때 덜컹 (화면 UI)
 ScoopShakeTime,0.35,덜컹 시간
