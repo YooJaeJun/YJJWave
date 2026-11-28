@@ -41,6 +41,7 @@ if os.path.exists(os.path.join(HERE, 'dazed.png')):
     SHEETS['dazed.png'] = (1, 1, 0)
     ACTIONS['dazed'] = ('dazed.png', [0, 0])
 DAZED_TILT = (4, -4)   # 어질: 같은 그림을 발 축으로 좌우 기우뚱
+MERGED_RATIO = 1.6    # 가장 큰 덩어리가 n번째보다 이 배 넘게 크면 두 캐릭터가 붙은 것
 
 
 def alpha_of(rgb):
@@ -58,6 +59,10 @@ def characters(sheet, count, rows):
     H, W = rgb.shape[:2]
     a = alpha_of(rgb)
     n, lab, st, cen = cv2.connectedComponentsWithStats((a > 0).astype(np.uint8), 8)
+    big = sorted(range(1, n), key=lambda i: -st[i, 4])[:count]
+    # 이웃 프레임이 맞닿아 한 덩어리가 된 시트는 쓰지 않는다 (잘라 내면 이웃의 꼬리·무기 조각이 남는다): 간격을 넓혀 다시 뽑을 것
+    if len(big) < count or st[big[0], 4] > MERGED_RATIO * st[big[count - 1], 4]:
+        sys.exit('%s/%s: 프레임이 서로 붙어 있다 (덩어리 %s). 간격을 넓혀 다시 뽑을 것' % (NAME, sheet, [int(st[i, 4]) for i in big]))
     comps = [i for i in range(1, n) if st[i, 4] >= 60]
     comps.sort(key=lambda i: -st[i, 4])
     bodies = comps[:count]
