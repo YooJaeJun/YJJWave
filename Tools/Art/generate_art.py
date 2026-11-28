@@ -137,8 +137,8 @@ UNITS.append(dict(name="BoneTower", body="#FFFFFF", head="#FFFFFF", hat="none", 
 # 16·17: 영웅 둘 (Gemini 원화, 리그로 움직인다)
 UNITS.append(dict(name="HeroCook", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0, faces=HOTBLOOD_FACES))
 UNITS.append(dict(name="HeroPot", body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0, faces=HOTBLOOD_FACES))
-# 18~22: 첫 스테이지 동물 (Gemini 원화)
-for _name in ("Boar", "Squirrel", "BeastDen", "BeastTower", "BoarKing"):
+# 18~22: 숲·산지 동물 (Gemini 원화), 22 = 산지 보스 곰 족장
+for _name in ("Boar", "Squirrel", "BeastDen", "BeastTower", "BearChief"):
     UNITS.append(dict(name=_name, body="#FFFFFF", head="#FFFFFF", hat="none", weapon="none", scale=1.0))
 
 
@@ -614,7 +614,7 @@ ART_UNITS = {
     "Veteran": dict(file="Veteran1.png", flip=False),
     "Grunt": dict(file="Grunt.png", flip=False, shadow=True),
     "Skeleton": dict(file="Skeleton.png", flip=True, shadow=True, holes=0.55),
-    # 졸병 변형 (grunt_variants.py 로 만든 원화)
+    # 졸병 계열 (Gemini 원화)
     "Archer": dict(file="Archer.png", flip=False, shadow=True),
     "Shield": dict(file="Shield.png", flip=False, shadow=True),
     "Brute": dict(file="Brute.png", flip=False, shadow=True),
@@ -629,7 +629,7 @@ ART_UNITS = {
     "HeroPot": dict(file="HeroPot.png", flip=False, shadow=True),
     "Boar": dict(file="Boar.png", flip=True, shadow=True),
     "Squirrel": dict(file="Squirrel.png", flip=True, shadow=True),
-    "BoarKing": dict(file="Boar.png", flip=True, shadow=True),
+    "BearChief": dict(file="BearChief.png", flip=True, shadow=True),
     "BeastDen": dict(file="BeastDen.png", flip=False, building=True),
     "BeastTower": dict(file="BeastTower.png", flip=False, building=True, clear_all_white=True),
     "BoneTent": dict(file="CampTent.png", flip=False, building=True),
@@ -1715,7 +1715,7 @@ def ui_icon(i):
     return p.done(C, C)
 
 
-UI_ICONS = 48   # 0~15 + 16 (안 씀) + 17 특성 바탕 원 + 18~32 중간 별 효과 + 33 뼈 + 34 냄비 + 35 국자 + 36~45 양념 (Cards.csv Icon) (UILayout.csv Ui*, Perks.csv Icon)
+UI_ICONS = 56   # 48~50 월드맵 스테이지 깃발 (새·깬·잠김), 0~15 + 16 (안 씀) + 17 특성 바탕 원 + 18~32 중간 별 효과 + 33 뼈 + 34 냄비 + 35 국자 + 36~45 양념 (Cards.csv Icon) (UILayout.csv Ui*, Perks.csv Icon)
 
 
 def ladle_image(C):
@@ -1837,10 +1837,12 @@ GEMINI_ICON_SHEETS = {
     "PerkIcons": (4, 4),  # 특성 별 효과 16종 (UI 16, 18~32)
     "FxIcons": (3, 2),    # 불꽃, 불덩이, 폭발 구름, 김, 빛기둥, 그을음
     "StoneWall": (2, 1),  # 돌 성벽 조각, 돌 성문 탑
+    "StageFlags": (3, 1), # 월드맵 스테이지 깃발: 새(빨강), 깬 곳(파랑), 잠김(회색)
 }
 GEMINI_UI_CELLS = {("UIIconsA", 0): 35, ("UIIconsA", 3): 4, ("UIIconsA", 4): 5, ("UIIconsA", 5): 33}
 GEMINI_UI_CELLS.update({("UIIconsB", k): 36 + k for k in range(10)})
 GEMINI_UI_CELLS.update({("PerkIcons", k): (16 if k == 0 else 17 + k) for k in range(16)})
+GEMINI_UI_CELLS.update({("StageFlags", k): 48 + k for k in range(3)})   # UILayout UiFlagNew·UiFlagCleared·UiFlagLocked
 GEMINI_FX_CELLS = {0: 11, 1: 8, 2: 9, 3: 14, 4: 15}   # FxIcons 순서 → Fx.png 칸 (UILayout FxFlame·FxMeteor·FxBlast·FxSteam·FxPromote). 5 그을음은 바닥에 구워져 너무 진해서 예전 옅은 그림을 쓴다
 GEMINI_FX_FIT = 0.9
 GEMINI_STAR_CELLS = {("UIIconsA", 6): 6, ("UIIconsA", 7): 7}   # 별: 게임이 색을 곱하므로 흰 별로 바꾼다
@@ -1921,6 +1923,8 @@ GROUND_FOREST = dict(grass="#5E8F3A", patches=["#58873A", "#67993F", "#527F34", 
 GROUND_GRAVEYARD = dict(grass="#4A5640", patches=["#435038", "#525E46", "#3E4934", "#57634A"], dirt="#6B5E58",
                         specks=["#5E524C", "#776A63", "#665A54"], blade="#2F3A28", camp="#5E5248", camp_specks=["#544840", "#6A5D52", "#5A4E46"], graves=True, ai="GroundGraveyard.png")
 
+# 산지: 바위 고개 (자갈길, 고산 풀, 바위)
+GROUND_MOUNTAIN = dict(GROUND_FOREST, ai="GroundMountain.png")
 
 GROUND_BASE = (2048, 740)    # 바닥 무늬를 짠 기준 크기 (전장 하나, 무늬 크기·밀도는 이 기준)
 GROUND_FIELD_PX = 6144       # Ground.png 너비 (= 렌더 타깃 GroundTargetWidth, 최대 확대에서도 또렷하게)
@@ -2193,7 +2197,8 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     jobs = [("Props.png", props_atlas), ("Units.png", units_atlas), ("Fx.png", fx_atlas), ("Buildings.png", buildings_atlas), ("UI.png", ui_atlas), ("Ground.png", ground),
             ("Ground_Graveyard.png", lambda: ground(GROUND_GRAVEYARD)), ("WorldMap.png", ai_world_map),
-            ("Ground_Outer.png", ground_outer), ("Ground_Graveyard_Outer.png", lambda: ground_outer(GROUND_GRAVEYARD))]
+            ("Ground_Outer.png", ground_outer), ("Ground_Graveyard_Outer.png", lambda: ground_outer(GROUND_GRAVEYARD)),
+            ("Ground_Mountain.png", lambda: ground(GROUND_MOUNTAIN)), ("Ground_Mountain_Outer.png", lambda: ground_outer(GROUND_MOUNTAIN))]
     jobs += [("Big_%s.png" % name, (lambda n: lambda: big_atlas(n))(name)) for name in big_specs()]
     only = [a for a in sys.argv[1:] if a.lower().endswith(".png")]   # 파일 이름을 주면 그것만 다시 만든다
     for name, make in jobs:

@@ -162,7 +162,7 @@ RIGS = {
             "crown": dict(poly=[(50, 0), (480, 0), (500, 250), (470, 400), (380, 445), (180, 445), (90, 400), (40, 260)], pivot=(270, 445), blur=24),
             "sword": dict(poly=[(405, 470), (480, 440), (545, 160), (695, 160), (695, 270), (575, 600), (470, 625), (420, 560)], pivot=(410, 500), blur=8),
         },
-        windup=-28, strike=70,
+        windup=-28, strike=58, center=True,
     ),
     # 미친 다람쥐: 큰 꼬리(망토 자리), 솔방울 든 팔, 머리, 두 다리
     "Squirrel": dict(
@@ -187,37 +187,60 @@ RIGS = {
         windup=-200, strike=-40,
     ),
 }
-# 졸병 변형 (grunt_variants.py: 졸병 원화에 장비만 바꿔 그림): 졸병 리그를 옮겨 쓴다
-GRUNT_VARIANT_PAD = 140   # grunt_variants.PAD
-GRUNT_VARIANTS = {        # 이름: (잘린 위치 x, y, 가로 배율)  ← grunt_variants.py 실행 때 찍히는 값
-    "Archer": (145, 25, 1.0),
-    "Shield": (140, 140, 1.0),
-    "Brute": (58, 74, 1.14),
-}
-# 위로 솟은 깃털·뿔과 커진 망치 머리까지 덮게 넓힌 투구·무기 다각형 (졸병 원화 좌표)
-GRUNT_VARIANT_CROWN = [(140, 60), (180, -140), (520, -140), (505, 95), (500, 145), (400, 160), (300, 200), (215, 262), (165, 268), (140, 200)]
-GRUNT_VARIANT_SWORD = [(-80, -80), (140, -80), (150, 120), (170, 245), (205, 275), (238, 345), (212, 365), (150, 345), (118, 300), (95, 250), (-80, 130)]
+RIGS.update({
+    # 궁수: 깃털 꽂은 초록 투구, 활 든 팔(앞), 화살 든 팔·화살통(망토 자리), 두 다리
+    "Archer": dict(
+        feet=(330, 668),
+        parts={
+            "cape": dict(poly=[(0, 100), (165, 100), (160, 170), (140, 260), (200, 340), (210, 445), (125, 455), (0, 425)], pivot=(190, 400), blur=14),
+            "back_leg": dict(poly=[(222, 605), (300, 605), (300, 675), (222, 675)], pivot=(262, 610)),
+            "front_leg": dict(poly=[(380, 605), (452, 605), (452, 675), (380, 675)], pivot=(412, 610)),
+            "crown": dict(poly=[(120, 0), (285, 0), (275, 75), (400, 75), (475, 125), (505, 215), (420, 200), (300, 245), (205, 320), (175, 380), (168, 170), (165, 100), (120, 60)], pivot=(320, 240), blur=20),
+            "sword": dict(poly=[(500, 372), (535, 65), (678, 65), (678, 675), (528, 675), (555, 425), (500, 442)], pivot=(505, 405), blur=8),
+        },
+        windup=-8, strike=12,
+    ),
+    # 방패병: 양동이 투구, 몽둥이 든 팔(뒤), 나무 방패(망토 자리로 흔든다), 두 다리
+    "Shield": dict(
+        feet=(312, 596),
+        parts={
+            "cape": dict(poly=[(458, 122), (692, 122), (692, 601), (448, 601), (452, 400)], pivot=(470, 380), blur=12),
+            "back_leg": dict(poly=[(215, 545), (292, 545), (292, 601), (215, 601)], pivot=(255, 548)),
+            "front_leg": dict(poly=[(345, 545), (422, 545), (422, 601), (345, 601)], pivot=(385, 548)),
+            "crown": dict(poly=[(148, 8), (422, 8), (470, 212), (412, 248), (300, 232), (200, 248), (162, 182)], pivot=(310, 240), blur=20),
+            "sword": dict(poly=[(0, 82), (112, 82), (192, 318), (208, 388), (160, 398), (100, 348), (0, 172)], pivot=(182, 372), blur=8),
+        },
+        windup=-30, strike=65, center=True, fit=0.9,
+    ),
+    # 망치꾼: 뿔 투구, 쇠망치 든 팔(뒤), 앞 팔(망토 자리), 두 다리
+    "Brute": dict(
+        feet=(385, 596),
+        parts={
+            "cape": dict(poly=[(555, 280), (633, 280), (633, 432), (555, 432)], pivot=(565, 300), blur=12),
+            "back_leg": dict(poly=[(260, 540), (336, 540), (336, 600), (260, 600)], pivot=(300, 545)),
+            "front_leg": dict(poly=[(440, 540), (516, 540), (516, 600), (440, 600)], pivot=(476, 545)),
+            "crown": dict(poly=[(238, 12), (562, 12), (562, 192), (450, 182), (330, 186), (248, 198)], pivot=(400, 190), blur=20),
+            "sword": dict(poly=[(0, 0), (215, 0), (208, 88), (168, 118), (218, 258), (242, 372), (208, 388), (150, 300), (122, 168), (0, 168)], pivot=(192, 292), blur=8),
+        },
+        windup=-4, strike=62, center=True, fit=0.84,
+    ),
+    # 곰 족장 (산지 보스): 나뭇가지 관 쓴 머리, 통나무 몽둥이 든 팔(앞), 털 망토. 망토·굵은 다리는 떼지 않고 몸째 들썩인다
+    "BearChief": dict(
+        feet=(350, 892),
+        parts={
+            "crown": dict(poly=[(150, 0), (520, 0), (532, 150), (500, 300), (440, 372), (260, 372), (200, 300), (150, 150)], pivot=(345, 372), blur=24),
+            "sword": dict(poly=[(590, 420), (660, 38), (821, 38), (821, 300), (740, 618), (640, 618), (600, 540)], pivot=(612, 470), blur=8),
+        },
+        windup=-22, strike=34, center=True,
+    ),
+})
 
-
-def _grunt_variant(bx, by, sx):
-    base = RIGS["Grunt"]
-    move = lambda p: ((p[0] + GRUNT_VARIANT_PAD) * sx - bx, p[1] + GRUNT_VARIANT_PAD - by)
-    parts = {}
-    for part, spec in base["parts"].items():
-        poly = {"crown": GRUNT_VARIANT_CROWN, "sword": GRUNT_VARIANT_SWORD}.get(part, spec["poly"])
-        parts[part] = dict(spec, poly=[move(p) for p in poly], pivot=move(spec["pivot"]))
-    return dict(base, feet=move(base["feet"]), parts=parts)
-
-
-RIGS["BoarKing"] = RIGS["Boar"]   # 멧돼지 대장 = 멧돼지 원화를 크게
-
-for _name, (_bx, _by, _sx) in GRUNT_VARIANTS.items():
-    RIGS[_name] = _grunt_variant(_bx, _by, _sx)
-
+CENTER_FIT = 0.96  # 칸 너비 중 그림 너비 상한
 FILL = 0.84        # 칸 높이 중 그림 비율 (generate_art.ART_FILL과 같게)
 FOOT = 0.92        # 칸에서 발 높이 (generate_art.FOOT)
 PAD = 160          # 휘어 나간 칼·망토가 잘리지 않게 둘레에 두는 여백 (원화 픽셀)
 BLUR = {"cape": 26, "back_leg": 14, "front_leg": 14, "crown": 30, "sword": 8}   # 부위 경계를 흐리는 폭 (원화 픽셀)
+STILL_PARTS = ("crown",)   # 몸에 붙여 같이 움직이는 부위 (머리·모자를 따로 돌리면 이마에 틈이 갈라진다)
 ORDER = ["cape", "back_leg", "body", "front_leg", "crown", "sword"]   # 뒤 → 앞
 CORE_SOFT = 1.5    # 부위 속 경계를 살짝 흐리는 폭 (원화 픽셀)
 SPARKLE_KEEP = ("Hero", "GruntHero")   # 몸에서 떨어진 반짝이를 지우는 원화 (칼과 따로 놀아서)
@@ -273,8 +296,13 @@ def _prepared(name):
     weights = {}
     used = Image.new("L", padded.size, 0)
     for part, spec in rig["parts"].items():
+        if part in STILL_PARTS:
+            continue
         mask = Image.new("L", padded.size, 0)
-        ImageDraw.Draw(mask).polygon([(x + PAD, y + PAD) for x, y in spec["poly"]], fill=255)
+        # 원화 끝에 닿은 꼭짓점은 여백 끝까지 밀어 낸다 (끝에 걸친 무기 조각이 몸에 남지 않게)
+        sw, sh = source.size
+        edge = lambda v, size: -PAD if v <= 0 else (size + PAD if v >= size - 1 else v)
+        ImageDraw.Draw(mask).polygon([(edge(x, sw) + PAD, edge(y, sh) + PAD) for x, y in spec["poly"]], fill=255)
         blur = spec.get("blur", BLUR[part])
         weights[part] = mask.filter(ImageFilter.GaussianBlur(blur / 2))
         # 부위 속(경계 띠를 뺀 곳)만 몸에서 덜어 낸다 → 경계 띠는 몸에도 남아 있어 부위가 움직여도 틈이 안 생긴다
@@ -353,10 +381,12 @@ def frame(name, action, p, out):
     # 납작해졌다 늘어났다 (발은 그대로)
     sy = 1.0 - q["squash"]
     sx = 1.0 + q["squash"] * 0.6
-    scale = min(out * FILL / source.size[1], out * 0.96 / source.size[0])
+    scale = min(out * FILL / source.size[1], out * rig.get("fit", CENTER_FIT) / source.size[0])
     small = full.resize((max(1, round(full.size[0] * scale * sx)), max(1, round(full.size[1] * scale * sy))), Image.LANCZOS)
     cell = Image.new("RGBA", (out, out), (0, 0, 0, 0))
-    ox = round(out / 2 - fx * scale * sx + q["dx"] * scale)
+    # center: 무기가 한쪽으로 크게 뻗은 원화는 발 대신 그림 가운데를 칸 가운데에 (휘두를 때 칸 밖으로 안 잘리게)
+    ax = source.size[0] / 2 + PAD if rig.get("center") else fx
+    ox = round(out / 2 - ax * scale * sx + q["dx"] * scale)
     oy = round(out * FOOT - fy * scale * sy + q["dy"] * scale)
     cell.paste(small, (ox, oy), small)
     if action == "corpse":
