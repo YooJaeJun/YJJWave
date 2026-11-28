@@ -32,6 +32,9 @@ FrontLabelY,140,전선 띠 위 보너스 글자 높이 (전장 위끝에서)
 ChargeDefaultReach,500,마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
 HeroBarMargin,14,영웅 칸: 화면 아래와 사이 (전장 아래 가운데)
 HeroBarPortrait,88,영웅 칸: 얼굴 크기
+HeroSkillIcon,30,영웅 칸: 스킬 아이콘 크기 (옆에 남은 쿨타임)
+HeroSkillDimAlpha,0.35,영웅 칸: 쿨타임 중인 스킬 아이콘 진하기
+BookCooldownW,80,영웅 창: 스킬 줄 오른쪽 쿨타임 글자 자리
 HeroBarHPW,170,영웅 칸: 이름·체력 막대 너비
 HeroSelectCardW,380,영웅 고르기 카드 너비
 HeroSelectCardH,470,영웅 고르기 카드 높이
@@ -177,6 +180,14 @@ RegionLabelLift,80,지역 이름을 자리보다 이만큼 위에
 StagePathAlpha,0.6,스테이지 길 진하기
 StagePathWidth,6,스테이지 길 굵기
 StageNodeSize,84,스테이지 자리 크기
+StageFlagSize,112,월드맵 스테이지 깃발 크기
+StageFlagLift,0.4,깃발 가운데가 꽂힌 자리보다 이만큼 위 (깃발 크기 비율)
+StageFlagBob,7,새 스테이지 깃발이 통통 뛰는 높이
+StageFlagBobSpeed,3.2,통통 뛰는 빠르기
+StageFlagGlow,0.35,새 스테이지 깃발이 금빛으로 반짝이는 정도
+UiFlagNew,48,UI 칸: 새 스테이지 깃발 (빨강)
+UiFlagCleared,49,UI 칸: 깬 스테이지 깃발 (파랑)
+UiFlagLocked,50,UI 칸: 잠긴 스테이지 깃발 (회색)
 StageNodeHover,1.15,마우스를 올리면 커지는 배율
 StageNameGap,8,자리와 이름 사이
 StageStarSize,30,월드맵 별 크기

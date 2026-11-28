@@ -229,6 +229,9 @@ struct FYJJUILayout
 	UPROPERTY() float ChargeDefaultReach = 0.f;   // 마우스가 UI 위일 때 돌격 방향 (영웅 앞으로 이 거리)
 	UPROPERTY() float HeroBarMargin = 0.f;   // 영웅 칸: 화면 아래와 사이 (전장 아래 가운데)
 	UPROPERTY() float HeroBarPortrait = 0.f;   // 영웅 칸: 얼굴 크기
+	UPROPERTY() float HeroSkillIcon = 0.f;   // 영웅 칸: 스킬 아이콘 크기 (옆에 남은 쿨타임)
+	UPROPERTY() float HeroSkillDimAlpha = 0.f;   // 영웅 칸: 쿨타임 중인 스킬 아이콘 진하기
+	UPROPERTY() float BookCooldownW = 0.f;   // 영웅 창: 스킬 줄 오른쪽 쿨타임 글자 자리
 	UPROPERTY() float HeroBarHPW = 0.f;   // 영웅 칸: 이름·체력 막대 너비
 	UPROPERTY() float HeroSelectCardW = 0.f;   // 영웅 고르기 카드 너비
 	UPROPERTY() float HeroSelectCardH = 0.f;   // 영웅 고르기 카드 높이
@@ -379,6 +382,14 @@ struct FYJJUILayout
 	UPROPERTY() float StagePathAlpha = 0.f;   // 스테이지 길 진하기
 	UPROPERTY() float StagePathWidth = 0.f;   // 스테이지 길 굵기
 	UPROPERTY() float StageNodeSize = 0.f;   // 스테이지 자리 크기
+	UPROPERTY() float StageFlagSize = 0.f;   // 월드맵 스테이지 깃발 크기
+	UPROPERTY() float StageFlagLift = 0.f;   // 깃발 가운데가 꽂힌 자리보다 이만큼 위 (깃발 크기 비율)
+	UPROPERTY() float StageFlagBob = 0.f;   // 새 스테이지 깃발이 통통 뛰는 높이
+	UPROPERTY() float StageFlagBobSpeed = 0.f;   // 통통 뛰는 빠르기
+	UPROPERTY() float StageFlagGlow = 0.f;   // 새 스테이지 깃발이 금빛으로 반짝이는 정도
+	UPROPERTY() float UiFlagNew = 0.f;   // UI 칸: 새 스테이지 깃발 (빨강)
+	UPROPERTY() float UiFlagCleared = 0.f;   // UI 칸: 깬 스테이지 깃발 (파랑)
+	UPROPERTY() float UiFlagLocked = 0.f;   // UI 칸: 잠긴 스테이지 깃발 (회색)
 	UPROPERTY() float StageNodeHover = 0.f;   // 마우스를 올리면 커지는 배율
 	UPROPERTY() float StageNameGap = 0.f;   // 자리와 이름 사이
 	UPROPERTY() float StageStarSize = 0.f;   // 월드맵 별 크기

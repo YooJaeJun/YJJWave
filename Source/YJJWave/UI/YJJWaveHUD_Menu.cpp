@@ -164,12 +164,8 @@ void AYJJWaveHUD::DrawWorldMap()
 		}
 	}
 
-	// 스테이지 길 + 자리: 깬 곳은 초록, 열린 곳은 노랑(반짝), 잠긴 곳은 회색. 아래에 이름과 별
+	// 스테이지 깃발 (킹덤러쉬식): 새 곳은 빨간 깃발(통통 뛴다), 깬 곳은 파란 깃발, 잠긴 곳은 회색. 발밑에 이름과 별
 	const TConstArrayView<FYJJStageDef> Stages = YJJData::Stages();
-	for (int32 Stage = 1; Stage < Stages.Num(); ++Stage)
-	{
-		DrawLine(Stages[Stage - 1].MapPos * MapSize, Stages[Stage].MapPos * MapSize, YJJUI::WithAlpha(YJJUI::Ink, L.StagePathAlpha), L.StagePathWidth);
-	}
 	const FVector2f Mouse = ToVirtual(MouseScreen());
 	const float Pulse = Half + Half * FMath::Sin(AnimClock * L.GlowSpeed);
 	for (int32 Stage = 0; Stage < Stages.Num(); ++Stage)
@@ -177,23 +173,33 @@ void AYJJWaveHUD::DrawWorldMap()
 		const FVector2f P = Stages[Stage].MapPos * MapSize;
 		const bool bOpen = Mode->IsStageOpen(Stage);
 		const bool bCleared = Mode->StageStars(Stage) > 0;
-		const bool bHover = bOpen && FVector2f::Distance(Mouse, P) <= L.StageNodeSize * Half;
-		const float Size = L.StageNodeSize * (bHover ? L.StageNodeHover : 1.f);
-		const FLinearColor Color = !bOpen ? YJJUI::PerkLocked : bCleared ? YJJUI::Good : FMath::Lerp(YJJUI::Highlight, FLinearColor::White, Pulse * Half);
-		DrawIcon(FMath::RoundToInt(L.UiBadge), P.X - Size * Half, P.Y - Size * Half, Size, Color);
-		DrawLabelCentered(FString::FromInt(Stage + 1), P.X, P.Y, L.BigText, bOpen ? YJJUI::Ink : YJJUI::Muted);
-		DrawLabelCentered(YJJLoc::Get(Stages[Stage].NameKey), P.X, P.Y + Size * Half + L.StageNameGap, L.MidText, bOpen ? YJJUI::Paper : YJJUI::Muted);
+		// P = 깃대가 꽂힌 흙더미 자리. 깃발 그림은 그 위로 선다
+		const FVector2f FlagCenter = P - FVector2f(0.f, L.StageFlagSize * L.StageFlagLift);
+		const bool bHover = bOpen && FVector2f::Distance(Mouse, FlagCenter) <= L.StageFlagSize * Half;
+		const float Size = L.StageFlagSize * (bHover ? L.StageNodeHover : 1.f);
+		const bool bNew = bOpen && !bCleared;
+		const float Bob = bNew ? FMath::Abs(FMath::Sin(AnimClock * L.StageFlagBobSpeed)) * L.StageFlagBob : 0.f;
+		const int32 Flag = FMath::RoundToInt(!bOpen ? L.UiFlagLocked : bCleared ? L.UiFlagCleared : L.UiFlagNew);
+		DrawIcon(Flag, P.X - Size * Half, P.Y - Size * (Half + L.StageFlagLift) - Bob, Size, bNew ? FMath::Lerp(FLinearColor::White, YJJUI::Highlight, Pulse * L.StageFlagGlow) : FLinearColor::White);
+		// 이름 + 별 (어두운 띠 위)
+		const FString Name = YJJLoc::Get(Stages[Stage].NameKey);
+		float NameW = 0.f;
+		MakeFont(Name, L.SmallText, 1.f, 0.f, NameW);
 		const int32 MaxStars = FMath::RoundToInt(L.ResultStarCount);
 		const float Star = L.StageStarSize;
+		const float BandW = FMath::Max(NameW, MaxStars * Star) + L.PanelPad * 2.f;
+		const float BandY = P.Y + L.StageNameGap;
+		DrawPanel(P.X - BandW * Half, BandY, BandW, L.SmallText + Star + L.PanelPad, YJJUI::PanelTint, FMath::RoundToInt(L.UiPanelDark));
+		DrawLabelCentered(Name, P.X, BandY + L.PanelPad * Half + L.SmallText * Half, L.SmallText, bOpen ? YJJUI::Paper : YJJUI::Muted);
 		const float StarsLeft = P.X - MaxStars * Star * Half;
 		for (int32 Index = 0; Index < MaxStars; ++Index)
 		{
 			const bool bEarned = Index < Mode->StageStars(Stage);
-			DrawIcon(FMath::RoundToInt(L.UiStar), StarsLeft + Index * Star, P.Y + Size * Half + L.StageNameGap + L.MidText, Star, bEarned ? YJJUI::PerkTaken : YJJUI::WithAlpha(YJJUI::Ink, L.ResultStarEmptyAlpha));
+			DrawIcon(FMath::RoundToInt(L.UiStar), StarsLeft + Index * Star, BandY + L.PanelPad * Half + L.SmallText, Star, bEarned ? YJJUI::PerkTaken : YJJUI::WithAlpha(YJJUI::Ink, L.ResultStarEmptyAlpha));
 		}
 		if (bOpen && MapPanel == EYJJMapPanel::None)
 		{
-			AddButton(EButton::WorldStage, Stage, P.X - Size * Half, P.Y - Size * Half, Size, Size);
+			AddButton(EButton::WorldStage, Stage, P.X - Size * Half, P.Y - Size, Size, Size + L.StageNameGap + L.SmallText + Star + L.PanelPad);
 		}
 	}
 
@@ -350,7 +356,9 @@ void AYJJWaveHUD::DrawHeroLineup()
 		const FYJJSkillDef& Skill = YJJData::Skill(SkillIndex);
 		const float Icon = L.TipLineH + Pad * Half;
 		DrawIcon(Skill.Icon, InfoX + Pad, RowY, Icon);
-		DrawLabel(YJJLoc::Get(Skill.NameKey) + TEXT(" · ") + YJJLoc::Get(*(FString(TEXT("SkillKind.")) + YJJData::SkillKindKey(Skill.Kind))), InfoX + Pad * 1.5f + Icon, RowY + (Icon - L.SmallText) * Half, L.SmallText, YJJUI::Paper, 0.f, L.BookInfoW - Pad * 3.f - Icon);
+		DrawLabel(YJJLoc::Get(Skill.NameKey) + TEXT(" · ") + YJJLoc::Get(*(FString(TEXT("SkillKind.")) + YJJData::SkillKindKey(Skill.Kind))), InfoX + Pad * 1.5f + Icon, RowY + (Icon - L.SmallText) * Half, L.SmallText, YJJUI::Paper, 0.f, L.BookInfoW - Pad * 3.f - Icon - L.BookCooldownW);
+		// 쿨타임 (오른쪽 끝)
+		DrawLabel(YJJLoc::Format(TEXT("Book.Cooldown"), { FMath::RoundToInt(Skill.Cooldown) }), InfoX + L.BookInfoW - Pad, RowY + (Icon - L.SmallText) * Half, L.SmallText, YJJUI::Highlight, 1.f);
 		RowY += Icon + Pad * Quarter;
 	}
 	// 출전 버튼

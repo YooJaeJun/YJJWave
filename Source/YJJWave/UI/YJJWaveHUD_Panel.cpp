@@ -178,7 +178,7 @@ void AYJJWaveHUD::DrawSpeedButton()
 	const bool bFast = Mode && !Mode->IsPaused() && Mode->SpeedToggle() > 1.f;
 	const float Glow = bFast ? Half + Half * FMath::Sin(AnimClock * L.GlowSpeed) : 0.f;
 	DrawPanel(X, Y, W, H, FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Glow), FMath::RoundToInt(L.UiCard));
-	DrawLabelCentered(Speed, X + W * Half, Y + H * Half, L.MidText, bFast ? YJJUI::Ink : YJJUI::Paper, W - L.PanelPad);
+	DrawLabelCentered(Speed, X + W * Half, Y + H * Half, L.MidText, YJJUI::Paper, W - L.PanelPad);
 	AddButton(EButton::Speed, 0, X, Y, W, H);
 }
 

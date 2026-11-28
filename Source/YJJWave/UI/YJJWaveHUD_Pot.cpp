@@ -291,17 +291,26 @@ void AYJJWaveHUD::DrawUnitInfo()
 	const float BarY = Y + Pad + L.SmallText + Pad * Half;
 	DrawBar(TX, BarY, TW, L.TextBarH, Units.HP[Slot] / FMath::Max(Units.MaxHP[Slot], KINDA_SMALL_NUMBER), Def.Team == EYJJTeam::Player ? YJJUI::HeroBar : YJJUI::BossBar);
 	DrawBarLabel(YJJLoc::Format(TEXT("UI.UnitHP"), { FormatCount(FMath::CeilToFloat(Units.HP[Slot])), FormatCount(Units.MaxHP[Slot]) }), TX, BarY, TW, L.TextBarH);
-	// 특성: 영웅은 스킬 셋 (자동), 나머지는 싸우는 방식
-	TArray<FString> Traits;
+	// 영웅: 스킬 셋 (AI 가 저절로 쓴다) 아이콘과 남은 쿨타임. 나머지: 싸우는 방식
+	const float RowY = BarY + L.TextBarH + Pad * Half;
 	if (Def.bHero)
 	{
-		Traits.Add(YJJLoc::Get(TEXT("Trait.Hero")));
-		for (const int32 Skill : Current->HeroDef().Skills)
+		const TArray<int32>& Skills = Current->HeroDef().Skills;
+		const float SkillIcon = L.HeroSkillIcon;
+		const float Step = TW / FMath::Max(Skills.Num(), 1);
+		for (int32 Index = 0; Index < Skills.Num(); ++Index)
 		{
-			Traits.Add(YJJLoc::Get(YJJData::Skill(Skill).NameKey));
+			const FYJJSkillDef& Skill = YJJData::Skill(Skills[Index]);
+			const float Ready = Current->HeroSkillReady(Index);
+			const bool bReady = Ready >= 1.f;
+			const float SX = TX + Index * Step;
+			DrawIcon(Skill.Icon, SX, RowY, SkillIcon, bReady ? FLinearColor::White : YJJUI::WithAlpha(FLinearColor::White, L.HeroSkillDimAlpha));
+			const FString Left = bReady ? YJJLoc::Get(TEXT("UI.SkillReady")) : YJJLoc::Format(TEXT("UI.SkillCooldown"), { FMath::CeilToInt((1.f - FMath::Max(Ready, 0.f)) * Skill.Cooldown) });
+			DrawLabel(Left, SX + SkillIcon + Pad * Quarter, RowY + (SkillIcon - L.SmallText) * Half, L.SmallText, bReady ? YJJUI::Good : YJJUI::Muted, 0.f, Step - SkillIcon - Pad * Half);
 		}
+		return;
 	}
-	else
+	TArray<FString> Traits;
 	{
 		Traits.Add(YJJLoc::Get(Def.ProjectileSpeed > 0.f ? TEXT("Trait.Ranged") : TEXT("Trait.Melee")));
 		if (Def.Splash > 0.f)
@@ -317,7 +326,7 @@ void AYJJWaveHUD::DrawUnitInfo()
 			Traits.Add(YJJLoc::Get(TEXT("Trait.Camp")));
 		}
 	}
-	DrawLabel(FString::Join(Traits, TEXT(" · ")), TX, BarY + L.TextBarH + Pad * Half, L.SmallText, YJJUI::Muted, 0.f, TW);
+	DrawLabel(FString::Join(Traits, TEXT(" · ")), TX, RowY, L.SmallText, YJJUI::Muted, 0.f, TW);
 }
 
 FLinearColor AYJJWaveHUD::PotStatusColor() const
