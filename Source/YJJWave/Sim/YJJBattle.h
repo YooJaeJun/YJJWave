@@ -300,7 +300,8 @@ private:
 	/** 그 스킬을 지금 쓰면 좋은가 (Kind 별 판단) */
 	bool HeroSkillFits(const FYJJSkillDef& Skill, float Dir) const;
 	int32 HeroIndex = 0;
-	void SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center);
+	/** 스킬로 둘레에 졸개를 부른다 (내 편은 병영 능력치, 적 편은 그 판 적 능력치) */
+	void SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center, EYJJTeam InTeam);
 	TArray<float> HeroSkillReadyNow;
 	void HandleSkillEvents();
 	// 맞붙은 전선 먼지

@@ -408,6 +408,8 @@ private:
 	void TickCharge(float Dt);
 	// 큰 범위 스킬
 	void AddCaster(int32 Slot, int32 Skill);
+	/** 유닛 표의 스킬 모두 (보스는 여럿) */
+	void AddUnitSkills(int32 Slot, const FYJJUnitDef& Def);
 	void TickSkills(float Dt);
 	void BeginSkill(FYJJSkillCaster& Caster);
 	FVector2f SkillCenter(const FYJJSkillCaster& Caster) const;

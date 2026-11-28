@@ -196,6 +196,8 @@ struct FYJJUnitDef
 	FName VoiceKey;              // Sounds.csv Voice_<Id>
 	/** 큰 범위 스킬 (Skills.csv 번호, 없으면 INDEX_NONE). 영웅은 후보가 여럿이면 첫 줄 (판 시작에 고른다) */
 	int32 Skill = INDEX_NONE;
+	/** 판에서 저절로 쓰는 스킬 모두 (보스는 여럿, 영웅이 고르는 Manual 은 빼고) */
+	TArray<int32> AutoSkills;
 };
 
 /** Heroes.csv 한 줄: 고를 수 있는 영웅 */

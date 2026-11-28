@@ -81,7 +81,7 @@ Perk.Locked,이어진 별을 먼저 찍어야 한다,Take a connected star first
 Perk.Cost,클릭: {0} 영혼으로 찍기,Click: take for {0} souls,
 Perk.NeedSouls,영혼 부족 ({0} 필요),Need {0} souls,
 Stage.Meadow,숲 어귀,Forest Edge,스테이지 1
-Stage.SkullHill,해골 언덕,Skull Hill,스테이지 2
+Stage.SkullHill,해골 언덕,Skull Hill,스테이지 3
 Unit.Hero,대장,Captain,내 영웅 (중심)
 Perk.KindSmall,작은 별,Minor,
 Perk.KindNotable,중간 별,Notable,
@@ -264,7 +264,7 @@ Skill.HeroSummon,졸병 떼 호출,Grunt Rush,영웅 R 스킬 후보
 SkillDesc.HeroWhirl,제자리에서 세 번 돌며 둘레의 적을 쓸어 날린다.,Spins three times and flings everything around.,
 SkillDesc.HeroQuake,한참 기를 모았다가 앞을 크게 내려찍는다. 한 방이 세다.,Charges up and slams the ground ahead. One huge hit.,
 SkillDesc.HeroSummon,냄비를 두드리면 졸병 {0}명이 땅에서 튀어나온다.,Bang the pot and {0} grunts pop out of the ground.,{0} = 나오는 수
-UI.SkillCooldown,대기 {0}초,Cooldown {0}s,스킬 카드
+UI.SkillCooldown,{0}초,{0}s,영웅 칸: 남은 쿨타임
 SpellDesc.Meteor,누른 뒤 전장을 클릭한 자리에 운석이 떨어진다.,Click the field to drop a meteor there.,주문 칸 툴팁
 SpellDesc.Rally,누르면 바로: 잠깐 동안 아군 전체가 빨리 때리고 빨리 걷는다 (금빛으로 빛난다).,Instantly: all troops attack and move faster for a while (they glow gold).,주문 칸 툴팁
 SpellDesc.Ladle,전장을 클릭한 자리를 큰 국자로 쾅. 횟수가 차오른다.,Smash the clicked spot with a giant ladle. Charges refill.,주문 칸 툴팁
@@ -320,8 +320,6 @@ Unit.Boar,멧돼지,Boar,
 Unit.Squirrel,미친 다람쥐,Mad Squirrel,
 Unit.BeastDen,짐승 굴,Beast Den,
 Unit.BeastTower,둥지 망루,Nest Tower,
-Unit.BoarKing,멧돼지 대장,Boar Chief,
-Skill.BoarStomp,들이받기,Boar Rush,
 Book.Heroes,영웅,Heroes,
 Book.Spells,주문,Spells,
 Book.Equipped,출전 영웅,Equipped Heroes,
@@ -335,3 +333,13 @@ Book.Range,사거리,Range,
 Book.Skills,스킬 (자동),Skills (auto),
 Map.Spells,주문,Spells,
 Book.Locked,잠김,Locked,
+Unit.BearChief,곰 족장,Bear Chief,
+Skill.BearSlam,통나무 내려찍기,Log Slam,
+Skill.BearSpin,통나무 회오리,Log Whirl,
+Skill.BearRoar,족장의 포효,Chief's Roar,
+Stage.Mountain,바위 고개,Rocky Pass,스테이지 2
+Talk.BearBoss1,이 산이 내 솥이다.,This mountain is my pot.,말풍선 (Dialogues.csv BearBoss)
+Talk.BearBoss2,곰탕이 되겠군.,"Bear soup, then.",
+Talk.BearDown1,…곰탕은 오래 끓인다.,...Bear soup takes long to boil.,말풍선 (Dialogues.csv BearDown)
+UI.SkillReady,준비,Ready,영웅 칸: 스킬 쓸 수 있음
+Book.Cooldown,쿨타임 {0}초,Cooldown {0}s,영웅 창 스킬 줄

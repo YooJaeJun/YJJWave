@@ -4,7 +4,15 @@ M2_Skeleton,Meadow,2,40,Boar,0.6,0
 M2_Imp,Meadow,2,40,Squirrel,0.15,0
 M3_Skeleton,Meadow,3,45,Boar,0.9,0
 M3_Imp,Meadow,3,45,Squirrel,0.375,0
-M3_BoneKing,Meadow,3,45,BoarKing,0,0
+T1_Boar,Mountain,1,35,Boar,0.6,5
+T1_Squirrel,Mountain,1,35,Squirrel,0.2,0
+T2_Boar,Mountain,2,35,Boar,1.2,0
+T2_Squirrel,Mountain,2,35,Squirrel,0.5,0
+T3_Boar,Mountain,3,40,Boar,2.2,0
+T3_Squirrel,Mountain,3,40,Squirrel,1.0,0
+T4_Boar,Mountain,4,50,Boar,3.5,0
+T4_Squirrel,Mountain,4,50,Squirrel,1.6,0
+T4_BearChief,Mountain,4,50,BearChief,0,1
 S1_Skeleton,SkullHill,1,35,Skeleton,1.12,0
 S1_Imp,SkullHill,1,35,Imp,0.3,0
 S2_Skeleton,SkullHill,2,35,Skeleton,2.25,0

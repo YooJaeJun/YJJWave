@@ -147,10 +147,7 @@ int32 FYJJHorde::Spawn(int32 InType, EYJJTeam InTeam, const FVector2f& InPos, co
 	{
 		BigUnits.Add(Slot);
 	}
-	if (Def.Skill != INDEX_NONE)
-	{
-		AddCaster(Slot, Def.Skill);
-	}
+	AddUnitSkills(Slot, Def);
 	return Slot;
 }
 
@@ -716,7 +713,7 @@ void FYJJHorde::Promote(int32 Slot)
 	if (New.Skill != INDEX_NONE && New.Skill != Old.Skill)
 	{
 		Casters.RemoveAll([Slot](const FYJJSkillCaster& Caster) { return Caster.Slot == Slot; });
-		AddCaster(Slot, New.Skill);
+		AddUnitSkills(Slot, New);
 	}
 	Promoted.Add({ Pos[Slot], NewType });
 }
@@ -970,6 +967,22 @@ void FYJJHorde::TickCharge(float Dt)
 	Slashes.Add({ Ahead, ChargeRadius, ChargeDir.X >= 0.f ? 1.f : -1.f });
 }
 
+void FYJJHorde::AddUnitSkills(int32 Slot, const FYJJUnitDef& Def)
+{
+	// 첫 스킬 (영웅은 판 시작에 SetSkills 로 바꾼다) + 보스의 나머지 저절로 쓰는 스킬
+	if (Def.Skill != INDEX_NONE)
+	{
+		AddCaster(Slot, Def.Skill);
+	}
+	for (const int32 Skill : Def.AutoSkills)
+	{
+		if (Skill != Def.Skill)
+		{
+			AddCaster(Slot, Skill);
+		}
+	}
+}
+
 void FYJJHorde::AddCaster(int32 Slot, int32 Skill)
 {
 	FYJJSkillCaster& Caster = Casters.AddDefaulted_GetRef();
@@ -1143,7 +1156,7 @@ void FYJJHorde::TickSkills(float Dt)
 			continue;
 		}
 		// 3) 저절로 쓰는 스킬: 바라보는 쪽 원 안에 상대가 충분하면
-		if (Skill.Trigger == EYJJSkillTrigger::Auto && Caster.Cooldown <= 0.f && !(Flags[Slot] & YJJUnitFlag::Casting))
+		if (Skill.Trigger == EYJJSkillTrigger::Auto && Caster.Cooldown <= 0.f && !IsCasting(Slot))
 		{
 			Caster.Dir = FaceLeft[Slot] ? -1.f : 1.f;
 			if (CountNear(SkillCenter(Caster), Skill.Radius, Opponent(MyTeam), Skill.AutoCount) >= Skill.AutoCount)

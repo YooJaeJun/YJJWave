@@ -289,6 +289,7 @@ void FYJJGameDatabase::LoadSkills()
 	for (FYJJUnitDef& Def : Units)
 	{
 		Def.Skill = INDEX_NONE;
+		Def.AutoSkills.Reset();
 	}
 	const UDataTable* Table = LoadTable(TEXT("Skills.csv"), FYJJSkillRow::StaticStruct());
 	Table->ForeachRow<FYJJSkillRow>(ContextName, [this](const FName& Name, const FYJJSkillRow& Row)
@@ -333,9 +334,9 @@ void FYJJGameDatabase::LoadSkills()
 		{
 			return;
 		}
-		// 내 영웅은 Manual 스킬이 여럿 (Heroes.csv 가 Z·X·C 에 놓는다). 다른 유닛은 하나만
+		// 내 영웅은 Manual 스킬이 여럿 (Heroes.csv 가 고른다), 보스는 저절로 쓰는 스킬이 여럿. 다른 유닛은 하나만
 		const bool bHeroSkill = Units[Def.Unit].bHero && Def.Trigger == EYJJSkillTrigger::Manual;
-		if (Units[Def.Unit].Skill != INDEX_NONE && !bHeroSkill)
+		if (Units[Def.Unit].Skill != INDEX_NONE && !bHeroSkill && !Units[Def.Unit].bBoss)
 		{
 			Problem(FString::Printf(TEXT("Skills.csv %s: %s 는 이미 스킬이 있다"), *Name.ToString(), *Row.Unit));
 			return;
@@ -343,6 +344,10 @@ void FYJJGameDatabase::LoadSkills()
 		if (Units[Def.Unit].Skill == INDEX_NONE)
 		{
 			Units[Def.Unit].Skill = Skills.Num();
+		}
+		if (!bHeroSkill)
+		{
+			Units[Def.Unit].AutoSkills.Add(Skills.Num());
 		}
 		Skills.Add(Def);
 	});

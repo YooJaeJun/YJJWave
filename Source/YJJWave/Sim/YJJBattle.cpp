@@ -485,9 +485,9 @@ void FYJJBattle::HandleSkillEvents()
 		Sounds.Add(SoundSmack);
 		// 큰 스킬이 맞는 순간 아주 잠깐 멈칫
 		HitStopLeft = T.HitStopTime;
-		if (Skill.SummonUnit != INDEX_NONE && Event.Team == EYJJTeam::Player)
+		if (Skill.SummonUnit != INDEX_NONE)
 		{
-			SummonAround(Skill, Event.Pos);
+			SummonAround(Skill, Event.Pos, Event.Team);
 		}
 		if (!Event.bLast)
 		{
@@ -592,7 +592,7 @@ float FYJJBattle::HeroMaxHP() const
 	return Horde.Hero() != INDEX_NONE ? Horde.MaxHP[Horde.Hero()] : 0.f;
 }
 
-void FYJJBattle::SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center)
+void FYJJBattle::SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center, EYJJTeam InTeam)
 {
 	// 그 유닛을 내는 병영의 Lv1 능력치 (특성·카드 보너스 포함)로 둘레에 튀어나온다
 	const FYJJTuning& T = YJJData::Tune();
@@ -603,7 +603,14 @@ void FYJJBattle::SummonAround(const FYJJSkillDef& Skill, const FVector2f& Center
 		const float Angle = Random.FRand() * 2.f * UE_PI;
 		const float Dist = Skill.Radius * T.SkillSummonSpread * FMath::Sqrt(Random.FRand());
 		const FVector2f Where = Center + FVector2f(FMath::Cos(Angle), FMath::Sin(Angle)) * Dist;
-		if (Horde.Spawn(Skill.SummonUnit, EYJJTeam::Player, Where, Stats) != INDEX_NONE)
+		if (InTeam == EYJJTeam::Enemy)
+		{
+			if (SpawnEnemyAt(Skill.SummonUnit, Where) != INDEX_NONE)
+			{
+				AddEffect(EYJJEffectKind::Build, Where, T.BuildEffectTime, T.SkillSummonPuff);
+			}
+		}
+		else if (Horde.Spawn(Skill.SummonUnit, EYJJTeam::Player, Where, Stats) != INDEX_NONE)
 		{
 			++Spawned[static_cast<int32>(EYJJTeam::Player)];
 			AddEffect(EYJJEffectKind::Build, Where, T.BuildEffectTime, T.SkillSummonPuff);
