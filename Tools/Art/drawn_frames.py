@@ -1,41 +1,45 @@
-"""손그림 프레임 애니 (곰 족장): AI/Frames/_src/<이름> 의 Gemini 시트에서 캐릭터를 떼어 내 AI/Frames/<이름>/<동작>_<번호>.png 로. 이후 generate_art.py Big_<이름>.png Units.png
+"""손그림 프레임 애니: python drawn_frames.py <유닛이름>. AI/Frames/_src/<이름> 의 Gemini 시트에서 캐릭터를 떼어 내 AI/Frames/<이름>/<동작>_<번호>.png 로. 이후 generate_art.py Big_<이름>.png Units.png
 - 칸으로 자르지 않는다 (몽둥이가 칸 경계를 넘어가면 잘리므로). 큰 덩어리 = 캐릭터, 작은 조각(먼지·떨어진 왕관)은 가까운 캐릭터에 붙인다
 - 크기는 시트마다 하나: 서 있는 기준 프레임의 키를 대기 1번 키에 맞춘다 (시체는 누운 몸 길이로)
 결과: AI/Frames/<이름>/*.png, _src 에 동작별 미리보기 GIF·한눈 띠. 필요: pip install opencv-python numpy"""
 import os
+import sys
 
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
 ART = os.path.dirname(os.path.abspath(__file__))
-NAME = "BearChief"
-HERE = os.path.join(ART, "AI", "Frames", "_src", NAME)      # Gemini 원본 시트
+NAME = sys.argv[1] if len(sys.argv) > 1 else "BearChief"
+HERE = os.path.join(ART, "AI", "Frames", "_src", NAME)      # Gemini 원본 시트 (attack·walk·idlehit·corpse, 있으면 dazed)
 DEST = os.path.join(ART, "AI", "Frames", NAME)              # generate_art 가 읽는 프레임
 OUT = 512
 FOOT = 0.93
 BG = (235, 232, 220, 255)
 TARGET_H = OUT * 0.66      # 서 있는 키 (칸 비율)
 CORPSE_LEN = 1.15          # 누운 몸 길이 = 서 있는 키 x 이 배
-ANCHOR_X = 0.43            # 몸 가운데 칸 비율 (공격 몽둥이가 앞으로 뻗을 자리)
+ANCHOR_X = 0.43            # 몸 가운데 칸 비율 (공격 무기가 앞으로 뻗을 자리)
 
-# 시트: 캐릭터 수, 줄 수, 크기 기준 프레임 번호
+# 시트: 캐릭터 수, 줄 수, 크기 기준 프레임 번호 (None = 누운 몸 길이로)
 SHEETS = {
-    'walk3_sheet.png':   (8, 2, 0),
-    'frames_sheet.png':  (6, 2, 0),
-    'idlehit_sheet.png': (8, 2, 0),
-    'dazed_edit.png':    (1, 1, 0),
-    'corpse3_sheet.png': (1, 1, None),
+    'walk.png':    (8, 2, 0),
+    'attack.png':  (6, 2, 0),
+    'idlehit.png': (8, 2, 0),
+    'corpse.png':  (1, 1, None),
 }
 # 동작: (시트, 쓸 캐릭터 번호들)
 ACTIONS = {
-    'walk':   ('walk3_sheet.png', [0, 1, 2, 3, 4, 5, 6, 7]),
-    'attack': ('frames_sheet.png', [0, 1, 2, 3, 4, 5]),
-    'idle':   ('idlehit_sheet.png', [0, 1, 2, 3]),
-    'hit':    ('idlehit_sheet.png', [4, 5]),
-    'dazed':  ('dazed_edit.png', [0, 0]),
-    'corpse': ('corpse3_sheet.png', [0]),
+    'walk':   ('walk.png', [0, 1, 2, 3, 4, 5, 6, 7]),
+    'attack': ('attack.png', [0, 1, 2, 3, 4, 5]),
+    'idle':   ('idlehit.png', [0, 1, 2, 3]),
+    'hit':    ('idlehit.png', [4, 5]),
+    'dazed':  ('idlehit.png', [6, 7]),
+    'corpse': ('corpse.png', [0]),
 }
+# 어질 시트를 따로 둔 유닛 (dazed.png 한 장 = 대기 그림의 얼굴만 바꾼 것): 같은 그림을 발 축으로 좌우 기우뚱
+if os.path.exists(os.path.join(HERE, 'dazed.png')):
+    SHEETS['dazed.png'] = (1, 1, 0)
+    ACTIONS['dazed'] = ('dazed.png', [0, 0])
 DAZED_TILT = (4, -4)   # 어질: 같은 그림을 발 축으로 좌우 기우뚱
 
 
@@ -116,7 +120,7 @@ for name, (s, idx) in ACTIONS.items():
         canvas = Image.new('RGBA', (OUT, OUT), (0, 0, 0, 0))
         ax = round(OUT * (0.5 if name == 'corpse' else ANCHOR_X))
         canvas.paste(img, (ax - cx, round(OUT * FOOT) - foot), img)
-        if name == 'dazed':
+        if name == 'dazed' and ACTIONS['dazed'][0] == 'dazed.png':
             canvas = canvas.rotate(DAZED_TILT[k], resample=Image.BICUBIC, center=(ax, round(OUT * FOOT)))
         canvas.save(os.path.join(DEST, '%s_%d.png' % (name, k)))
         aligned[name].append(canvas)

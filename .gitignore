@@ -76,3 +76,4 @@ Tools/Art/Generated/_sheet*.png
 
 # AI 원화 생성 원본 (승인된 것만 Tools/Art/AI/Approved 에)
 Tools/Art/AI/Raw/
+Tools/Art/AI/Frames/_src/*/preview_*
