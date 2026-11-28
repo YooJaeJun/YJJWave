@@ -880,6 +880,22 @@ def old_pose(name, phase):
 
 
 BIG_SHEET_COLS = 12  # 큰 유닛 그림 한 줄 칸 수 (칸은 논리 칸 순서 × 중간 프레임으로 줄줄이)
+# 손그림 프레임 애니 유닛: AI/Frames/<이름>/<동작>_<번호>.png (동작마다 ACTIONS 의 칸 수만큼, 발 위치·크기 맞춤 끝난 정사각 칸)
+#   리그로 움직이지 않고 그린 프레임을 그대로 쓴다. 중간 프레임은 같은 그림을 되풀이
+DRAWN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AI", "Frames")
+_drawn_cache = {}
+
+
+def has_drawn(name):
+    return os.path.isdir(os.path.join(DRAWN_DIR, name))
+
+
+def drawn_frame(name, action, index, cell):
+    key = (name, action, index, cell)
+    if key not in _drawn_cache:
+        img = Image.open(os.path.join(DRAWN_DIR, name, "%s_%d.png" % (action, index))).convert("RGBA")
+        _drawn_cache[key] = img.resize((cell, cell), Image.LANCZOS)
+    return _drawn_cache[key]
 
 
 def big_specs():
@@ -902,7 +918,9 @@ def big_atlas(name):
             continue
         for sub in range(sub_count):
             phase = (frame - first + sub / sub_count) / count
-            if name in rig.RIGS:
+            if has_drawn(name):
+                img = drawn_frame(name, action, frame - first, cell)
+            elif name in rig.RIGS:
                 img = rig.frame(name, action, phase, cell)
             elif action == "corpse":
                 img = corpse(u, cell)
@@ -930,6 +948,12 @@ def props_atlas():
 def units_atlas():
     atlas = Image.new("RGBA", (UNIT_CELL * UNIT_COLS, UNIT_CELL * UNIT_ROWS), (0, 0, 0, 0))
     for row, u in enumerate(UNITS):
+        if has_drawn(u["name"]):
+            for frame in range(BIG_LOGICAL):
+                action, first, count = action_of(frame)
+                if action is not None:
+                    atlas.alpha_composite(drawn_frame(u["name"], action, frame - first, UNIT_CELL), (frame * UNIT_CELL, row * UNIT_CELL))
+            continue
         if u["name"] in rig.RIGS:
             # AI 원화 리그 유닛: 칸마다 동작·위상으로 (작은 칸은 중간 프레임 없음)
             for frame in range(BIG_LOGICAL):
