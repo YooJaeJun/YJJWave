@@ -175,6 +175,10 @@ public:
 	int32 LastVisibleUnits() const { return Sorted.Num(); }
 	void SetTreeOpen(bool bOpen) { bTreeOpen = bOpen; }
 	/** 월드맵 영웅 고르기를 연다 (그 스테이지로 출전, INDEX_NONE 이면 닫기) */
+	/** 국자 뜨기가 다 멈췄나 (이제 카드를 고를 수 있다) */
+	bool IsScoopDone() const;
+	/** 국자 뜨기가 시작된 지 (실제 시간) */
+	float GetScoopAge() const { return ScoopAge; }
 	void OpenMapPanel(EYJJMapPanel Panel) { MapPanel = Panel; bTreeOpen = Panel == EYJJMapPanel::Perks; BookView = 0; }
 	/** 오토파일럿 스크린샷용: 마우스 대신 이 별의 설명창을 띄운다 (INDEX_NONE이면 마우스) */
 	void SetForcedHoverPerk(int32 Perk) { ForcedHoverPerk = Perk; }
@@ -379,6 +383,15 @@ private:
 	void PressSpell(EYJJSpell Spell);
 	static bool NeedsAim(EYJJSpell Spell) { return Spell != EYJJSpell::Rally; }
 	void DrawCardPick();
+	/** 국자 하나: 솥에서 올라와 재료가 휙휙 바뀌다 멈추고 카드에 붓는다 */
+	void DrawScoop(int32 Index, float X, float Y);
+	/** 다 뜬 카드 한 장 (등급 띠·전설 빛줄기·대박/아깝다) */
+	void DrawScoopCard(int32 Index, float X, float Y, float Since);
+	void UpdateScoop(float DeltaSeconds);
+	/** 국자 Index 가 멈추는 때 (연출 시작부터) */
+	float ScoopLockTime(int32 Index) const;
+	/** 김 색: 등급이 무지개면 돈다 */
+	FLinearColor ScoopSteamColor(int32 Grade) const;
 	/** 양념 하나를 냄비에 (카드 고르기) + 배너 */
 	void PickSeasoning(int32 Choice);
 	/** 좌측 패널: 이번 판 넣은 양념 그림들 (높이를 돌려준다) */
@@ -424,6 +437,12 @@ private:
 	/** 결과 창이 뜬 지 (실제 시간, 별 연출) */
 	float ResultAge = 0.f;
 	int32 StarsSounded = 0;
+	/** 국자 뜨기 연출: 카드 제안 번호, 시작부터 실제 시간, 국자마다 아깝다·딸깍 수·멈춤 소리 */
+	int32 ScoopSerial = INDEX_NONE;
+	float ScoopAge = 0.f;
+	TArray<bool> ScoopNearMiss;
+	TArray<int32> ScoopTicks;
+	TArray<bool> ScoopLocked;
 	/** 글꼴을 만든 언어 (바뀌면 다시 만든다) */
 	FString GameFontLanguage;
 	UPROPERTY() TObjectPtr<UTextureRenderTarget2D> GroundTarget;
@@ -540,6 +559,12 @@ private:
 	static constexpr int32 BakeFirstBigPass = 2;   // 피 → 시체 → 큰 유닛마다 큰 시체
 	inline static const FName SoundClick = TEXT("Click");
 	inline static const FName SoundStar = TEXT("Star");
+	inline static const FName SoundScoopTick = TEXT("ScoopTick");
+	inline static const FName SoundScoopMiss = TEXT("ScoopMiss");
+	/** 국자 뜨기: 재료 가짜 순서를 섞는 소수 */
+	static constexpr int32 ScoopHashStep = 7919;
+	static constexpr int32 ScoopHashSlot = 104729;
+	static constexpr int32 ScoopHashSerial = 31;
 
 	// 옵션 버튼 번호
 	static constexpr int32 NumVolumeRows = 4;   // 배경음·효과음·보이스·카메라 진동 (막대 줄)

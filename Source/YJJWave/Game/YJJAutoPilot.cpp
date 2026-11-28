@@ -229,6 +229,18 @@ void FYJJAutoPilot::Tick(float RealDeltaSeconds)
 	// 카드: 아무거나 하나
 	if (Battle.bCardPending)
 	{
+		// 국자가 다 멈출 때까지 기다린다. 처음 한 번은 도는 중에도 한 장 찍는다
+		APlayerController* Controller = Mode->GetWorld()->GetFirstPlayerController();
+		const AYJJWaveHUD* ScoopHUD = Controller ? Cast<AYJJWaveHUD>(Controller->GetHUD()) : nullptr;
+		if (ScoopHUD && !ScoopHUD->IsScoopDone())
+		{
+			if (!bScoopShot && ScoopHUD->GetScoopAge() >= T.BotScoopShotAt)
+			{
+				bScoopShot = true;
+				Mode->TakeShot(FString::Printf(TEXT("%sScoop"), ShotPrefix));
+			}
+			return;
+		}
 		// 처음 한 번은 카드 화면을 찍고 조금 뒤에 고른다 (스크린샷이 저장될 시간)
 		if (!bCardShot)
 		{

@@ -48,6 +48,7 @@ private:
 	float TotalTime = 0.f;
 	bool bTreeShot = false;
 	bool bCardShot = false;
+	bool bScoopShot = false;
 	bool bOptionsShot = false;
 	bool bCutShot = false;
 	bool bBuyShot = false;

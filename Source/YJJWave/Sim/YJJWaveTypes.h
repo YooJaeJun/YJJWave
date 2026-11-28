@@ -29,6 +29,33 @@ enum class EYJJStat : uint8
 	Count
 };
 
+/** 재료 등급이 키우는 특수 효과 값 (Cards.csv GradeScale: A / B / 빈칸) */
+enum class EYJJGradeScale : uint8
+{
+	None,
+	A,
+	B,
+};
+
+/** CardGrades.csv: 국자로 뜬 재료 등급 (흔함 → 귀함 → 전설) */
+struct FYJJCardGrade
+{
+	FName Id;
+	FString NameKey;
+	/** 뽑힐 무게 */
+	float Weight = 1.f;
+	/** 카드 수치 배율 */
+	float Mult = 1.f;
+	/** 등급 글자·띠 색 */
+	FLinearColor Color = FLinearColor::White;
+	/** 국자 위로 피어오르는 김 색 (뜨는 동안 미리 흘린다) */
+	FLinearColor Steam = FLinearColor::White;
+	/** 김이 무지개로 돈다 (전설) */
+	bool bRainbow = false;
+	/** 국자가 멈출 때 소리 (Sounds.csv) */
+	FName Sound;
+};
+
 /** 특성 별 종류 */
 enum class EYJJPerkKind : uint8
 {
@@ -365,6 +392,8 @@ struct FYJJPerkDef
 	int32 Icon = INDEX_NONE;
 	/** 양념 한 줄 맛 설명 (Cards.csv) */
 	FString FlavorKey;
+	/** 재료 등급이 능력치와 함께 키우는 특수 효과 값 (Cards.csv) */
+	EYJJGradeScale GradeScale = EYJJGradeScale::None;
 };
 
 /** Broth.csv 한 줄: 왕국의 마지막 냄비 국물 단계 (뼈가 Bones 만큼 모이면 이 단계) */

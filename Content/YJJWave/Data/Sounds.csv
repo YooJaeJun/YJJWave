@@ -40,3 +40,8 @@ Star,SFX_Star,0.7,Sfx,0,1.15,1.35,결과 별이 하나 나올 때
 Smack,SFX_Smack,0.8,Sfx,0.05,0.9,1.1,국자 내려치기 쾅
 Swing,SFX_Swing,0.5,Sfx,0.05,0.95,1.1,국자 휘두르기
 WallBreak,SFX_MeteorBoom,1.0,Sfx,0,0.6,0.7,성벽이 무너짐
+ScoopTick,SFX_Click,0.22,Sfx,0.03,1.35,1.7,국자 재료가 휙휙 바뀔 때 딸깍
+ScoopLock,SFX_Smack,0.45,Sfx,0.05,1.1,1.2,흔한 재료로 탁 멈춤
+ScoopRare,SFX_Upgrade,0.6,Sfx,0.05,1.05,1.1,귀한 재료로 멈춤
+ScoopJackpot,SFX_Victory,0.7,Sfx,0,1.1,1.1,전설 재료 (잭팟)
+ScoopMiss,SFX_PotOverflow,0.35,Sfx,0.1,1.4,1.5,금빛 김이 피식 꺼짐 (아깝다)

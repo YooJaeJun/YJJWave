@@ -18,7 +18,7 @@ class UScriptStruct;
  *   Perks.csv      특성 성좌 (Tools/Data/gen_perks.py)  Spells.csv     주문 Lv별 수치·특수 효과
  *   Broth.csv      냄비 국물 단계                 Dialogues.csv  게임 중 말풍선 대화
  *   Regions.csv    월드맵 지역                    Skills.csv     영웅·보스 큰 범위 스킬
- *   Heroes.csv     고를 수 있는 영웅과 스킬 3개
+ *   Heroes.csv     고를 수 있는 영웅과 스킬 3개    CardGrades.csv 국자로 뜬 재료 등급
  * 글자는 Localization.csv (YJJLoc).
  */
 class YJJWAVE_API FYJJGameDatabase
@@ -43,6 +43,8 @@ public:
 	TArray<FYJJSpellLevel> SpellLevels[static_cast<int32>(EYJJSpell::Count)];
 	/** Broth.csv: 냄비 국물 단계 (Bones 오름차순) */
 	TArray<FYJJBrothStage> Broth;
+	/** CardGrades.csv: 재료 등급 (Order 순서, 0 = 흔함) */
+	TArray<FYJJCardGrade> CardGrades;
 	/** Dialogues.csv: 말풍선 대화 */
 	TArray<FYJJTalk> Talks;
 	/** Skills.csv: 영웅·보스 큰 범위 스킬 (유닛 Def.Skill 이 번호) */
@@ -70,6 +72,7 @@ private:
 	void LoadCards();
 	void LoadSpells();
 	void LoadBroth();
+	void LoadCardGrades();
 	void LoadDialogues();
 	void LoadSkills();
 	void LoadHeroes();
@@ -117,6 +120,7 @@ namespace YJJData
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Perks();
 	YJJWAVE_API TConstArrayView<FYJJPerkDef> Cards();
 	YJJWAVE_API TConstArrayView<FYJJBrothStage> Broth();
+	YJJWAVE_API TConstArrayView<FYJJCardGrade> CardGrades();
 	YJJWAVE_API TConstArrayView<FYJJTalk> Talks();
 	YJJWAVE_API TConstArrayView<FYJJSkillDef> Skills();
 	YJJWAVE_API const FYJJSkillDef& Skill(int32 Index);

@@ -343,3 +343,11 @@ Talk.BearBoss2,곰탕이 되겠군.,"Bear soup, then.",
 Talk.BearDown1,…곰탕은 오래 끓인다.,...Bear soup takes long to boil.,말풍선 (Dialogues.csv BearDown)
 UI.SkillReady,준비,Ready,영웅 칸: 스킬 쓸 수 있음
 Book.Cooldown,쿨타임 {0}초,Cooldown {0}s,영웅 창 스킬 줄
+Grade.Common,흔한 재료,Common,국자 등급
+Grade.Rare,귀한 재료,Rare,
+Grade.Legend,전설의 재료,Legendary,
+UI.ScoopTitle,국자 뜨기,Scoop!,카드 고르기 제목 (뜨는 중)
+UI.ScoopSub,솥 바닥에서 뭐가 걸려 올라올까… (누르면 바로 멈춘다),What will the ladle catch… (click to stop),
+UI.ScoopMiss,아깝다!,So close!,금빛 김이 꺼질 때
+UI.ScoopJackpot,대박!,Jackpot!,전설 재료
+UI.GradeMult,효과 ×{0},Effect ×{0},등급 배율

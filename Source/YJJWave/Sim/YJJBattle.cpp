@@ -44,11 +44,13 @@ void FYJJBattle::Reset(int32 InStage, const FYJJProgress& Progress)
 	bVictory = false;
 	bCardPending = false;
 	CardOffer.Reset();
+	CardOfferGrades.Reset();
 	// 영웅: 월드맵에서 고른 영웅 (없으면 첫 영웅), 액티브 스킬 셋
 	HeroIndex = YJJData::HeroIndex(Progress.Hero);
 	HeroSkillReadyNow.Init(-1.f, HeroDef().Skills.Num());
 	Sounds.Add(SoundCard);
 	CardsTaken.Reset();
+	CardGrades.Reset();
 	FrontBonus = 1.f;
 	Corpses.Reset();
 	CorpseCursor = 0;
@@ -816,7 +818,53 @@ void FYJJBattle::OfferCards()
 	{
 		CardOffer.AddUnique(Random.RandHelper(NumCards));
 	}
+	CardOfferGrades.Reset();
+	for (int32 Index = 0; Index < CardOffer.Num(); ++Index)
+	{
+		CardOfferGrades.Add(RollCardGrade());
+	}
+	++CardOfferSerial;
 	bCardPending = true;
+}
+
+int32 FYJJBattle::RollCardGrade()
+{
+	const TConstArrayView<FYJJCardGrade> Grades = YJJData::CardGrades();
+	float Total = 0.f;
+	for (const FYJJCardGrade& Grade : Grades)
+	{
+		Total += Grade.Weight;
+	}
+	float Roll = Random.FRand() * Total;
+	for (int32 Index = 0; Index < Grades.Num(); ++Index)
+	{
+		Roll -= Grades[Index].Weight;
+		if (Roll < 0.f)
+		{
+			return Index;
+		}
+	}
+	return 0;
+}
+
+FYJJPerkDef FYJJBattle::GradedCard(int32 Card, int32 Grade)
+{
+	FYJJPerkDef Def = YJJData::Cards()[Card];
+	const TConstArrayView<FYJJCardGrade> Grades = YJJData::CardGrades();
+	const float Mult = Grades.IsValidIndex(Grade) ? Grades[Grade].Mult : 1.f;
+	for (FYJJPerkDef::FMod& Mod : Def.Mods)
+	{
+		Mod.Value *= Mult;
+	}
+	if (Def.GradeScale == EYJJGradeScale::A)
+	{
+		Def.Special.A *= Mult;
+	}
+	else if (Def.GradeScale == EYJJGradeScale::B)
+	{
+		Def.Special.B *= Mult;
+	}
+	return Def;
 }
 
 bool FYJJBattle::PickCard(int32 Choice)
@@ -826,8 +874,10 @@ bool FYJJBattle::PickCard(int32 Choice)
 		return false;
 	}
 	const int32 Card = CardOffer[Choice];
+	const int32 Grade = CardOfferGrades.IsValidIndex(Choice) ? CardOfferGrades[Choice] : 0;
 	CardsTaken.Add(Card);
-	for (const FYJJPerkDef::FMod& Mod : YJJData::Cards()[Card].Mods)
+	CardGrades.Add(Grade);
+	for (const FYJJPerkDef::FMod& Mod : GradedCard(Card, Grade).Mods)
 	{
 		Mods[ModIndex(Mod.Stat, Mod.Building + 1)] += Mod.Value;
 	}
@@ -835,7 +885,8 @@ bool FYJJBattle::PickCard(int32 Choice)
 	RecomputeHero();
 	bCardPending = false;
 	CardOffer.Reset();
-	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 카드: %s"), *YJJData::Cards()[Card].Id.ToString());
+	CardOfferGrades.Reset();
+	UE_LOG(LogYJJWave, Display, TEXT("[Battle] 카드: %s (%s)"), *YJJData::Cards()[Card].Id.ToString(), YJJData::CardGrades().IsValidIndex(Grade) ? *YJJData::CardGrades()[Grade].Id.ToString() : TEXT("-"));
 	return true;
 }
 
@@ -1407,9 +1458,9 @@ void FYJJBattle::RebuildSpecials()
 		}
 		ApplySpecialDef(Def, Specials);
 	}
-	for (const int32 Card : CardsTaken)
+	for (int32 Index = 0; Index < CardsTaken.Num(); ++Index)
 	{
-		ApplySpecialDef(YJJData::Cards()[Card], Specials);
+		ApplySpecialDef(GradedCard(CardsTaken[Index], CardGrades.IsValidIndex(Index) ? CardGrades[Index] : 0), Specials);
 	}
 	Horde.SetSpecials(Specials);
 }

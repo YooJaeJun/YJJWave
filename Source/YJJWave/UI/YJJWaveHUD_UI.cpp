@@ -1,4 +1,4 @@
-// 화면 UI (1920x1080 가상 좌표), 특성 성좌 화면, 마우스·키 처리
+﻿// 화면 UI (1920x1080 가상 좌표), 특성 성좌 화면, 마우스·키 처리
 #include "CanvasItem.h"
 #include "CanvasTypes.h"
 #include "Data/YJJGameData.h"
@@ -1173,55 +1173,313 @@ int32 AYJJWaveHUD::BuildingIndexForKey(const FKey& Key)
 
 void AYJJWaveHUD::DrawCardPick()
 {
-	// 양념 고르기: 웨이브를 버티면 보급 수레가 양념 셋을 가져온다. 하나를 냄비에 넣으면 이번 판 군대가 그 맛으로 강해진다
+	// 국자 뜨기: 웨이브를 버티면 솥에서 국자 셋이 하나씩 떠오른다. 국자 안 재료가 슬롯처럼 휙휙 바뀌다가 탁 멈추고,
+	// 김 색이 등급을 미리 흘린다 (하양 → 금빛 → 무지개). 금빛 김이 오르다 피식 꺼지면 아깝다. 다 멈추면 하나를 냄비에 넣는다
 	const FYJJBattle* Current = Battle();
 	const FYJJUILayout& L = UI();
 	const float Pad = L.TextPad;
-	DrawBox(0.f, 0.f, VirtualW, VirtualHeight, YJJUI::Shade);
+	DrawBox(0.f, 0.f, VirtualW, VirtualHeight, YJJUI::WithAlpha(YJJUI::Shade, L.ScoopShade));
 	const float CenterX = WorldCenterVirtualX();
-	DrawLabel(YJJLoc::Get(TEXT("UI.CardTitle")), CenterX, L.CardTitleY, L.TitleText, YJJUI::Highlight, Half);
-	DrawLabel(YJJLoc::Get(TEXT("UI.CardSub")), CenterX, L.CardTitleY + L.TitleText + L.CardSubGap, L.SmallText, YJJUI::Paper, Half);
+	const bool bDone = IsScoopDone();
+	DrawLabel(YJJLoc::Get(bDone ? TEXT("UI.CardTitle") : TEXT("UI.ScoopTitle")), CenterX, L.CardTitleY, L.TitleText, YJJUI::Highlight, Half);
+	DrawLabel(YJJLoc::Get(bDone ? TEXT("UI.CardSub") : TEXT("UI.ScoopSub")), CenterX, L.CardTitleY + L.TitleText + L.CardSubGap, L.SmallText, YJJUI::Paper, Half);
+
+	// 화면 아래 큰 솥 (국자가 여기서 올라온다)
+	const float PotSize = L.ScoopPotSize;
+	DrawIcon(FMath::RoundToInt(L.UiPot), CenterX - PotSize * Half, VirtualHeight - L.ScoopPotBottom - PotSize, PotSize);
 
 	const int32 Count = Current->CardOffer.Num();
 	const float Total = Count * L.CardW + (Count - 1) * L.CardPickGap;
 	const float Y = L.CardTitleY + L.TitleText + L.CardSubGap + L.SmallText + Pad * 2.f;
+	if (!bDone)
+	{
+		// 아무 데나 누르면 바로 다 멈춘다
+		AddButton(EButton::Card, INDEX_NONE, 0.f, 0.f, VirtualW, VirtualHeight);
+	}
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		const FYJJPerkDef& Def = YJJData::Cards()[Current->CardOffer[Index]];
 		const float X = CenterX - Total * Half + Index * (L.CardW + L.CardPickGap);
-		const bool bHover = HoverButton(EButton::Card) && ButtonAt(ToVirtual(MouseScreen()))->Index == Index;
-		DrawPanel(X, Y, L.CardW, L.CardPickH, bHover ? FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Half) : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
-		DrawLabel(FString::FromInt(Index + 1), X + Pad, Y + Pad, L.MidText, YJJUI::Highlight);
-		// 양념 그림 → 이름 → 맛 한 줄 → 효과
-		float RowY = Y + Pad;
-		if (Def.Icon != INDEX_NONE)
+		const float Since = ScoopAge - ScoopLockTime(Index);
+		if (Since < 0.f)
 		{
-			DrawIcon(Def.Icon, X + (L.CardW - L.CardIconSize) * Half, RowY, L.CardIconSize);
+			// 아직 안 뜬 자리: 카드 뒷면
+			DrawPanel(X, Y, L.CardW, L.CardPickH, YJJUI::WithAlpha(YJJUI::PanelTint, L.ScoopBackAlpha), FMath::RoundToInt(L.UiCard));
 		}
-		RowY += L.CardIconSize + Pad * Half;
-		DrawLabel(YJJLoc::Get(Def.NameKey), X + L.CardW * Half, RowY, L.MidText, YJJUI::Paper, Half, L.CardW - Pad * 2.f);
-		RowY += L.MidText + Pad * Half;
-		if (!Def.FlavorKey.IsEmpty())
+		else
 		{
-			for (const FString& Line : WrapText(YJJLoc::Get(Def.FlavorKey), L.TinyText, L.CardW - Pad * 2.f))
+			DrawScoopCard(Index, X, Y, Since);
+		}
+	}
+	// 국자는 카드 위에 그린다
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		DrawScoop(Index, CenterX - Total * Half + Index * (L.CardW + L.CardPickGap), Y);
+	}
+}
+
+void AYJJWaveHUD::DrawScoopCard(int32 Index, float X, float Y, float Since)
+{
+	const FYJJBattle* Current = Battle();
+	const FYJJUILayout& L = UI();
+	const float Pad = L.TextPad;
+	const TConstArrayView<FYJJCardGrade> Grades = YJJData::CardGrades();
+	const int32 GradeIndex = Current->CardOfferGrades.IsValidIndex(Index) ? Current->CardOfferGrades[Index] : 0;
+	const FYJJCardGrade* Grade = Grades.IsValidIndex(GradeIndex) ? &Grades[GradeIndex] : nullptr;
+	const FYJJPerkDef Def = FYJJBattle::GradedCard(Current->CardOffer[Index], GradeIndex);
+	const bool bDone = IsScoopDone();
+
+	// 전설: 카드 뒤에서 무지개 빛줄기가 돈다, 멈출 때 덜컹
+	FVector2f Jolt = FVector2f::ZeroVector;
+	if (Grade && Grade->bRainbow)
+	{
+		if (FxAtlas.Texture)
+		{
+			const float Ray = L.CardW * L.ScoopRaySize;
+			const FYJJQuadBatch Rays = BeginBatch(Canvas->Canvas, FxAtlas.Texture, 2);
+			const FVector2f Mid = ViewOffset + FVector2f(X + L.CardW * Half, Y + L.CardPickH * Half) * ViewScale;
+			for (int32 Turn = 0; Turn < 2; ++Turn)
 			{
-				DrawLabel(Line, X + L.CardW * Half, RowY, L.TinyText, YJJUI::Muted, Half);
-				RowY += L.TinyText + L.CardLineGap;
+				AddQuadRotated(Rays, Mid, FVector2f(Ray * ViewScale), ScoopAge * L.ScoopRaySpin + Turn * UE_HALF_PI, FxAtlas.UV(FMath::RoundToInt(L.FxPromote)), FxAtlas.CellUV, YJJUI::WithAlpha(ScoopSteamColor(GradeIndex), L.ScoopRayAlpha), false);
 			}
-			RowY += Pad * Half;
 		}
-		for (const FString& Line : WrapText(EffectText(Def), L.SmallText, L.CardW - Pad * 2.f))
+		const float ShakeT = 1.f - FMath::Clamp(Since / FMath::Max(L.ScoopShakeTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
+		Jolt = FVector2f(FMath::Sin(Since * L.ScoopWobbleSpeed), FMath::Cos(Since * L.ScoopWobbleSpeed * Half)) * L.ScoopShake * ShakeT;
+	}
+	X += Jolt.X;
+	Y += Jolt.Y;
+
+	const bool bHover = bDone && HoverButton(EButton::Card) && ButtonAt(ToVirtual(MouseScreen()))->Index == Index;
+	DrawPanel(X, Y, L.CardW, L.CardPickH, bHover ? FMath::Lerp(YJJUI::PanelTint, YJJUI::Highlight, Half) : YJJUI::PanelTint, FMath::RoundToInt(L.UiCard));
+	DrawLabel(FString::FromInt(Index + 1), X + Pad, Y + Pad, L.MidText, YJJUI::Highlight);
+	// 등급 띠 (카드 위)
+	if (Grade)
+	{
+		const float BandY = Y - L.ScoopBandH * Half;
+		DrawBox(X + Pad, BandY, L.CardW - Pad * 2.f, L.ScoopBandH, YJJUI::WithAlpha(YJJUI::Ink, YJJUI::Shade.A));
+		const FString Band = Grade->Mult > 1.f ? YJJLoc::Get(Grade->NameKey) + TEXT(" · ") + YJJLoc::Format(TEXT("UI.GradeMult"), { FString::Printf(TEXT("%g"), Grade->Mult) }) : YJJLoc::Get(Grade->NameKey);
+		DrawLabelCentered(Band, X + L.CardW * Half, BandY + L.ScoopBandH * Half, L.SmallText, Grade->bRainbow ? ScoopSteamColor(GradeIndex) : Grade->Color, L.CardW - Pad * 2.f);
+	}
+	// 양념 그림: 국자에서 떨어져 툭 튄다 → 이름 → 맛 한 줄 → 효과 (등급 배율을 곱한 값)
+	float RowY = Y + Pad;
+	if (Def.Icon != INDEX_NONE)
+	{
+		const float Pop = FMath::Clamp(Since / FMath::Max(L.ScoopPourTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
+		const float Size = L.CardIconSize * FMath::Lerp(L.ScoopLockPop, 1.f, 1.f - FMath::Square(1.f - Pop));
+		DrawIcon(Def.Icon, X + (L.CardW - Size) * Half, RowY + (L.CardIconSize - Size) * Half, Size);
+	}
+	RowY += L.CardIconSize + Pad * Half;
+	DrawLabel(YJJLoc::Get(Def.NameKey), X + L.CardW * Half, RowY, L.MidText, YJJUI::Paper, Half, L.CardW - Pad * 2.f);
+	RowY += L.MidText + Pad * Half;
+	if (!Def.FlavorKey.IsEmpty())
+	{
+		for (const FString& Line : WrapText(YJJLoc::Get(Def.FlavorKey), L.TinyText, L.CardW - Pad * 2.f))
 		{
-			DrawValueLabel(Line, X + Pad, RowY, L.SmallText, YJJUI::Paper, L.CardW - Pad * 2.f);
-			RowY += L.TipLineH;
+			DrawLabel(Line, X + L.CardW * Half, RowY, L.TinyText, YJJUI::Muted, Half);
+			RowY += L.TinyText + L.CardLineGap;
 		}
+		RowY += Pad * Half;
+	}
+	for (const FString& Line : WrapText(EffectText(Def), L.SmallText, L.CardW - Pad * 2.f))
+	{
+		DrawValueLabel(Line, X + Pad, RowY, L.SmallText, YJJUI::Paper, L.CardW - Pad * 2.f);
+		RowY += L.TipLineH;
+	}
+	// 대박! / 아깝다! (카드 위로 떠올랐다 사라진다)
+	const bool bMiss = ScoopNearMiss.IsValidIndex(Index) && ScoopNearMiss[Index];
+	if ((bMiss || (Grade && Grade->bRainbow)) && Since < L.ScoopShoutTime)
+	{
+		const float T = Since / FMath::Max(L.ScoopShoutTime, KINDA_SMALL_NUMBER);
+		const FLinearColor Shout = bMiss ? YJJUI::Muted : ScoopSteamColor(GradeIndex);
+		DrawLabelCentered(YJJLoc::Get(bMiss ? TEXT("UI.ScoopMiss") : TEXT("UI.ScoopJackpot")), X + L.CardW * Half, Y - L.ScoopBandH - L.ScoopShoutRise * T, L.ScoopShoutText, YJJUI::WithAlpha(Shout, 1.f - T * T));
+	}
+	if (bDone)
+	{
 		AddButton(EButton::Card, Index, X, Y, L.CardW, L.CardPickH);
 	}
+}
+
+void AYJJWaveHUD::DrawScoop(int32 Index, float X, float Y)
+{
+	const FYJJBattle* Current = Battle();
+	const FYJJUILayout& L = UI();
+	const float Local = ScoopAge - Index * L.ScoopInterval;
+	const float LockAt = ScoopLockTime(Index) - Index * L.ScoopInterval;
+	if (Local <= 0.f || Local >= LockAt + L.ScoopPourTime || !UiAtlas.Texture)
+	{
+		return;
+	}
+	const TConstArrayView<FYJJCardGrade> Grades = YJJData::CardGrades();
+	const TConstArrayView<FYJJPerkDef> Cards = YJJData::Cards();
+	const int32 GradeIndex = Current->CardOfferGrades.IsValidIndex(Index) ? Current->CardOfferGrades[Index] : 0;
+	const bool bMiss = ScoopNearMiss.IsValidIndex(Index) && ScoopNearMiss[Index];
+	const float SpinTime = LockAt - L.ScoopRiseTime;
+
+	// 국자 오목한 곳 자리: 솥 아가리 → (포물선) → 카드 그림 자리
+	const FVector2f Home(X + L.CardW * Half, Y + L.TextPad + L.CardIconSize * Half);
+	const FVector2f Pot(WorldCenterVirtualX(), VirtualHeight - L.ScoopPotBottom - L.ScoopPotSize * (1.f - L.ScoopPotMouth));
+	const float Rise = FMath::Clamp(Local / FMath::Max(L.ScoopRiseTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
+	const float RiseEase = 1.f - FMath::Square(1.f - Rise);
+	const FVector2f Bowl = FMath::Lerp(Pot, Home, RiseEase) - FVector2f(0.f, L.ScoopArcHeight * FMath::Sin(Rise * UE_PI));
+	const float Spin = FMath::Clamp((Local - L.ScoopRiseTime) / FMath::Max(SpinTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
+	const float Pour = FMath::Clamp((Local - LockAt) / FMath::Max(L.ScoopPourTime, KINDA_SMALL_NUMBER), 0.f, 1.f);
+	float Angle = FMath::Lerp(L.ScoopRiseTilt, L.ScoopHoldTilt, RiseEase) + L.ScoopPourTilt * Pour * Pour;
+	if (Rise >= 1.f && Pour <= 0.f)
+	{
+		// 도는 동안 덜덜 (끝날수록 잦아든다)
+		Angle += FMath::Sin(Local * L.ScoopWobbleSpeed) * L.ScoopWobble * (1.f - Spin);
+	}
+	const float Fade = 1.f - Pour;
+
+	// 김: 도는 동안 등급을 흘린다. 아깝다면 금빛까지 오르다가 멈추는 순간 피식 꺼진다
+	const int32 HintGrade = bMiss ? FMath::Min(1, Grades.Num() - 1) : GradeIndex;
+	const float Hint = FMath::SmoothStep(L.ScoopHintStart, 1.f, Spin) * (bMiss && Pour > 0.f ? 1.f - Pour : 1.f);
+	if (FxAtlas.Texture && Rise >= 1.f)
+	{
+		const int32 Puffs = L.ScoopSteamPuffs;
+		const FLinearColor SteamColor = FMath::Lerp(FLinearColor::White, ScoopSteamColor(HintGrade), Hint);
+		const float Grow = 1.f + HintGrade * L.ScoopHintGrow * Hint;
+		const FYJJQuadBatch Steam = BeginBatch(Canvas->Canvas, FxAtlas.Texture, Puffs);
+		for (int32 Puff = 0; Puff < Puffs; ++Puff)
+		{
+			const float Phase = FMath::Frac(ScoopAge * L.ScoopSteamSpeed + static_cast<float>(Puff) / FMath::Max(Puffs, 1));
+			const float Size = L.ScoopSteamSize * Grow * FMath::Lerp(Half, 1.f, Phase);
+			const FVector2f Spot = Bowl + FVector2f(FMath::Sin(Phase * FullTurn + Puff) * L.ScoopItemSize * PotSteamSpread, -L.ScoopItemSize * L.ScoopItemLift - L.ScoopSteamRise * Grow * Phase);
+			AddQuad(Steam, ViewOffset + (Spot - FVector2f(Size * Half)) * ViewScale, FVector2f(Size * ViewScale), FxAtlas.UV(FMath::RoundToInt(L.FxSteam)), FxAtlas.CellUV, YJJUI::WithAlpha(SteamColor, L.ScoopSteamAlpha * FMath::Sin(Phase * UE_PI) * Fade), false);
+		}
+	}
+
+	// 국자 (오목한 곳이 Bowl 에 오게 돌려 그린다)
+	float Sin = 0.f;
+	float Cos = 1.f;
+	FMath::SinCos(&Sin, &Cos, Angle);
+	const float Ladle = L.ScoopLadleSize;
+	const FVector2f Off((Half - L.ScoopBowlX) * Ladle, (Half - L.ScoopBowlY) * Ladle);
+	const FVector2f LadleCenter = Bowl + FVector2f(Cos * Off.X - Sin * Off.Y, Sin * Off.X + Cos * Off.Y);
+	{
+		const FYJJQuadBatch Batch = BeginBatch(Canvas->Canvas, UiAtlas.Texture, 1);
+		AddQuadRotated(Batch, ViewOffset + LadleCenter * ViewScale, FVector2f(Ladle * ViewScale), Angle, UiAtlas.UV(FMath::RoundToInt(L.UiLadle)), UiAtlas.CellUV, YJJUI::WithAlpha(FLinearColor::White, Fade), false);
+	}
+
+	// 재료 릴: 처음엔 빠르게, 갈수록 느리게 바뀌다가 마지막 칸이 진짜 카드. 바뀔 때 위에서 툭 떨어져 들어온다
+	if (Rise < 1.f || Pour > 0.f || Cards.Num() == 0)
+	{
+		return;
+	}
+	const int32 Steps = L.ScoopReelSteps + Index * L.ScoopReelStepsExtra;
+	const float Reel = Steps * (1.f - FMath::Square(1.f - Spin));
+	const int32 Step = FMath::Min(FMath::FloorToInt(Reel), Steps);
+	const float Slide = Step >= Steps ? 0.f : FMath::Frac(Reel);
+	if (ScoopTicks.IsValidIndex(Index) && ScoopTicks[Index] < Step)
+	{
+		ScoopTicks[Index] = Step;
+		FYJJAudio::Play(this, SoundScoopTick);
+	}
+	const int32 Shown = Step >= Steps ? Current->CardOffer[Index] : (Step * ScoopHashStep + Index * ScoopHashSlot + ScoopSerial * ScoopHashSerial) % Cards.Num();
+	const int32 Icon = Cards[Shown].Icon;
+	if (Icon != INDEX_NONE)
+	{
+		// 새 재료가 위에서 내려와 자리 잡는다 (덜 내려왔을수록 옅다)
+		const float Drop = (1.f - FMath::Min(Slide * 2.f, 1.f)) * L.ScoopItemSize * L.ScoopReelShift;
+		const float Size = L.ScoopItemSize;
+		DrawIcon(Icon, Bowl.X - Size * Half, Bowl.Y - Size * (Half + L.ScoopItemLift) - Drop, Size, YJJUI::WithAlpha(FLinearColor::White, FMath::Lerp(Half, 1.f, FMath::Min(Slide * 2.f, 1.f))));
+	}
+}
+
+void AYJJWaveHUD::UpdateScoop(float DeltaSeconds)
+{
+	const FYJJBattle* Current = Battle();
+	if (!Current->bCardPending)
+	{
+		return;
+	}
+	const int32 Count = Current->CardOffer.Num();
+	if (ScoopSerial != Current->CardOfferSerial)
+	{
+		ScoopSerial = Current->CardOfferSerial;
+		ScoopAge = 0.f;
+		ScoopNearMiss.Init(false, Count);
+		ScoopTicks.Init(0, Count);
+		ScoopLocked.Init(false, Count);
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			ScoopNearMiss[Index] = YJJData::CardGrades().Num() > 1 && Current->CardOfferGrades.IsValidIndex(Index) && Current->CardOfferGrades[Index] == 0 && Random.FRand() < UI().ScoopNearMissChance;
+		}
+	}
+	ScoopAge += DeltaSeconds;
+	// 멈추는 순간 소리: 등급 소리 (아깝다면 김 빠지는 소리도)
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		if (ScoopLocked[Index] || ScoopAge < ScoopLockTime(Index))
+		{
+			continue;
+		}
+		ScoopLocked[Index] = true;
+		const int32 Grade = Current->CardOfferGrades.IsValidIndex(Index) ? Current->CardOfferGrades[Index] : 0;
+		if (YJJData::CardGrades().IsValidIndex(Grade) && !YJJData::CardGrades()[Grade].Sound.IsNone())
+		{
+			FYJJAudio::Play(this, YJJData::CardGrades()[Grade].Sound);
+		}
+		if (ScoopNearMiss[Index])
+		{
+			FYJJAudio::Play(this, SoundScoopMiss);
+		}
+	}
+}
+
+float AYJJWaveHUD::ScoopLockTime(int32 Index) const
+{
+	const FYJJUILayout& L = UI();
+	const bool bMiss = ScoopNearMiss.IsValidIndex(Index) && ScoopNearMiss[Index];
+	return Index * (L.ScoopInterval + L.ScoopSpinExtra) + L.ScoopRiseTime + L.ScoopSpinTime + (bMiss ? L.ScoopNearMissExtra : 0.f);
+}
+
+bool AYJJWaveHUD::IsScoopDone() const
+{
+	const FYJJBattle* Current = Battle();
+	if (!Current || !Current->bCardPending || ScoopSerial != Current->CardOfferSerial)
+	{
+		return false;
+	}
+	float End = 0.f;
+	for (int32 Index = 0; Index < Current->CardOffer.Num(); ++Index)
+	{
+		End = FMath::Max(End, ScoopLockTime(Index));
+	}
+	return ScoopAge >= End + UI().ScoopPourTime;
+}
+
+FLinearColor AYJJWaveHUD::ScoopSteamColor(int32 Grade) const
+{
+	const TConstArrayView<FYJJCardGrade> Grades = YJJData::CardGrades();
+	if (!Grades.IsValidIndex(Grade))
+	{
+		return FLinearColor::White;
+	}
+	if (Grades[Grade].bRainbow)
+	{
+		const float Hue = FMath::Frac(AnimClock * UI().ScoopRainbowSpeed);
+		return FLinearColor::MakeFromHSV8(static_cast<uint8>(Hue * MAX_uint8), MAX_uint8 / 2, MAX_uint8);
+	}
+	return Grades[Grade].Steam;
 }
 
 void AYJJWaveHUD::PickSeasoning(int32 Choice)
 {
 	FYJJBattle* Current = EditBattle();
+	// 국자가 아직 돌면: 누르면 바로 다 멈춘다 (고르는 건 그 다음)
+	if (Current->bCardPending && !IsScoopDone())
+	{
+		if (ScoopSerial == Current->CardOfferSerial)
+		{
+			float End = 0.f;
+			for (int32 Index = 0; Index < Current->CardOffer.Num(); ++Index)
+			{
+				End = FMath::Max(End, ScoopLockTime(Index));
+			}
+			ScoopAge = FMath::Max(ScoopAge, End + UI().ScoopPourTime);
+		}
+		return;
+	}
 	if (!Current->CardOffer.IsValidIndex(Choice))
 	{
 		return;

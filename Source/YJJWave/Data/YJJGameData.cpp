@@ -123,6 +123,7 @@ void FYJJGameDatabase::Load()
 	LoadPerks();
 	LoadCards();
 	LoadBroth();
+	LoadCardGrades();
 	LoadDialogues();
 
 	UE_LOG(LogYJJWave, Display, TEXT("[Data] 유닛 %d, 병영 %d, 스테이지 %d, 특성 %d, 문제 %d"), Units.Num(), Buildings.Num(), Stages.Num(), Perks.Num(), Problems.Num());
@@ -280,6 +281,35 @@ void FYJJGameDatabase::LoadBroth()
 	if (Broth.Num() == 0)
 	{
 		Problem(TEXT("Broth.csv: 국물 단계가 없다"));
+	}
+}
+
+void FYJJGameDatabase::LoadCardGrades()
+{
+	CardGrades.Reset();
+	TArray<TPair<int32, FYJJCardGrade>> Ordered;
+	const UDataTable* Table = LoadTable(TEXT("CardGrades.csv"), FYJJCardGradeRow::StaticStruct());
+	Table->ForeachRow<FYJJCardGradeRow>(ContextName, [&Ordered](const FName& Name, const FYJJCardGradeRow& Row)
+	{
+		FYJJCardGrade Grade;
+		Grade.Id = Name;
+		Grade.NameKey = Row.NameKey;
+		Grade.Weight = FMath::Max(Row.Weight, 0.f);
+		Grade.Mult = Row.Mult;
+		Grade.Color = FLinearColor::FromSRGBColor(FColor::FromHex(Row.Color));
+		Grade.Steam = FLinearColor::FromSRGBColor(FColor::FromHex(Row.Steam));
+		Grade.bRainbow = Row.Rainbow != 0;
+		Grade.Sound = Row.Sound.IsEmpty() ? NAME_None : FName(*Row.Sound);
+		Ordered.Emplace(Row.Order, Grade);
+	});
+	Ordered.StableSort([](const TPair<int32, FYJJCardGrade>& A, const TPair<int32, FYJJCardGrade>& B) { return A.Key < B.Key; });
+	for (const TPair<int32, FYJJCardGrade>& Entry : Ordered)
+	{
+		CardGrades.Add(Entry.Value);
+	}
+	if (CardGrades.Num() == 0)
+	{
+		Problem(TEXT("CardGrades.csv: 재료 등급이 없다"));
 	}
 }
 
@@ -693,6 +723,7 @@ void FYJJGameDatabase::LoadCards()
 		Def.Kind = EYJJPerkKind::Notable;
 		Def.Icon = Row.Icon;
 		Def.FlavorKey = Row.FlavorKey;
+		Def.GradeScale = Row.GradeScale == TEXT("A") ? EYJJGradeScale::A : Row.GradeScale == TEXT("B") ? EYJJGradeScale::B : EYJJGradeScale::None;
 		ReadEffects(TEXT("Cards.csv"), Name, Row, Def);
 	});
 }
@@ -825,6 +856,7 @@ int32 YJJData::HeroUnit()
 TConstArrayView<FYJJPerkDef> YJJData::Perks() { return FYJJGameDatabase::Get().Perks; }
 TConstArrayView<FYJJPerkDef> YJJData::Cards() { return FYJJGameDatabase::Get().Cards; }
 TConstArrayView<FYJJBrothStage> YJJData::Broth() { return FYJJGameDatabase::Get().Broth; }
+TConstArrayView<FYJJCardGrade> YJJData::CardGrades() { return FYJJGameDatabase::Get().CardGrades; }
 TConstArrayView<FYJJSkillDef> YJJData::Skills() { return FYJJGameDatabase::Get().Skills; }
 const FYJJSkillDef& YJJData::Skill(int32 Index) { return FYJJGameDatabase::Get().Skills[Index]; }
 TConstArrayView<FYJJHeroDef> YJJData::Heroes() { return FYJJGameDatabase::Get().Heroes; }

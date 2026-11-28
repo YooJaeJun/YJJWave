@@ -304,4 +304,23 @@ struct FYJJCardRow : public FYJJEffectRow
 	UPROPERTY() int32 Icon = -1;
 	/** 한 줄 맛 설명 (Localization) */
 	UPROPERTY() FString FlavorKey;
+	/** 재료 등급이 키우는 특수 효과 값: A / B / 빈칸 (능력치는 늘 등급 배율) */
+	UPROPERTY() FString GradeScale;
+};
+
+/** CardGrades.csv: 국자로 뜬 재료 등급 */
+USTRUCT()
+struct FYJJCardGradeRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY() FString NameKey;
+	UPROPERTY() int32 Order = 0;
+	UPROPERTY() float Weight = 1.f;
+	UPROPERTY() float Mult = 1.f;
+	UPROPERTY() FString Color;
+	UPROPERTY() FString Steam;
+	UPROPERTY() int32 Rainbow = 0;
+	UPROPERTY() FString Sound;
+	UPROPERTY() FString Note;
 };

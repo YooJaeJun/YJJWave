@@ -256,6 +256,7 @@ void AYJJWaveHUD::Tick(float DeltaSeconds)
 		return;
 	}
 	ResultAge = Battle()->bGameOver ? ResultAge + DeltaSeconds : 0.f;
+	UpdateScoop(DeltaSeconds);
 	ComboTimer -= DeltaSeconds;
 	UpdateCoinPops(DeltaSeconds);
 	UpdatePotPops(DeltaSeconds);

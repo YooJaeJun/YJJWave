@@ -175,11 +175,19 @@ public:
 	/** 말풍선 대화가 듣는 사건 (HUD가 가져가고 비운다) */
 	TArray<FYJJBattleEvent> Events;
 
-	// ---- 카드 (웨이브가 바뀔 때 3장 중 1장, 이번 판 한정) ----
+	// ---- 카드 (웨이브가 바뀔 때 국자로 셋을 떠서 1장, 이번 판 한정) ----
 	bool bCardPending = false;
 	TArray<int32> CardOffer;
+	/** 국자로 뜬 재료 등급 (CardOffer 와 같은 순서, CardGrades.csv 번호) */
+	TArray<int32> CardOfferGrades;
+	/** 카드를 새로 떠 올 때마다 1씩 (HUD 국자 연출이 처음부터 다시) */
+	int32 CardOfferSerial = 0;
 	TArray<int32> CardsTaken;
+	/** 넣은 카드의 등급 (CardsTaken 과 같은 순서) */
+	TArray<int32> CardGrades;
 	bool PickCard(int32 Choice);
+	/** 등급 배율을 곱한 카드 (능력치 전부 + GradeScale 이 가리키는 특수 효과 값) */
+	static FYJJPerkDef GradedCard(int32 Card, int32 Grade);
 
 	// ---- 상태 ----
 	FYJJHorde Horde;
@@ -240,6 +248,8 @@ private:
 	void SpawnEnemy(int32 Unit);
 	int32 SpawnEnemyAt(int32 Unit, const FVector2f& Pos);
 	void OfferCards();
+	/** CardGrades.csv Weight 로 재료 등급 하나 */
+	int32 RollCardGrade();
 	void TickNecro(float Dt);
 	void TickPot(float Dt);
 	void AddEvent(EYJJTalkTrigger Trigger, int32 Unit = INDEX_NONE);

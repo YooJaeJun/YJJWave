@@ -1,0 +1,4 @@
+﻿Name,NameKey,Order,Weight,Mult,Color,Steam,Rainbow,Sound,Note
+Common,Grade.Common,0,68,1,D8D0BC,F4F1EA,0,ScoopLock,흔한 재료: 하얀 김
+Rare,Grade.Rare,1,25,1.6,F2B33D,FFD36B,0,ScoopRare,귀한 재료: 금빛 김
+Legend,Grade.Legend,2,7,2.5,FF7AD9,FFFFFF,1,ScoopJackpot,전설 재료: 무지개 김
